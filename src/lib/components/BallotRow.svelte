@@ -162,12 +162,7 @@
     display: flex;
     align-items: center;
     height: 100%;
-    border-right: 1px solid var(--grid-border-light);
     padding: 0 6px;
-  }
-
-  .cell:last-child {
-    border-right: none;
   }
 
   /* ─── Party Name Cell — All Caps ─────────────────────────────────────────────── */
