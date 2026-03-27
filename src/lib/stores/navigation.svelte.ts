@@ -26,6 +26,10 @@ class NavigationStore {
     return COLUMN_TITLES[this.column];
   }
 
+  get columnType(): 'presidential' | 'legislative' {
+    return this.column === 0 ? 'presidential' : 'legislative';
+  }
+
   get canGoLeft(): boolean {
     return this.column > 0;
   }

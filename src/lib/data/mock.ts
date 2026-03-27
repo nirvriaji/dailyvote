@@ -5,13 +5,11 @@ import type { BallotColumn, BallotRow, VoteZone, Candidate, ZoneId } from '$lib/
 const PRESIDENTIAL_ZONES: VoteZone[] = [
   { id: 'symbol', type: 'symbol', label: 'Símbolo del partido', description: 'Marca el símbolo o logo del partido' },
   { id: 'photo', type: 'photo', label: 'Fotografía del candidato/a', description: 'Marca la foto del candidato/a presidencial' },
-  { id: 'number', type: 'number', label: 'Número del partido', description: 'Marca el número que identifica al partido' },
 ];
 
 const LEGISLATIVE_ZONES: VoteZone[] = [
   { id: 'symbol', type: 'symbol', label: 'Símbolo del partido', description: 'Marca el símbolo o logo del partido' },
-  { id: 'list', type: 'list', label: 'Lista completa', description: 'Marca para votar por la lista de candidatos del partido' },
-  { id: 'number', type: 'number', label: 'Número preferencial', description: 'Escribe el número del candidato de tu preferencia dentro de la lista' },
+  { id: 'number', type: 'number', label: 'Número del candidato', description: 'Escribe el número del candidato de tu preferencia (diferente al número del partido)' },
 ];
 
 // ─── Parties (Perú 2026 - placeholder) ─────────────────────────────────────────

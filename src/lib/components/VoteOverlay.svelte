@@ -67,7 +67,7 @@
       <button class="close-btn" onclick={() => ui.closeOverlay()} aria-label="Cerrar">✕</button>
     </div>
 
-    <!-- Zone cards — one card per valid vote zone -->
+    <!-- Zone cards — individual options AND both option -->
     <div class="zone-cards">
       {#each row.voteZones as zone (zone.id)}
         <button
@@ -76,10 +76,6 @@
           aria-label={zone.description}
           style:--pc={row.partyColor}
         >
-          <!--
-            Mini ballot preview: shows a simplified ballot row
-            with THIS zone highlighted and an X mark on it.
-          -->
           <div class="preview">
             <div class="preview-badge" style:background={row.partyColor}>
               <span>{row.partyNumber}</span>
@@ -99,17 +95,51 @@
               {/each}
             </div>
           </div>
-
-          <!-- Label and description -->
           <div class="zone-info">
             <span class="zone-title">{zone.label}</span>
             <span class="zone-desc">{zone.description}</span>
           </div>
-
-          <!-- CTA arrow -->
           <span class="zone-cta" aria-hidden="true">→</span>
         </button>
       {/each}
+      
+      <!-- Third option: Mark both/all zones -->
+      {#if row.voteZones.length > 1}
+        <button
+          class="zone-card"
+          onclick={() => {
+            // Cast vote for all zones
+            row.voteZones.forEach((z, i) => {
+              setTimeout(() => castVote(z.id, z.type, z.label), i * 100);
+            });
+          }}
+          aria-label="Marcar ambas opciones"
+          style:--pc={row.partyColor}
+        >
+          <div class="preview">
+            <div class="preview-badge" style:background={row.partyColor}>
+              <span>{row.partyNumber}</span>
+            </div>
+            <div class="preview-zones">
+              {#each row.voteZones as z}
+                <div class="pz pz-on">
+                  <svg class="pz-x" viewBox="0 0 16 16" aria-hidden="true">
+                    <line x1="3.5" y1="3.5" x2="12.5" y2="12.5"
+                          stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+                    <line x1="12.5" y1="3.5" x2="3.5" y2="12.5"
+                          stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+                  </svg>
+                </div>
+              {/each}
+            </div>
+          </div>
+          <div class="zone-info">
+            <span class="zone-title">Marcar ambos</span>
+            <span class="zone-desc">Selecciona todas las opciones disponibles</span>
+          </div>
+          <span class="zone-cta" aria-hidden="true">→</span>
+        </button>
+      {/if}
     </div>
 
     <!-- Clear vote link (shown when this row is already voted) -->
