@@ -3,10 +3,6 @@
   import { ui } from '$lib/stores/ui.svelte';
   import { vote } from '$lib/stores/vote.svelte';
   import MiniMap from './MiniMap.svelte';
-
-  const ZONE_LABEL: Record<string, string> = {
-    top: 'Superior', middle: 'Media', bottom: 'Inferior',
-  };
 </script>
 
 <header class="context-bar">
@@ -15,10 +11,9 @@
     <MiniMap />
   </div>
 
-  <!-- Center: section name + zone -->
+  <!-- Center: section name -->
   <div class="bar-center">
     <p class="section-name">{nav.title}</p>
-    <p class="zone-name">Zona {ZONE_LABEL[nav.zone]}</p>
   </div>
 
   <!-- Right: progress badge -->
@@ -91,13 +86,6 @@
     text-overflow: ellipsis;
     max-width: 100%;
     line-height: 1.3;
-  }
-
-  .zone-name {
-    font-size: 9px;
-    color: rgba(255, 255, 255, 0.38);
-    line-height: 1;
-    letter-spacing: 0.04em;
   }
 
   /* ─── Progress button ──────────────────────────────────────────────────────── */
