@@ -1,0 +1,116 @@
+/* ──────────────────────────────────────────────────────────────────────────────
+   DailyVote — Refined Design System
+   Big-Tech Quality: Apple/Stripe/Linear inspired
+   One continuous printed document with minimal visual noise
+────────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* ─── Layout ──────────────────────────────────────────────────────────────── */
+  --bar-height: 52px;
+
+  /* ─── Document Surface (Unified Paper Background) ──────────────────────────── */
+  /* Single warm paper tone across entire ballot */
+  --doc-surface:      #f5f2e8;
+  --ballot-bg:        #f5f2e8;
+  --paper-accent:     #f0ece0; /* Slightly darker for subtle variation */
+  
+  /* Column separation - minimal */
+  --col-divider:      rgba(0, 0, 0, 0.05);
+  
+  /* ─── Color Usage Principle: Color is for meaning, not decoration ───────────── */
+  /* All section colors are subtle low-opacity tints */
+  --section-tint-1:   rgba(100, 150, 200, 0.06);
+  --section-tint-2:   rgba(150, 100, 150, 0.06);
+  --section-tint-3:   rgba(100, 180, 130, 0.06);
+  --section-tint-4:   rgba(180, 140, 100, 0.06);
+  
+  /* Active states - subtle */
+  --active-bg:        rgba(0, 0, 0, 0.04);
+  --hover-bg:         rgba(0, 0, 0, 0.03);
+  
+  /* ─── Surfaces (UI Chrome) ───────────────────────────────────────────────── */
+  --surface:          #FFFFFF;
+  --surface-elevated: rgba(255, 255, 255, 0.96);
+  --surface-hover:    rgba(0, 0, 0, 0.02);
+  
+  /* ─── HUD/Overlays ────────────────────────────────────────────────────────── */
+  --hud-bg:           rgba(28, 27, 25, 0.92);
+  --hud-border:       rgba(255, 255, 255, 0.08);
+  
+  /* ─── Borders ─────────────────────────────────────────────────────────────── */
+  --border:           rgba(0, 0, 0, 0.08);
+  --border-strong:    rgba(0, 0, 0, 0.15);
+  --border-light:     rgba(0, 0, 0, 0.04);
+  
+  /* ─── Text Hierarchy ───────────────────────────────────────────────────────── */
+  --text-primary:     #1a1917;      /* Near black - main content */
+  --text-secondary:   #4a4946;      /* Dark gray - secondary */
+  --text-muted:       #6b6a67;      /* Medium gray - supporting */
+  --text-subtle:      #9a9894;      /* Light gray - least important */
+  --text-on-dark:     rgba(255, 255, 255, 0.92);
+  
+  /* ─── Accent (Voting/Action) ───────────────────────────────────────────────── */
+  --accent:           #c8102e;
+  --accent-subtle:    rgba(200, 16, 46, 0.12);
+  
+  /* ─── Typography ──────────────────────────────────────────────────────────── */
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
+               'Segoe UI', system-ui, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* ─── Reset ───────────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  /* Unified paper background - no gradients or visual noise */
+  background: #ebe8e0;
+}
+
+h1, h2, h3, h4, h5, h6 { 
+  font-weight: 700; 
+  line-height: 1.15; 
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+p  { margin: 0; }
+ul, ol { list-style: none; padding: 0; margin: 0; }
+button { 
+  font-family: inherit; 
+  font-size: inherit;
+  cursor: pointer;
+}
+
+/* ─── Focus States ────────────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+:focus:not(:focus-visible) { outline: none; }
+
+/* ─── Scrollbars (Minimal) ──────────────────────────────────────────────────── */
+::-webkit-scrollbar { 
+  width: 0; 
+  height: 0; 
+}
+
+/* ─── Utility ─────────────────────────────────────────────────────────────────── */
+.sr-only {
+  position: absolute; 
+  width: 1px; 
+  height: 1px; 
+  padding: 0;
+  margin: -1px; 
+  overflow: hidden; 
+  clip: rect(0,0,0,0);
+  white-space: nowrap; 
+  border-width: 0;
+}
