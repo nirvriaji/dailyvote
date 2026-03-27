@@ -14,46 +14,56 @@
   let vw = $state(0);
 
   // ─── Layout ───────────────────────────────────────────────────────────────────
-  // Column width fills space leaving room for right preview
-  // Left side: no preview, column starts immediately after ordinals + small gap
-  // Gap: 4px between ordinals and current column (minimal)
-  // All columns have standard right preview (180px)
+  // Carousel-style layout with gaps between column and previews
+  // Left preview (prev column): 60px | Gap: 16px | Main column | Gap: 16px | Right preview (next column): 180px
   const GAP = 4;
-  const PREVIEW_WIDTH = 180;
-  const CENTER_OFFSET = 64; // Half of (180 - 52) to balance left/right space visually
-  let previewRight = $derived(PREVIEW_WIDTH);
-  let colWidth = $derived(Math.max(480, vw - 48 - GAP - previewRight)); // Minus ordinals (48), gap (4), preview (180)
-  let stageW   = $derived(COLUMN_COUNT * colWidth);
+  const PREVIEW_LEFT = 60;  // Partial previous column visible
+  const PREVIEW_RIGHT = 180; // Standard right preview
+  const COLUMN_GAP = 16;     // Gap between main column and previews
+  const CENTER_OFFSET = 40;  // Adjusted for new layout
+  
+  // Total available width minus all the fixed elements
+  let availableWidth = $derived(vw - 48 - GAP - PREVIEW_LEFT - COLUMN_GAP - COLUMN_GAP - PREVIEW_RIGHT);
+  let colWidth = $derived(Math.max(480, availableWidth));
+  
+  // Stage width includes all columns plus gaps between them
+  let stageW = $derived((COLUMN_COUNT * colWidth) + ((COLUMN_COUNT - 1) * COLUMN_GAP));
 
   /*
    * With transform-origin: 0 0 on the stage,
    * transform: translateX(panX) scale(s) maps document x → screen x × s + panX.
    *
-   * panXFor(c, s)   = −c × colWidth × s + offset
-   *                 → aligns column c visually centered
+   * panXFor(c, s)   = −c × (colWidth + gap) × s + offset
+   *                 → aligns column c with proper gaps
    *
-   * The offset accounts for the 48px ordinal column + 4px gap + centering offset
+   * The offset accounts for ordinals + left preview + gap + centering
    */
   function panXFor(c: number, s: number): number {
-    // Align column c centered: base position 52px (48 + 4 gap) + center offset
-    return 52 + CENTER_OFFSET - (c * colWidth * s);
+    // Position: ordinals (48) + gap (4) + left preview (60) + gap (16) = 128px from left edge
+    const leftOffset = 48 + GAP + PREVIEW_LEFT + COLUMN_GAP;
+    // Each column position includes its index times (width + gap)
+    return leftOffset - (c * (colWidth + COLUMN_GAP) * s);
   }
   function panXFitAll(s: number): number {
-    return (vw - stageW * s) / 2;
+    // Total width includes columns plus gaps between them
+    const totalWidth = (COLUMN_COUNT * colWidth) + ((COLUMN_COUNT - 1) * COLUMN_GAP);
+    return (vw - totalWidth * s) / 2;
   }
 
   // ─── Navigation state ─────────────────────────────────────────────────────────
   let dragOffset    = $state(0);
   let animated      = $state(false); // off during onboarding; toggled by gesture
-  // Align current column visually centered:
-  // Left side has ~52px (ordinals 48 + gap 4), right side has 180px preview
-  // Difference is 128px, so shift column 64px right to center it visually
-  let navTranslateX = $derived(64 + CENTER_OFFSET - (nav.column * colWidth) + dragOffset);
+  // Align column with gaps on both sides:
+  // Position: ordinals (48) + gap (4) + left preview (60) + gap (16) = 128px
+  const LEFT_MARGIN = 48 + GAP + PREVIEW_LEFT + COLUMN_GAP;
+  let navTranslateX = $derived(LEFT_MARGIN - (nav.column * (colWidth + COLUMN_GAP)) + dragOffset);
   
-  // Fade start percentage: dynamically calculated based on column width and preview
-  // Formula: fade starts at (colWidth / (colWidth + previewRight)) * 100%
-  // This ensures the current column is fully visible and only the preview gets faded
-  let fadeStart = $derived(Math.round((colWidth / (colWidth + previewRight)) * 100));
+  // Fade start percentage: ensure column is fully visible until the gap before right preview
+  // The visible area is: left preview (60) + gap (16) + column + gap (16) of the 180 preview
+  // So the column ends at: 60 + 16 + colWidth = 76 + colWidth
+  // Total visible is: 60 + 16 + colWidth + 16 + 180 = 272 + colWidth
+  // Column percentage: (76 + colWidth) / (272 + colWidth) * 100
+  let fadeStart = $derived(Math.round(((PREVIEW_LEFT + COLUMN_GAP + colWidth) / (PREVIEW_LEFT + COLUMN_GAP + colWidth + COLUMN_GAP + PREVIEW_RIGHT)) * 100));
 
   // ─── Onboarding state ─────────────────────────────────────────────────────────
   let onbActive    = $state(true);
@@ -325,19 +335,19 @@
     /* Paper ballot background */
     background: var(--paper-offwhite);
     
-    /* Mask: hide left side completely, show current column fully until fade-start, fade to right */
+    /* Mask: hide left side completely, show column fully until fade-start, fade preview area */
     -webkit-mask-image: linear-gradient(
       to right,
       transparent 0%,
       black 0%,
-      black var(--fade-start, 85%),
+      black var(--fade-start),
       transparent 100%
     );
     mask-image: linear-gradient(
       to right,
       transparent 0%,
       black 0%,
-      black var(--fade-start, 85%),
+      black var(--fade-start),
       transparent 100%
     );
   }
@@ -347,7 +357,7 @@
   /* ─── Document sheet — Official ballot paper ───────────────────────────────── */
   .document-sheet {
     display: flex;
-    gap: 0;
+    gap: 16px; /* Gap between columns */
     height: 100%;
     will-change: transform;
     transition: none;
