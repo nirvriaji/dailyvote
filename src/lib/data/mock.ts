@@ -220,13 +220,48 @@ function makeLegislativeRow(colId: string, partyIdx: number, parties: Party[] = 
   };
 }
 
-// ─── Ballot columns (estructura real de cédula) ─────────────────────────────────
+  // ─── Ballot columns (estructura real de cédula) ─────────────────────────────────
+
+// Create presidential rows with a spacer at index 3 for Frepap alignment
+function createPresidentialRows(): BallotRow[] {
+  const rows: BallotRow[] = [];
+  
+  // First 3 parties (indices 0-2)
+  for (let i = 0; i < 3; i++) {
+    rows.push(makePresidentialRow(i));
+  }
+  
+  // Spacer row for Frepap (index 3) - empty row to align with legislative columns
+  rows.push({
+    id: 'col0-row-frepap-spacer',
+    partyNumber: 4,
+    partyName: '',
+    partyAbbr: '',
+    partyColor: '#3E2723',
+    partySymbolUrl: '',
+    candidates: [],
+    voteZones: [],
+    zone: 'top' as ZoneId,
+    isPresidential: true,
+    presidentialPhoto: '',
+    rowIndex: 3,
+  });
+  
+  // Remaining parties (indices 3-35 from PARTIES, placed at indices 4-36)
+  for (let i = 3; i < PARTIES.length; i++) {
+    const row = makePresidentialRow(i);
+    row.rowIndex = i + 1; // Shift row index to account for spacer
+    rows.push(row);
+  }
+  
+  return rows;
+}
 
 export const BALLOT_COLUMNS: BallotColumn[] = [
   {
     id: 'col0', index: 0, section: 'presidente',
     title: 'Presidente y Vicepresidentes',
-    rows: PARTIES.map((_, i) => makePresidentialRow(i)),
+    rows: createPresidentialRows(),
   },
   {
     id: 'col1', index: 1, section: 'senadores-nacional',

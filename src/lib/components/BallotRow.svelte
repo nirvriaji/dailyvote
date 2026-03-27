@@ -33,70 +33,81 @@
   }
 </script>
 
-<div
-  class="ballot-row"
-  class:is-voted={isThisRowVoted}
-  class:is-faded={columnHasOtherVote}
-  class:is-active={isActive}
-  class:is-presidential={row.isPresidential}
-  class:is-even={isEvenRow}
-  style="--party-color: {row.partyColor}"
-  role="button"
-  tabindex="0"
-  aria-label="Partido {row.partyName}, número {row.partyNumber}"
-  onclick={handleTap}
-  onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && handleTap()}
-  onmouseenter={handleMouseEnter}
-  onmouseleave={handleMouseLeave}
->
-  <!-- Celda 1: Nombre del partido -->
-  <div class="cell name-cell">
-    <span class="party-name">{row.partyName}</span>
+{#if row.partyName}
+  <div
+    class="ballot-row"
+    class:is-voted={isThisRowVoted}
+    class:is-faded={columnHasOtherVote}
+    class:is-active={isActive}
+    class:is-presidential={row.isPresidential}
+    class:is-even={isEvenRow}
+    style="--party-color: {row.partyColor}"
+    role="button"
+    tabindex="0"
+    aria-label="Partido {row.partyName}, número {row.partyNumber}"
+    onclick={handleTap}
+    onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && handleTap()}
+    onmouseenter={handleMouseEnter}
+    onmouseleave={handleMouseLeave}
+  >
+    <!-- Celda 1: Nombre del partido -->
+    <div class="cell name-cell">
+      <span class="party-name">{row.partyName}</span>
+    </div>
+
+    <!-- Celda 2: Logo del partido -->
+    <div class="cell logo-cell">
+      <div class="logo-box">
+        {#if row.partySymbolUrl}
+          <img src={row.partySymbolUrl} alt="Logo {row.partyAbbr}" class="party-logo" />
+        {:else}
+          <span class="logo-text">{row.partyAbbr}</span>
+        {/if}
+      </div>
+    </div>
+
+    {#if row.isPresidential}
+      <!-- Celda 3 (Presidencial): Foto del candidato -->
+      <div class="cell photo-cell">
+        {#if row.presidentialPhoto}
+          <div class="candidate-photo-container">
+            <img src={row.presidentialPhoto} alt={row.candidates[0]?.name || 'Candidato'} class="candidate-photo-img" />
+          </div>
+        {:else if row.candidates.length > 0}
+          <div class="candidate-photo" style:background-color={row.candidates[0].avatarColor}>
+            <span class="photo-text">FOTO</span>
+          </div>
+        {/if}
+      </div>
+      <!-- Celda 4 (Presidencial): Vacía -->
+      <div class="cell empty-cell"></div>
+    {:else}
+      <!-- Celdas 3-4 (Legislativas): Casillas de votación sutiles -->
+      <div class="cell vote-cell">
+        <div class="vote-box"></div>
+      </div>
+      <div class="cell vote-cell">
+        <div class="vote-box"></div>
+      </div>
+    {/if}
+
+    <!-- Marca de voto -->
+    {#if isThisRowVoted && currentVote}
+      <div class="vote-indicator" aria-label="Voto registrado">
+        <VoteMark type={currentVote.zoneType} size={28} animate={false} />
+      </div>
+    {/if}
   </div>
-
-  <!-- Celda 2: Logo del partido -->
-  <div class="cell logo-cell">
-    <div class="logo-box">
-      {#if row.partySymbolUrl}
-        <img src={row.partySymbolUrl} alt="Logo {row.partyAbbr}" class="party-logo" />
-      {:else}
-        <span class="logo-text">{row.partyAbbr}</span>
-      {/if}
-    </div>
+{:else}
+  <!-- Spacer row for Frepap alignment -->
+  <div
+    class="ballot-row is-spacer"
+    class:is-even={isEvenRow}
+    aria-label="Espacio reservado"
+  >
+    <div class="spacer-content"></div>
   </div>
-
-  {#if row.isPresidential}
-    <!-- Celda 3 (Presidencial): Foto del candidato -->
-    <div class="cell photo-cell">
-      {#if row.presidentialPhoto}
-        <div class="candidate-photo-container">
-          <img src={row.presidentialPhoto} alt={row.candidates[0]?.name || 'Candidato'} class="candidate-photo-img" />
-        </div>
-      {:else if row.candidates.length > 0}
-        <div class="candidate-photo" style:background-color={row.candidates[0].avatarColor}>
-          <span class="photo-text">FOTO</span>
-        </div>
-      {/if}
-    </div>
-    <!-- Celda 4 (Presidencial): Vacía -->
-    <div class="cell empty-cell"></div>
-  {:else}
-    <!-- Celdas 3-4 (Legislativas): Casillas de votación sutiles -->
-    <div class="cell vote-cell">
-      <div class="vote-box"></div>
-    </div>
-    <div class="cell vote-cell">
-      <div class="vote-box"></div>
-    </div>
-  {/if}
-
-  <!-- Marca de voto -->
-  {#if isThisRowVoted && currentVote}
-    <div class="vote-indicator" aria-label="Voto registrado">
-      <VoteMark type={currentVote.zoneType} size={28} animate={false} />
-    </div>
-  {/if}
-</div>
+{/if}
 
 <style>
   /* ─── Row Container ──────────────────────────────────────────────────────────── */
@@ -274,17 +285,19 @@
     background: rgba(255, 255, 255, 0.5);
   }
 
-  /* ─── Vote Indicator ─────────────────────────────────────────────────────────── */
-  .vote-indicator {
-    position: absolute;
-    top: 50%;
-    right: 20px;
-    transform: translateY(-50%);
+  /* ─── Spacer row for Frepap alignment ────────────────────────────────────────── */
+  .ballot-row.is-spacer {
+    cursor: default;
     pointer-events: none;
-    z-index: 1;
+    background: rgba(0, 0, 0, 0.02);
   }
 
-  .ballot-row:not(.is-presidential) .vote-indicator {
-    right: 28px;
+  .ballot-row.is-spacer.is-even {
+    background: rgba(0, 0, 0, 0.03);
+  }
+
+  .spacer-content {
+    flex: 1;
+    height: 100%;
   }
 </style>
