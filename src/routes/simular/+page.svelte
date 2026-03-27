@@ -51,33 +51,39 @@
 </svelte:head>
 
 <!--
-  App shell layout with two-column grid:
-    ┌──────────────────────────────────────────┐
-    │  ContextBar (fixed)                      │  ← 56px
-    ├──────────────────────────────────────────┤
-    │  ┌─────┬─────────────────────────────┐ │
-    │  │ Ord │       BallotStage           │ │  ← remaining height
-    │  │ 60px│  (scrollable horizontally)  │ │
-    │  │     │                             │ │
-    │  └─────┴─────────────────────────────┘ │
-    └──────────────────────────────────────────┘
-
-  VoteOverlay and ProgressPanel float above everything (fixed position).
-  Onboarding modal sits at z-index 200 when active.
+  Layout: Ordinals + gap + Stage (with current column + right preview)
+  Left side: completely hidden, no peeking
+  Right side: blurred preview of next column visible
+  
+  Structure:
+    ┌───────────────────────────────────────────────┐
+    │ ContextBar                                   │
+    ├───────────────────────────────────────────────┤
+    │ ┌─────┬──┬───────────────────────────┬─────┐│
+    │ │ Ord │  │    STAGE (current +       │PREV ││
+    │ │ 60px│8px│     right preview)        │200px││
+    │ │     │  │                           │     ││
+    │ └─────┴──┴───────────────────────────┴─────┘│
+    └───────────────────────────────────────────────┘
+  
+  Left side of current column is completely masked/hidden.
 -->
 <div class="app-shell">
 
   <!-- Context bar: always visible, shows minimap + section + progress -->
   <ContextBar />
 
-  <!-- The ballot area with two-column grid: ordinal + stage -->
+  <!-- Layout: Ordinals (60px) + gap (8px) + Stage (flexible with current + right preview) -->
   <div class="ballot-container">
     <!-- Fixed ordinal column on the left -->
     <div class="ordinal-wrapper">
       <OrdinalColumn columns={BALLOT_COLUMNS} />
     </div>
     
-    <!-- Horizontally scrollable ballot stage on the right -->
+    <!-- Gap spacer -->
+    <div class="gap-spacer"></div>
+    
+    <!-- Stage: shows current column + right preview, hides left side completely -->
     <div class="stage-wrapper">
       <BallotStage columns={BALLOT_COLUMNS} />
     </div>
@@ -126,17 +132,17 @@
     flex-direction: column;
   }
 
-  /* Two-column grid layout: ordinal (fixed 60px) + stage (flexible) */
+  /* Layout: ordinal (60px) + gap (8px) + stage (flexible) */
   .ballot-container {
     flex: 1;
     min-height: 0;
     margin-top: var(--bar-height, 56px);
     display: grid;
-    grid-template-columns: 60px 1fr;
+    grid-template-columns: 60px 8px 1fr;
     background: var(--doc-surface);
   }
 
-  /* Ordinal column: fixed width, scrollable vertically */
+  /* Ordinal column: fixed width */
   .ordinal-wrapper {
     width: 60px;
     height: 100%;
@@ -146,7 +152,14 @@
     z-index: 10;
   }
 
-  /* Stage: fills remaining width, handles horizontal navigation */
+  /* Gap between ordinals and stage */
+  .gap-spacer {
+    width: 8px;
+    height: 100%;
+    background: transparent;
+  }
+
+  /* Stage: fills remaining width, hides left peek completely */
   .stage-wrapper {
     flex: 1;
     height: 100%;
@@ -158,7 +171,7 @@
   .col-arrows {
     position: fixed;
     top: calc(var(--bar-height, 56px) + 50%);
-    left: 60px; /* Offset to account for ordinal column */
+    left: 68px; /* After ordinals (60px) + gap (8px) */
     right: 0;
     transform: translateY(-50%);
     display: flex;

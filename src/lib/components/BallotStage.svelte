@@ -14,27 +14,24 @@
   let vw = $state(0);
 
   // ─── Layout ───────────────────────────────────────────────────────────────────
-  const PEEK_RESERVE = 60; // total px reserved for side peeking (30px each side)
-  // Ancho ajustado para acomodar tipografía más grande y celdas de 80px:
-  // nombre (flexible) + logo (80px) + celda3 (80px) + celda4 (80px) + gaps + padding
-  let colWidth = $derived(Math.min(920, Math.max(520, vw - PEEK_RESERVE)));
+  // Column width fills space leaving room for right preview (200px)
+  // Left side: no preview, column starts near ordinals
+  const PREVIEW_RIGHT = 200;
+  let colWidth = $derived(Math.max(500, vw - 60 - 8 - PREVIEW_RIGHT)); // Minus ordinals (60), gap (8), preview (200)
   let stageW   = $derived(COLUMN_COUNT * colWidth);
 
   /*
    * With transform-origin: 0 0 on the stage,
    * transform: translateX(panX) scale(s) maps document x → screen x × s + panX.
    *
-   * panXFor(c, s)   = vw/2 − (c + 0.5) × colWidth × s
-   *                 → centers column c in the viewport at scale s
+   * panXFor(c, s)   = −c × colWidth × s + offset
+   *                 → aligns column c at left edge (after ordinals + gap)
    *
-   * panXFitAll(s)   = (vw − stageW × s) / 2
-   *                 → centers the entire document
-   *
-   * At s = 1, panXFor(c, 1) = (vw − colWidth)/2 − c × colWidth
-   *                          = navTranslateX  ← same formula used for navigation
+   * The offset accounts for the 60px ordinal column + 8px gap
    */
   function panXFor(c: number, s: number): number {
-    return vw / 2 - (c + 0.5) * colWidth * s;
+    // Align column c so it starts at position 68px (60 + 8 gap)
+    return 68 - (c * colWidth * s);
   }
   function panXFitAll(s: number): number {
     return (vw - stageW * s) / 2;
@@ -43,7 +40,8 @@
   // ─── Navigation state ─────────────────────────────────────────────────────────
   let dragOffset    = $state(0);
   let animated      = $state(false); // off during onboarding; toggled by gesture
-  let navTranslateX = $derived(-(nav.column * colWidth) + (vw - colWidth) / 2 + dragOffset);
+  // Align current column at left edge (after ordinals + gap)
+  let navTranslateX = $derived(68 - (nav.column * colWidth) + dragOffset);
 
   // ─── Onboarding state ─────────────────────────────────────────────────────────
   let onbActive    = $state(true);
@@ -309,21 +307,23 @@
     /* Unified paper background - no gradients, no visual noise */
     background: #ebe8e0;
     
-    /* Subtle edge fade only - no heavy masking */
-    -webkit-mask-image: linear-gradient(
-      to right,
-      transparent 0%,
-      black 4%,
-      black 96%,
-      transparent 100%
-    );
-    mask-image: linear-gradient(
-      to right,
-      transparent 0%,
-      black 4%,
-      black 96%,
-      transparent 100%
-    );
+  /* Mask: hide left side completely, show current column fully, fade right side */
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    transparent 0%,
+    black 0%,
+    black 85%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    transparent 0%,
+    black 0%,
+    black 85%,
+    transparent 100%
+  );
   }
 
   .stage-viewport:active { cursor: grabbing; }
