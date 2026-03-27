@@ -103,3 +103,52 @@ button {
   white-space: nowrap; 
   border-width: 0;
 }
+
+/* ─── Reusable Image Frame — Unified container for all ballot images ───────────── */
+.image-frame {
+  /* Container sizing */
+  width: 44px;
+  height: 44px;
+  
+  /* Border — consistent with ballot grid */
+  border: 1.5px solid var(--grid-border);
+  
+  /* No border-radius — sharp corners like printed ballot */
+  border-radius: 0;
+  
+  /* Background for image containment */
+  background: white;
+  
+  /* Overflow hidden for clean clipping */
+  overflow: hidden;
+  
+  /* Flex centering */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  /* Box sizing */
+  box-sizing: border-box;
+}
+
+/* Image inside frame */
+.image-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* Default: fit entire image */
+  display: block;
+}
+
+/* Variant for photos — use cover instead of contain */
+.image-frame.is-photo img {
+  object-fit: cover;
+}
+
+/* Variant for placeholder text */
+.image-frame.is-placeholder {
+  font-family: 'Roboto Condensed', 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  letter-spacing: 0.02em;
+}

@@ -56,25 +56,25 @@
   </div>
 
   <!-- Celda 2: Logo del partido -->
-  <div class="cell logo-cell">
-    <div class="logo-box">
+  <div class="cell image-cell">
+    <div class="image-frame">
       {#if row.partySymbolUrl}
-        <img src={row.partySymbolUrl} alt="Logo {row.partyAbbr}" class="party-logo" />
+        <img src={row.partySymbolUrl} alt="Logo {row.partyAbbr}" />
       {:else}
-        <span class="logo-text">{row.partyAbbr}</span>
+        <span class="image-placeholder">{row.partyAbbr}</span>
       {/if}
     </div>
   </div>
 
   {#if row.isPresidential}
     <!-- Celda 3 (Presidencial): Foto del candidato -->
-    <div class="cell photo-cell">
+    <div class="cell image-cell">
       {#if row.presidentialPhoto}
-        <div class="candidate-photo-container">
-          <img src={row.presidentialPhoto} alt={row.candidates[0]?.name || 'Candidato'} class="candidate-photo-img" />
+        <div class="image-frame is-photo">
+          <img src={row.presidentialPhoto} alt={row.candidates[0]?.name || 'Candidato'} />
         </div>
       {:else if row.candidates.length > 0}
-        <div class="candidate-photo" style:background-color={row.candidates[0].avatarColor}>
+        <div class="image-frame is-photo" style:background-color={row.candidates[0].avatarColor}>
           <span class="photo-text">FOTO</span>
         </div>
       {/if}
@@ -192,30 +192,13 @@
     -webkit-box-orient: vertical;
   }
 
-  /* ─── Logo Cell — Square Box ─────────────────────────────────────────────────── */
-  .logo-cell {
+  .image-cell {
     justify-content: center;
     padding: 4px;
   }
 
-  .logo-box {
-    width: 44px;
-    height: 44px;
-    border: 1px solid var(--grid-border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: white;
-    overflow: hidden;
-  }
-
-  .party-logo {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-  }
-
-  .logo-text {
+  /* Placeholder text for missing images */
+  .image-placeholder {
     font-family: 'Roboto Condensed', 'Inter', sans-serif;
     font-size: 11px;
     font-weight: 700;
@@ -223,39 +206,7 @@
     letter-spacing: 0.02em;
   }
 
-  /* ─── Photo Cell (Presidential) — Square Box ─────────────────────────────────── */
-  .photo-cell {
-    justify-content: center;
-    padding: 4px;
-  }
-
-  .candidate-photo-container {
-    width: 44px;
-    height: 44px;
-    border: 1px solid var(--grid-border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    background: white;
-  }
-
-  .candidate-photo-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .candidate-photo {
-    width: 44px;
-    height: 44px;
-    border: 1px solid var(--grid-border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-  }
-
+  /* Photo placeholder styling */
   .photo-text {
     font-family: 'Roboto Condensed', 'Inter', sans-serif;
     font-size: 8px;

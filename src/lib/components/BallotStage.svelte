@@ -17,13 +17,11 @@
   // Column width fills space leaving room for right preview
   // Left side: no preview, column starts immediately after ordinals + small gap
   // Gap: 4px between ordinals and current column (minimal)
-  // All columns except last have standard right preview (180px)
-  // Last column (Parlamento Andino): no preview but adds 16px right margin for breathing room
+  // All columns have standard right preview (180px)
   const GAP = 4;
   const PREVIEW_WIDTH = 180;
-  const LAST_COLUMN_MARGIN = 16; // Right margin for last column so it doesn't stick to edge
-  let previewRight = $derived(nav.column === 4 ? LAST_COLUMN_MARGIN : PREVIEW_WIDTH);
-  let colWidth = $derived(Math.max(480, vw - 48 - GAP - previewRight)); // Minus ordinals (48), gap (4), preview/margin (variable)
+  let previewRight = $derived(PREVIEW_WIDTH);
+  let colWidth = $derived(Math.max(480, vw - 48 - GAP - previewRight)); // Minus ordinals (48), gap (4), preview (180)
   let stageW   = $derived(COLUMN_COUNT * colWidth);
 
   /*
@@ -52,10 +50,7 @@
   // Fade start percentage: dynamically calculated based on column width and preview
   // Formula: fade starts at (colWidth / (colWidth + previewRight)) * 100%
   // This ensures the current column is fully visible and only the preview gets faded
-  let fadeStart = $derived(
-    previewRight === 0 ? 100 : // No fade if no preview
-    Math.round((colWidth / (colWidth + previewRight)) * 100)
-  );
+  let fadeStart = $derived(Math.round((colWidth / (colWidth + previewRight)) * 100));
 
   // ─── Onboarding state ─────────────────────────────────────────────────────────
   let onbActive    = $state(true);
@@ -292,6 +287,11 @@
         onScrollRef={(el) => { colScrollEls[i] = el; }}
       />
     {/each}
+    
+    <!-- Empty preview spacer for last column - acts as right margin -->
+    {#if nav.column === 4}
+      <div class="empty-preview" aria-hidden="true"></div>
+    {/if}
   </div>
 
   {#if onbActive}
@@ -398,5 +398,14 @@
   
   .skip-btn:active { 
     background: var(--paper-offwhite);
+  }
+
+  /* Empty preview for last column - acts as right margin */
+  .empty-preview {
+    width: 180px;
+    flex-shrink: 0;
+    height: 100%;
+    background: transparent;
+    pointer-events: none;
   }
 </style>
