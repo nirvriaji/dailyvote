@@ -120,32 +120,43 @@
     /* Default (Legislativo): Party Name | Logo | Vote 1 | Vote 2 */
     grid-template-columns: 1fr var(--col-logo-width, 56px) var(--col-vote-width, 52px) var(--col-vote-width, 52px);
     height: var(--row-height, 56px);
-    border-bottom: 1px solid var(--grid-border-light);
+    border-bottom: 2px solid #FFFFFF;
     cursor: pointer;
     position: relative;
     /* Background set by section classes below */
     font-family: 'Roboto Condensed', 'Inter', sans-serif;
   }
 
-  /* ─── Section Background Colors — Applied by section-{section} class ───────────── */
+  /* ─── Section Background Colors — Security Micro-Pattern ────────────────────── */
+  /* Base color + diagonal crossed lines pattern overlay */
   .ballot-row.section-presidente {
-    background: var(--col-presidente);
+    background-color: var(--col-presidente-base);
+    background-image: var(--security-micro-pattern);
+    background-repeat: repeat;
   }
 
   .ballot-row.section-senadores-nacional {
-    background: var(--col-senadores-nacional);
+    background-color: var(--col-senadores-nacional-base);
+    background-image: var(--security-micro-pattern);
+    background-repeat: repeat;
   }
 
   .ballot-row.section-senadores-regional {
-    background: var(--col-senadores-regional);
+    background-color: var(--col-senadores-regional-base);
+    background-image: var(--security-micro-pattern);
+    background-repeat: repeat;
   }
 
   .ballot-row.section-diputados {
-    background: var(--col-diputados);
+    background-color: var(--col-diputados-base);
+    background-image: var(--security-micro-pattern);
+    background-repeat: repeat;
   }
 
   .ballot-row.section-parlamento-andino {
-    background: var(--col-parlamento);
+    background-color: var(--col-parlamento-base);
+    background-image: var(--security-micro-pattern);
+    background-repeat: repeat;
   }
 
   /* Presidential: 3 columns only (Party Name + Logo + Photo) - no number */
@@ -153,44 +164,31 @@
     grid-template-columns: 1fr var(--col-logo-width, 56px) var(--col-photo-width, 56px);
   }
 
-  /* Alternating row backgrounds - subtle dark overlay on section color */
-  .ballot-row.is-even::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.03);
-    pointer-events: none;
-    z-index: 0;
+  /* Alternating row backgrounds - subtle brightness adjustment */
+  .ballot-row.is-even {
+    filter: brightness(0.985);
   }
 
-  /* Hover state - subtle dark overlay */
-  .ballot-row:hover:not(.is-faded)::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.05);
-    pointer-events: none;
-    z-index: 0;
+  /* Hover state - preserve pattern with overlay blend */
+  .ballot-row:hover:not(.is-faded) {
+    filter: brightness(0.97);
   }
 
-  /* Active/Focus state - stronger overlay */
-  .ballot-row.is-active::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.08);
-    pointer-events: none;
-    z-index: 0;
+  /* Active/Focus state - stronger darkening */
+  .ballot-row.is-active {
+    filter: brightness(0.94);
   }
 
-  /* Voted state - accent color overlay */
+  /* Voted state - accent color tint */
+  .ballot-row.is-voted {
+    box-shadow: inset 0 0 0 1000px var(--accent-light);
+  }
+
+  /* Remove the old ::before hover styles that were hiding the pattern */
+  .ballot-row:hover:not(.is-faded)::before,
+  .ballot-row.is-active::before,
   .ballot-row.is-voted::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: var(--accent-light);
-    pointer-events: none;
-    z-index: 0;
+    display: none;
   }
 
   .ballot-row:last-child {
@@ -280,14 +278,16 @@
   .vote-box {
     width: 44px;
     height: 44px;
-    border: 1px solid var(--grid-border);
-    background: var(--vote-box-bg);
-    transition: border-color 0.15s ease, background 0.15s ease;
+    border: 1px solid var(--text-primary);
+    background-color: #FFFFFF !important;
+    background-image: none !important;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
   }
 
   .ballot-row:hover .vote-box {
-    border-color: var(--sky-blue-dark);
-    background: var(--vote-box-bg);
+    border-color: var(--text-primary);
+    background-color: #FFFFFF !important;
+    background-image: none !important;
   }
 
   /* Empty cell for Senadores Regional - just space, no content */
@@ -311,30 +311,40 @@
     pointer-events: none;
   }
 
-  /* Spacers use same section colors as regular rows */
+  /* Spacers use same section colors and pattern as regular rows */
   .ballot-row.is-spacer.section-presidente {
-    background: var(--col-presidente);
+    background-color: var(--col-presidente-base);
+    background-image: var(--security-micro-pattern);
+    background-repeat: repeat;
   }
 
   .ballot-row.is-spacer.section-senadores-nacional {
-    background: var(--col-senadores-nacional);
+    background-color: var(--col-senadores-nacional-base);
+    background-image: var(--security-micro-pattern);
+    background-repeat: repeat;
   }
 
   .ballot-row.is-spacer.section-senadores-regional {
-    background: var(--col-senadores-regional);
+    background-color: var(--col-senadores-regional-base);
+    background-image: var(--security-micro-pattern);
+    background-repeat: repeat;
   }
 
   .ballot-row.is-spacer.section-diputados {
-    background: var(--col-diputados);
+    background-color: var(--col-diputados-base);
+    background-image: var(--security-micro-pattern);
+    background-repeat: repeat;
   }
 
   .ballot-row.is-spacer.section-parlamento-andino {
-    background: var(--col-parlamento);
+    background-color: var(--col-parlamento-base);
+    background-image: var(--security-micro-pattern);
+    background-repeat: repeat;
   }
 
-  /* Even spacer rows - slight darkening */
+  /* Even spacer rows - slight darkening with filter */
   .ballot-row.is-spacer.is-even {
-    background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0.02));
+    filter: brightness(0.985);
   }
 
   .spacer-content {

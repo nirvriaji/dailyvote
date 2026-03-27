@@ -13,13 +13,13 @@
   
   let contentEl = $state<HTMLElement | null>(null);
 
-  // Section colors for hover highlighting - Soft but bright tones
+  // Section colors for hover highlighting - Micro-pattern security colors
   const SECTION_COLORS: Record<string, string> = {
-    'presidente': '#A5E0F5',
-    'senadores-nacional': '#FDC8CE',
-    'senadores-regional': '#FDD8A8',
-    'diputados': '#A8EBC8',
-    'parlamento-andino': '#FAE8A0',
+    'presidente': '#E1F5FE',
+    'senadores-nacional': '#FCE4EC',
+    'senadores-regional': '#EFEBE9',
+    'diputados': '#E8F5E9',
+    'parlamento-andino': '#FFFDE7',
   };
 
   // Reactive hover state from store
@@ -81,7 +81,7 @@
     width: 48px;
     height: 100%;
     overflow: hidden;
-    background: var(--paper-white);
+    background: #FFFFFF;
     border-right: 1px solid var(--grid-border);
     flex-shrink: 0;
     position: relative;
@@ -96,8 +96,8 @@
   .ordinal-header {
     padding: 8px 4px 6px;
     border-bottom: 1px solid var(--grid-border);
-    /* Soft gray/plomo header background */
-    background: var(--col-header-bg);
+    /* White header background */
+    background: var(--paper-white);
     z-index: 20;
     
     /* Same height as ballot column headers */
@@ -123,7 +123,7 @@
     flex: 1;
     overflow: hidden;
     position: relative;
-    background: var(--paper-white);
+    background: #FFFFFF;
   }
 
   /* ─── Contenido scrollable ─────────────────────────────────────────────────── */
@@ -134,7 +134,7 @@
     /* Free scroll - no zones */
     overscroll-behavior-y: contain;
     -webkit-overflow-scrolling: touch;
-    background: var(--paper-white);
+    background: #FFFFFF;
     
     /* Hide scrollbar */
     scrollbar-width: none;
@@ -158,12 +158,12 @@
     transition: background 0.12s ease;
   }
 
-  /* Alternating background - matches ballot-row */
+  /* Alternating background - clean white */
   .ordinal-row.is-even {
-    background: rgba(0, 0, 0, 0.015);
+    background: transparent;
   }
 
-  /* Hover state - synchronized with ballot row hover */
+  /* Hover state - solid section color without pattern */
   .ordinal-row.is-hovered {
     background: var(--hover-bg) !important;
   }
@@ -189,8 +189,8 @@
     left: 0;
     right: 0;
     height: 8px;
-    /* Fade matching gray header */
-    background: linear-gradient(to bottom, var(--col-header-bg), transparent);
+    /* Fade matching white header */
+    background: linear-gradient(to bottom, #FFFFFF, transparent);
     z-index: 15;
     pointer-events: none;
   }

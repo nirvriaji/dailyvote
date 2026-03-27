@@ -11,7 +11,7 @@
 
   /* ─── Paper Colors (Peruvian Ballot Style) ───────────────────────────────── */
   --paper-white:      #fafaf8;
-  --paper-offwhite:   #f5f5f0;
+  --paper-offwhite:   #ffffff;
   --paper-cream:      #f0f0ea;
   --paper-border:     #e0e0d8;
   
@@ -35,12 +35,22 @@
   --accent:           #c8102e;
   --accent-light:     rgba(200, 16, 46, 0.08);
   
-  /* ─── Section Colors (Ballot Columns) — Soft but bright ───────────────────── */
-  --col-presidente:           #A5E0F5;
-  --col-senadores-nacional:   #FDC8CE;
-  --col-senadores-regional:   #FDD8A8;
-  --col-diputados:            #A8EBC8;
-  --col-parlamento:           #FAE8A0;
+  /* ─── Section Colors (Ballot Columns) — Security Micro-Pattern ─────────────── */
+  /* Base colors with pattern overlay colors (slightly darker for texture) */
+  --col-presidente-base:           #E1F5FE;
+  --col-presidente-pattern:       #B3E5FC;
+  --col-senadores-nacional-base:   #FCE4EC;
+  --col-senadores-nacional-pattern: #F8BBD0;
+  --col-senadores-regional-base:   #EFEBE9;
+  --col-senadores-regional-pattern: #D7CCC8;
+  --col-diputados-base:            #E8F5E9;
+  --col-diputados-pattern:         #C8E6C9;
+  --col-parlamento-base:           #FFFDE7;
+  --col-parlamento-pattern:        #FFF9C4;
+  
+  /* ─── Security Micro-Pattern SVG — Diagonal Crossed Lines ───────────────────── */
+  /* Micro-lines at 45° crossing pattern, 0.4px lines, dense 6px tile */
+  --security-micro-pattern: url("data:image/svg+xml,%3Csvg width='6' height='6' viewBox='0 0 6 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23000000' fill-opacity='0.15' fill-rule='evenodd'%3E%3Cpath d='M5 0h1L0 6V5zM6 5v1H5z'/%3E%3C/g%3E%3C/svg%3E");
   
   /* ─── Header Background — Soft gray/plomo ─────────────────────────────────── */
   --col-header-bg:            #E0E5E9;
@@ -129,8 +139,9 @@ button {
   /* No border-radius — sharp corners like printed ballot */
   border-radius: 0;
   
-  /* Background for image containment */
-  background: white;
+  /* Pure white background, no patterns */
+  background-color: #FFFFFF !important;
+  background-image: none !important;
   
   /* Overflow hidden for clean clipping */
   overflow: hidden;
