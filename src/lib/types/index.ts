@@ -33,6 +33,7 @@ export interface BallotRow {
   partyName: string;
   partyAbbr: string;
   partyColor: string;
+  partySymbolUrl?: string;
   candidates: Candidate[];
   voteZones: VoteZone[];
   zone: ZoneId;

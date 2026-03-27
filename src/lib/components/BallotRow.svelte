@@ -57,14 +57,22 @@
   <!-- Celda 2: Logo del partido -->
   <div class="cell logo-cell">
     <div class="logo-box">
-      <span class="logo-text">{row.partyAbbr}</span>
+      {#if row.partySymbolUrl}
+        <img src={row.partySymbolUrl} alt="Logo {row.partyAbbr}" class="party-logo" />
+      {:else}
+        <span class="logo-text">{row.partyAbbr}</span>
+      {/if}
     </div>
   </div>
 
   {#if row.isPresidential}
     <!-- Celda 3 (Presidencial): Foto del candidato -->
     <div class="cell photo-cell">
-      {#if row.candidates.length > 0}
+      {#if row.presidentialPhoto}
+        <div class="candidate-photo-container">
+          <img src={row.presidentialPhoto} alt={row.candidates[0]?.name || 'Candidato'} class="candidate-photo-img" />
+        </div>
+      {:else if row.candidates.length > 0}
         <div class="candidate-photo" style:background-color={row.candidates[0].avatarColor}>
           <span class="photo-text">FOTO</span>
         </div>
@@ -185,6 +193,13 @@
     align-items: center;
     justify-content: center;
     background: transparent;
+    overflow: hidden;
+  }
+
+  .party-logo {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
   }
 
   .logo-text {
@@ -197,6 +212,22 @@
   /* ─── Photo Cell (Presidential) ──────────────────────────────────────────────── */
   .photo-cell {
     justify-content: center;
+  }
+
+  .candidate-photo-container {
+    width: 64px;
+    height: 64px;
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .candidate-photo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 
   .candidate-photo {
