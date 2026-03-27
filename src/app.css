@@ -35,12 +35,15 @@
   --accent:           #c8102e;
   --accent-light:     rgba(200, 16, 46, 0.08);
   
-  /* ─── Section Colors (Ballot Columns) — Pastel but saturated ──────────────── */
-  --col-presidente:           #7DD3FC;
-  --col-senadores-nacional:   #FDA4AF;
-  --col-senadores-regional:   #FDBA74;
-  --col-diputados:            #6EE7B7;
-  --col-parlamento:           #FDE047;
+  /* ─── Section Colors (Ballot Columns) — Soft but bright ───────────────────── */
+  --col-presidente:           #A5E0F5;
+  --col-senadores-nacional:   #FDC8CE;
+  --col-senadores-regional:   #FDD8A8;
+  --col-diputados:            #A8EBC8;
+  --col-parlamento:           #FAE8A0;
+  
+  /* ─── Header Background — Soft gray/plomo ─────────────────────────────────── */
+  --col-header-bg:            #E0E5E9;
   
   /* ─── Vote Box Neutral Background ───────────────────────────────────────── */
   --vote-box-bg:      #F4F4F4;

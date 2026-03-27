@@ -159,8 +159,8 @@
   .col-header {
     padding: 8px 12px 6px;
     border-bottom: 1px solid var(--grid-border);
-    /* Sky blue header background */
-    background: var(--sky-blue);
+    /* Soft gray/plomo header background */
+    background: var(--col-header-bg);
     z-index: 20;
     
     /* Fixed height */
@@ -232,8 +232,8 @@
     left: 0;
     right: 0;
     height: 8px;
-    /* Fade matching sky blue header */
-    background: linear-gradient(to bottom, var(--sky-blue), transparent);
+    /* Fade matching gray header */
+    background: linear-gradient(to bottom, var(--col-header-bg), transparent);
     z-index: 15;
     pointer-events: none;
   }

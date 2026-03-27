@@ -13,13 +13,13 @@
   
   let contentEl = $state<HTMLElement | null>(null);
 
-  // Section colors for hover highlighting - Sky blue theme
-  const SECTION_TINTS: Record<string, string> = {
-    'presidente': 'rgba(207, 232, 243, 0.45)',
-    'senadores-nacional': 'rgba(217, 237, 247, 0.40)',
-    'senadores-regional': 'rgba(184, 220, 232, 0.40)',
-    'diputados': 'rgba(207, 232, 243, 0.45)',
-    'parlamento-andino': 'rgba(217, 237, 247, 0.40)',
+  // Section colors for hover highlighting - Soft but bright tones
+  const SECTION_COLORS: Record<string, string> = {
+    'presidente': '#A5E0F5',
+    'senadores-nacional': '#FDC8CE',
+    'senadores-regional': '#FDD8A8',
+    'diputados': '#A8EBC8',
+    'parlamento-andino': '#FAE8A0',
   };
 
   // Reactive hover state from store
@@ -43,7 +43,7 @@
   }
 
   function getHoverBgColor(section: string | null): string {
-    return section ? (SECTION_TINTS[section] || 'rgba(0,0,0,0.06)') : 'rgba(0,0,0,0.06)';
+    return section ? (SECTION_COLORS[section] || 'rgba(0,0,0,0.06)') : 'rgba(0,0,0,0.06)';
   }
 </script>
 
@@ -96,7 +96,8 @@
   .ordinal-header {
     padding: 8px 4px 6px;
     border-bottom: 1px solid var(--grid-border);
-    background: var(--sky-blue);
+    /* Soft gray/plomo header background */
+    background: var(--col-header-bg);
     z-index: 20;
     
     /* Same height as ballot column headers */
@@ -188,7 +189,8 @@
     left: 0;
     right: 0;
     height: 8px;
-    background: linear-gradient(to bottom, var(--sky-blue), transparent);
+    /* Fade matching gray header */
+    background: linear-gradient(to bottom, var(--col-header-bg), transparent);
     z-index: 15;
     pointer-events: none;
   }
