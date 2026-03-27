@@ -251,6 +251,7 @@ function createPresidentialRows(): BallotRow[] {
   for (let i = 3; i < PARTIES.length; i++) {
     const row = makePresidentialRow(i);
     row.rowIndex = i + 1; // Shift row index to account for spacer
+    row.partyNumber = i + 2; // Shift party number: 3->5, 4->6, etc. (since 4 is Frepap)
     rows.push(row);
   }
   

@@ -18,11 +18,12 @@
   // Left side: no preview, column starts immediately after ordinals + small gap
   // Gap: 4px between ordinals and current column (minimal)
   // All columns except last have standard right preview (180px)
-  // Last column (Parlamento Andino): no right preview (0px), full width
+  // Last column (Parlamento Andino): no preview but adds 16px right margin for breathing room
   const GAP = 4;
   const PREVIEW_WIDTH = 180;
-  let previewRight = $derived(nav.column === 4 ? 0 : PREVIEW_WIDTH);
-  let colWidth = $derived(Math.max(480, vw - 60 - GAP - previewRight)); // Minus ordinals (60), gap (4), preview (variable)
+  const LAST_COLUMN_MARGIN = 16; // Right margin for last column so it doesn't stick to edge
+  let previewRight = $derived(nav.column === 4 ? LAST_COLUMN_MARGIN : PREVIEW_WIDTH);
+  let colWidth = $derived(Math.max(480, vw - 48 - GAP - previewRight)); // Minus ordinals (48), gap (4), preview/margin (variable)
   let stageW   = $derived(COLUMN_COUNT * colWidth);
 
   /*
@@ -32,11 +33,11 @@
    * panXFor(c, s)   = −c × colWidth × s + offset
    *                 → aligns column c at left edge (after ordinals + small gap)
    *
-   * The offset accounts for the 60px ordinal column + 4px gap
+   * The offset accounts for the 48px ordinal column + 4px gap
    */
   function panXFor(c: number, s: number): number {
-    // Align column c so it starts at position 64px (60 + 4 gap)
-    return 64 - (c * colWidth * s);
+    // Align column c so it starts at position 52px (48 + 4 gap)
+    return 52 - (c * colWidth * s);
   }
   function panXFitAll(s: number): number {
     return (vw - stageW * s) / 2;
@@ -307,7 +308,7 @@
 </div>
 
 <style>
-  /* ─── Stage viewport — Refined, minimal background ───────────────────────────── */
+  /* ─── Stage viewport — Paper ballot background ──────────────────────────────── */
   .stage-viewport {
     position: relative;
     width: 100%;
@@ -318,29 +319,29 @@
     user-select: none;
     -webkit-user-select: none;
     
-    /* Unified paper background - no gradients, no visual noise */
-    background: #ebe8e0;
+    /* Paper ballot background */
+    background: var(--paper-offwhite);
     
-  /* Mask: hide left side completely, show current column fully until fade-start, fade to right */
-  -webkit-mask-image: linear-gradient(
-    to right,
-    transparent 0%,
-    black 0%,
-    black var(--fade-start, 85%),
-    transparent 100%
-  );
-  mask-image: linear-gradient(
-    to right,
-    transparent 0%,
-    black 0%,
-    black var(--fade-start, 85%),
-    transparent 100%
-  );
+    /* Mask: hide left side completely, show current column fully until fade-start, fade to right */
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0%,
+      black 0%,
+      black var(--fade-start, 85%),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent 0%,
+      black 0%,
+      black var(--fade-start, 85%),
+      transparent 100%
+    );
   }
 
   .stage-viewport:active { cursor: grabbing; }
 
-  /* ─── Document sheet — One continuous printed sheet ──────────────────────────── */
+  /* ─── Document sheet — Official ballot paper ───────────────────────────────── */
   .document-sheet {
     display: flex;
     gap: 0;
@@ -349,14 +350,18 @@
     transition: none;
     align-items: stretch;
     
-    /* Unified paper background */
-    background: #f5f2e8;
+    /* Official ballot paper */
+    background: var(--paper-white);
     
-    /* Single subtle border - no shadows, no elevation */
-    border-left: 1px solid rgba(0, 0, 0, 0.06);
-    border-right: 1px solid rgba(0, 0, 0, 0.06);
+    /* Thin borders like printed paper */
+    border-left: 1px solid var(--grid-border-light);
+    border-right: 1px solid var(--grid-border-light);
     
-    /* No shadows - flat document style */
+    /* Subtle paper texture effect */
+    box-shadow: 
+      inset 0 0 60px rgba(0, 0, 0, 0.02),
+      0 1px 3px rgba(0, 0, 0, 0.05);
+    
     transform-origin: 0 0;
   }
 
@@ -365,34 +370,33 @@
     transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
-  /* ─── Skip button — Minimal, refined ─────────────────────────────────────────── */
+  /* ─── Skip button — Document style ──────────────────────────────────────────── */
   .skip-btn {
     position: absolute;
-    bottom: 24px;
+    bottom: 20px;
     right: 20px;
     z-index: 20;
     padding: 8px 16px;
-    background: rgba(28, 27, 25, 0.85);
-    color: rgba(255, 255, 255, 0.9);
-    border: none;
-    border-radius: 6px;
-    font-size: 12px;
+    background: var(--paper-white);
+    color: var(--text-secondary);
+    border: 1px solid var(--grid-border);
+    border-radius: 2px;
+    font-family: 'Roboto Condensed', 'Inter', sans-serif;
+    font-size: 11px;
     font-weight: 600;
-    letter-spacing: 0.01em;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
     cursor: pointer;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    pointer-events: auto;
-    transition: opacity 0.15s ease, transform 0.15s ease;
+    transition: background 0.15s, border-color 0.15s;
+    -webkit-tap-highlight-color: transparent;
   }
 
   .skip-btn:hover { 
-    opacity: 0.9;
-    transform: translateY(-1px);
+    background: var(--paper-cream);
+    border-color: var(--grid-border-light);
   }
   
   .skip-btn:active { 
-    opacity: 0.7;
-    transform: translateY(0);
+    background: var(--paper-offwhite);
   }
 </style>

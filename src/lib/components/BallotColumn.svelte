@@ -22,13 +22,13 @@
 
   let active = $derived(distance === 0);
 
-  // Section-specific tint colors for body content (not headers)
+  // Section-specific tint colors for body content (not headers) - Sky blue theme
   const SECTION_TINTS: Record<string, string> = {
-    'presidente': 'rgba(120, 170, 200, 0.10)',        // Blue-ish
-    'senadores-nacional': 'rgba(220, 150, 170, 0.10)', // Pink-ish
-    'senadores-regional': 'rgba(190, 160, 140, 0.10)', // Light brown
-    'diputados': 'rgba(150, 190, 170, 0.10)',          // Light green
-    'parlamento-andino': 'rgba(220, 210, 140, 0.12)',  // Light yellow
+    'presidente': 'rgba(207, 232, 243, 0.35)',        // Sky blue light
+    'senadores-nacional': 'rgba(217, 237, 247, 0.30)', // Sky blue lighter
+    'senadores-regional': 'rgba(184, 220, 232, 0.30)', // Sky blue dark
+    'diputados': 'rgba(207, 232, 243, 0.35)',          // Sky blue light
+    'parlamento-andino': 'rgba(217, 237, 247, 0.30)',  // Sky blue lighter
   };
 
   let sectionTint = $derived(SECTION_TINTS[column.section] || 'transparent');
@@ -120,9 +120,9 @@
     flex-shrink: 0;
     height: 100%;
     overflow: hidden;
-    /* Unified neutral paper background */
-    background: #f5f2e8;
-    border-right: 1px solid rgba(0, 0, 0, 0.04);
+    /* Official ballot paper background */
+    background: var(--paper-white);
+    border-right: 1px solid var(--grid-border);
     
     /* Layout vertical: header arriba, viewport abajo */
     display: flex;
@@ -167,12 +167,12 @@
     z-index: 1;
   }
 
-  /* ─── Column header - Neutral printed ballot style ──────────────────────────── */
+  /* ─── Column header - Official document style ─────────────────────────────── */
   .col-header {
-    padding: 10px 14px 8px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
-    /* Neutral gray header background - consistent across all sections */
-    background: #e8e5dd;
+    padding: 8px 12px 6px;
+    border-bottom: 1px solid var(--grid-border);
+    /* Sky blue header background */
+    background: var(--sky-blue);
     z-index: 20;
     
     /* Fixed height */
@@ -184,13 +184,14 @@
   }
 
   .col-title {
-    /* Printed ballot style: dense, uppercase, bold */
-    font-size: 14px;
-    font-weight: 900;
+    /* Official document style: condensed, uppercase, bold */
+    font-family: 'Roboto Condensed', 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: -0.02em;
-    color: #1a1917;
-    margin: 0 0 2px;
+    letter-spacing: 0.02em;
+    color: var(--sky-text);
+    margin: 0 0 1px;
     line-height: 1.1;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -198,12 +199,13 @@
   }
 
   .col-subtitle {
-    /* Supporting text - smaller but clear */
-    font-size: 10px;
-    font-weight: 700;
-    color: #4a4946;
+    /* Supporting text - smaller, official */
+    font-family: 'Roboto Condensed', 'Inter', sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--text-muted);
     margin: 0;
-    letter-spacing: 0.01em;
+    letter-spacing: 0.02em;
     text-transform: uppercase;
     line-height: 1.2;
   }
@@ -215,7 +217,7 @@
     position: relative;
     /* Section tint applied to body only, not header */
     background: linear-gradient(to bottom, var(--section-tint), var(--section-tint)),
-                #f5f2e8;
+                var(--paper-white);
   }
 
   /* ─── Contenido scrollable ──────────────────────────────────────────── */
@@ -242,9 +244,9 @@
     top: 46px;
     left: 0;
     right: 0;
-    height: 10px;
-    /* Neutral fade matching header color */
-    background: linear-gradient(to bottom, #e8e5dd, transparent);
+    height: 8px;
+    /* Fade matching sky blue header */
+    background: linear-gradient(to bottom, var(--sky-blue), transparent);
     z-index: 15;
     pointer-events: none;
   }

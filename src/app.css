@@ -1,64 +1,52 @@
 /* ──────────────────────────────────────────────────────────────────────────────
-   DailyVote — Refined Design System
-   Big-Tech Quality: Apple/Stripe/Linear inspired
-   One continuous printed document with minimal visual noise
+   DailyVote — Peruvian Electoral Ballot Design System
+   Authentic paper ballot aesthetic: printed document style
 ────────────────────────────────────────────────────────────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
   /* ─── Layout ──────────────────────────────────────────────────────────────── */
-  --bar-height: 52px;
+  --bar-height: 48px;
 
-  /* ─── Document Surface (Unified Paper Background) ──────────────────────────── */
-  /* Single warm paper tone across entire ballot */
-  --doc-surface:      #f5f2e8;
-  --ballot-bg:        #f5f2e8;
-  --paper-accent:     #f0ece0; /* Slightly darker for subtle variation */
+  /* ─── Paper Colors (Peruvian Ballot Style) ───────────────────────────────── */
+  --paper-white:      #fafaf8;
+  --paper-offwhite:   #f5f5f0;
+  --paper-cream:      #f0f0ea;
+  --paper-border:     #e0e0d8;
   
-  /* Column separation - minimal */
-  --col-divider:      rgba(0, 0, 0, 0.05);
+  /* ─── Sky Blue Accent (#cfe8f3, #d9edf7) ──────────────────────────────────── */
+  --sky-blue-light:   #d9edf7;
+  --sky-blue:         #cfe8f3;
+  --sky-blue-dark:    #b8dce8;
+  --sky-text:         #2c5f7c;
   
-  /* ─── Color Usage Principle: Color is for meaning, not decoration ───────────── */
-  /* All section colors are subtle low-opacity tints */
-  --section-tint-1:   rgba(100, 150, 200, 0.06);
-  --section-tint-2:   rgba(150, 100, 150, 0.06);
-  --section-tint-3:   rgba(100, 180, 130, 0.06);
-  --section-tint-4:   rgba(180, 140, 100, 0.06);
+  /* ─── Grid Borders ──────────────────────────────────────────────────────── */
+  --grid-border:      #c5c5bd;
+  --grid-border-light: #d8d8d0;
   
-  /* Active states - subtle */
-  --active-bg:        rgba(0, 0, 0, 0.04);
-  --hover-bg:         rgba(0, 0, 0, 0.03);
+  /* ─── Text Colors ───────────────────────────────────────────────────────── */
+  --text-primary:     #1a1a1a;
+  --text-secondary:   #4a4a4a;
+  --text-muted:       #6a6a6a;
+  --text-light:       #8a8a8a;
   
-  /* ─── Surfaces (UI Chrome) ───────────────────────────────────────────────── */
-  --surface:          #FFFFFF;
-  --surface-elevated: rgba(255, 255, 255, 0.96);
-  --surface-hover:    rgba(0, 0, 0, 0.02);
-  
-  /* ─── HUD/Overlays ────────────────────────────────────────────────────────── */
-  --hud-bg:           rgba(28, 27, 25, 0.92);
-  --hud-border:       rgba(255, 255, 255, 0.08);
-  
-  /* ─── Borders ─────────────────────────────────────────────────────────────── */
-  --border:           rgba(0, 0, 0, 0.08);
-  --border-strong:    rgba(0, 0, 0, 0.15);
-  --border-light:     rgba(0, 0, 0, 0.04);
-  
-  /* ─── Text Hierarchy ───────────────────────────────────────────────────────── */
-  --text-primary:     #1a1917;      /* Near black - main content */
-  --text-secondary:   #4a4946;      /* Dark gray - secondary */
-  --text-muted:       #6b6a67;      /* Medium gray - supporting */
-  --text-subtle:      #9a9894;      /* Light gray - least important */
-  --text-on-dark:     rgba(255, 255, 255, 0.92);
-  
-  /* ─── Accent (Voting/Action) ───────────────────────────────────────────────── */
+  /* ─── Accent (Voting) ───────────────────────────────────────────────────── */
   --accent:           #c8102e;
-  --accent-subtle:    rgba(200, 16, 46, 0.12);
+  --accent-light:     rgba(200, 16, 46, 0.08);
   
-  /* ─── Typography ──────────────────────────────────────────────────────────── */
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
-               'Segoe UI', system-ui, 'Helvetica Neue', Arial, sans-serif;
+  /* ─── Document Typography ───────────────────────────────────────────────── */
+  font-family: 'Roboto Condensed', 'Inter', -apple-system, BlinkMacSystemFont, 
+               'Segoe UI', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  
+  /* ─── Grid System ───────────────────────────────────────────────────────── */
+  --row-height: 56px;
+  --col-number-width: 48px;
+  --col-logo-width: 56px;
+  --col-photo-width: 56px;
 }
 
 /* ─── Reset ───────────────────────────────────────────────────────────────────── */
@@ -69,30 +57,31 @@ html, body {
   padding: 0;
   height: 100%;
   overflow: hidden;
-  /* Unified paper background - no gradients or visual noise */
-  background: #ebe8e0;
+  background: var(--paper-offwhite);
 }
 
 h1, h2, h3, h4, h5, h6 { 
+  font-family: 'Roboto Condensed', 'Inter', sans-serif;
   font-weight: 700; 
   line-height: 1.15; 
   margin: 0;
-  letter-spacing: -0.01em;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
 }
 
 p  { margin: 0; }
 ul, ol { list-style: none; padding: 0; margin: 0; }
 button { 
-  font-family: inherit; 
+  font-family: 'Roboto Condensed', 'Inter', sans-serif;
   font-size: inherit;
   cursor: pointer;
 }
 
 /* ─── Focus States ────────────────────────────────────────────────────────────── */
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--sky-blue-dark);
   outline-offset: 2px;
-  border-radius: 2px;
+  border-radius: 1px;
 }
 :focus:not(:focus-visible) { outline: none; }
 

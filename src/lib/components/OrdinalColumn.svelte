@@ -12,23 +12,14 @@
   let ordinalRows = $derived(columns[0]?.rows ?? []);
   
   let contentEl = $state<HTMLElement | null>(null);
-  let topAnchor = $state<HTMLElement | null>(null);
-  let middleAnchor = $state<HTMLElement | null>(null);
-  let bottomAnchor = $state<HTMLElement | null>(null);
 
-  const byZone = $derived({
-    top: ordinalRows.filter(r => r.zone === 'top'),
-    middle: ordinalRows.filter(r => r.zone === 'middle'),
-    bottom: ordinalRows.filter(r => r.zone === 'bottom'),
-  });
-
-  // Section colors for hover highlighting
+  // Section colors for hover highlighting - Sky blue theme
   const SECTION_TINTS: Record<string, string> = {
-    'presidente': 'rgba(120, 170, 200, 0.25)',
-    'senadores-nacional': 'rgba(220, 150, 170, 0.25)',
-    'senadores-regional': 'rgba(190, 160, 140, 0.25)',
-    'diputados': 'rgba(150, 190, 170, 0.25)',
-    'parlamento-andino': 'rgba(220, 210, 140, 0.30)',
+    'presidente': 'rgba(207, 232, 243, 0.45)',
+    'senadores-nacional': 'rgba(217, 237, 247, 0.40)',
+    'senadores-regional': 'rgba(184, 220, 232, 0.40)',
+    'diputados': 'rgba(207, 232, 243, 0.45)',
+    'parlamento-andino': 'rgba(217, 237, 247, 0.40)',
   };
 
   // Reactive hover state from store
@@ -64,53 +55,18 @@
 
   <!-- Viewport que recorta el contenido -->
   <div class="ordinal-viewport">
-    <!-- Contenido scrollable -->
+    <!-- Contenido scrollable - todas las filas de forma continua -->
     <div class="ordinal-content" bind:this={contentEl} onscroll={onScroll}>
-      <!-- Top zone -->
-      <div class="zone-anchor" bind:this={topAnchor}>
-        {#each byZone.top as row (row.id)}
-            <div 
-              class="ordinal-row" 
-              class:is-even={isEven(row.rowIndex)}
-              class:is-hovered={hoveredIndex === row.rowIndex}
-              style="--hover-bg: {getHoverBgColor(hoveredSection)}"
-            >
-            <span class="ordinal-number" style:color={row.partyColor}>{row.partyNumber}</span>
-          </div>
-        {/each}
-      </div>
-
-      <!-- Middle zone -->
-      {#if byZone.middle.length > 0}
-        <div class="zone-anchor" bind:this={middleAnchor}>
-          {#each byZone.middle as row (row.id)}
-            <div 
-              class="ordinal-row" 
-              class:is-even={isEven(row.rowIndex)}
-              class:is-hovered={hoveredIndex === row.rowIndex}
-              style="--hover-bg: {getHoverBgColor(hoveredSection)}"
-            >
-              <span class="ordinal-number" style:color={row.partyColor}>{row.partyNumber}</span>
-            </div>
-          {/each}
+      {#each ordinalRows as row, index (row.id)}
+        <div 
+          class="ordinal-row" 
+          class:is-even={isEven(index)}
+          class:is-hovered={hoveredIndex === index}
+          style="--hover-bg: {getHoverBgColor(hoveredSection)}"
+        >
+          <span class="ordinal-number" style:color={row.partyColor}>{row.partyNumber}</span>
         </div>
-      {/if}
-
-      <!-- Bottom zone -->
-      {#if byZone.bottom.length > 0}
-        <div class="zone-anchor" bind:this={bottomAnchor}>
-          {#each byZone.bottom as row (row.id)}
-            <div 
-              class="ordinal-row" 
-              class:is-even={isEven(row.rowIndex)}
-              class:is-hovered={hoveredIndex === row.rowIndex}
-              style="--hover-bg: {getHoverBgColor(hoveredSection)}"
-            >
-              <span class="ordinal-number" style:color={row.partyColor}>{row.partyNumber}</span>
-            </div>
-          {/each}
-        </div>
-      {/if}
+      {/each}
 
       <div class="col-spacer" aria-hidden="true"></div>
     </div>
@@ -122,11 +78,11 @@
 
 <style>
   .ordinal-outer {
-    width: 60px;
+    width: 48px;
     height: 100%;
     overflow: hidden;
-    background: #f5f2e8;
-    border-right: 1px solid rgba(0, 0, 0, 0.06);
+    background: var(--paper-white);
+    border-right: 1px solid var(--grid-border);
     flex-shrink: 0;
     position: relative;
     z-index: 10;
@@ -136,11 +92,11 @@
     flex-direction: column;
   }
 
-  /* ─── Header - Matches ballot column headers ─────────────────────────────────── */
+  /* ─── Header — Matches ballot column headers ─────────────────────────────────── */
   .ordinal-header {
-    padding: 10px 8px 8px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
-    background: rgba(0, 0, 0, 0.02);
+    padding: 8px 4px 6px;
+    border-bottom: 1px solid var(--grid-border);
+    background: var(--sky-blue);
     z-index: 20;
     
     /* Same height as ballot column headers */
@@ -152,10 +108,11 @@
   }
 
   .ordinal-label {
-    font-size: 13px;
-    font-weight: 800;
-    color: #6b6a67;
-    letter-spacing: 0.02em;
+    font-family: 'Roboto Condensed', 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--sky-text);
+    letter-spacing: 0.03em;
     text-transform: uppercase;
     line-height: 1;
   }
@@ -165,7 +122,7 @@
     flex: 1;
     overflow: hidden;
     position: relative;
-    background: #f5f2e8;
+    background: var(--paper-white);
   }
 
   /* ─── Contenido scrollable ─────────────────────────────────────────────────── */
@@ -173,10 +130,10 @@
     height: 100%;
     overflow-y: auto;
     overflow-x: hidden;
-    scroll-snap-type: y mandatory;
+    /* Free scroll - no zones */
     overscroll-behavior-y: contain;
     -webkit-overflow-scrolling: touch;
-    background: #f5f2e8;
+    background: var(--paper-white);
     
     /* Hide scrollbar */
     scrollbar-width: none;
@@ -188,26 +145,21 @@
     height: 0;
   }
 
-  .zone-anchor {
-    scroll-snap-align: start;
-    scroll-snap-stop: always;
-  }
-
-  /* ─── Ordinal rows - Seamless integration with ballot rows ────────────────────── */
+  /* ─── Ordinal rows — Seamless integration with ballot rows ────────────────────── */
   .ordinal-row {
     display: flex;
     align-items: center;
     justify-content: center;
     width: 100%;
-    height: 88px; /* Same as ballot-row */
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    height: var(--row-height, 56px); /* Same as ballot-row */
+    border-bottom: 1px solid var(--grid-border-light);
     background: transparent;
     transition: background 0.12s ease;
   }
 
   /* Alternating background - matches ballot-row */
   .ordinal-row.is-even {
-    background: rgba(0, 0, 0, 0.02);
+    background: rgba(0, 0, 0, 0.015);
   }
 
   /* Hover state - synchronized with ballot row hover */
@@ -216,14 +168,14 @@
   }
 
   .ordinal-row:last-child {
-    border-bottom: none;
+    border-bottom: 1px solid var(--grid-border);
   }
 
-  /* ─── Ordinal number - Integrated, subtle ────────────────────────────────────── */
+  /* ─── Ordinal number — Integrated, subtle ────────────────────────────────────── */
   .ordinal-number {
-    font-size: 17px;
-    font-weight: 600;
-    color: #6b6a67;
+    font-family: 'Roboto Condensed', 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.01em;
     line-height: 1;
@@ -235,8 +187,8 @@
     top: 46px; /* Match header height */
     left: 0;
     right: 0;
-    height: 10px;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.02), transparent);
+    height: 8px;
+    background: linear-gradient(to bottom, var(--sky-blue), transparent);
     z-index: 15;
     pointer-events: none;
   }

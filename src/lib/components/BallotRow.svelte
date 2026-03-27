@@ -108,55 +108,52 @@
 {/if}
 
 <style>
-  /* ─── Row Container ──────────────────────────────────────────────────────────── */
+  /* ─── Row Container — Grid Layout — Official Ballot Style ───────────────────── */
   .ballot-row {
     display: grid;
     align-items: center;
-    column-gap: 8px;
-    padding: 0 16px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    /* Default (Legislativo): Party Name | Logo | Vote 1 | Vote 2 */
+    grid-template-columns: 1fr var(--col-logo-width, 56px) var(--col-vote-width, 52px) var(--col-vote-width, 52px);
+    height: var(--row-height, 56px);
+    border-bottom: 1px solid var(--grid-border-light);
     cursor: pointer;
     position: relative;
     background: transparent;
-    /* Default: 4 columns for legislative (name + logo + vote1 + vote2) */
-    grid-template-columns: minmax(200px, 1fr) 80px 80px 80px;
-    height: 88px;
+    font-family: 'Roboto Condensed', 'Inter', sans-serif;
   }
 
-  /* Presidential: 3 columns only (name + logo + photo), no empty cell */
+  /* Presidential: 3 columns only (Party Name + Logo + Photo) - no number */
   .ballot-row.is-presidential {
-    grid-template-columns: minmax(200px, 1fr) 80px 80px;
+    grid-template-columns: 1fr var(--col-logo-width, 56px) var(--col-photo-width, 56px);
   }
 
   /* Alternating row backgrounds - subtle */
   .ballot-row.is-even {
-    background: rgba(0, 0, 0, 0.02);
+    background: rgba(0, 0, 0, 0.015);
   }
 
   .ballot-row:last-child {
-    border-bottom: none;
+    border-bottom: 1px solid var(--grid-border);
   }
 
-  /* Hover state - big tech pattern */
+  /* Hover state */
   .ballot-row:hover:not(.is-faded) {
-    background: rgba(0, 0, 0, 0.03);
+    background: rgba(207, 232, 243, 0.25);
   }
 
   /* Active/Focus state */
   .ballot-row.is-active {
-    background: rgba(0, 0, 0, 0.04);
-    border-left-color: var(--party-color);
+    background: var(--sky-blue-light);
   }
 
   /* Voted state */
   .ballot-row.is-voted {
-    background: rgba(200, 16, 46, 0.06);
-    border-left-color: var(--party-color);
+    background: var(--accent-light);
   }
 
   /* Faded state (other row selected in column) */
   .ballot-row.is-faded {
-    opacity: 0.4;
+    opacity: 0.35;
     pointer-events: none;
   }
 
@@ -165,20 +162,28 @@
     display: flex;
     align-items: center;
     height: 100%;
+    border-right: 1px solid var(--grid-border-light);
+    padding: 0 6px;
   }
 
-  /* ─── Party Name - Primary Focus ─────────────────────────────────────────────── */
+  .cell:last-child {
+    border-right: none;
+  }
+
+  /* ─── Party Name Cell — All Caps ─────────────────────────────────────────────── */
   .name-cell {
+    padding-left: 10px;
+    padding-right: 8px;
     overflow: hidden;
-    padding-right: 4px;
   }
 
   .party-name {
-    font-size: 17px;
-    font-weight: 700;
+    font-family: 'Roboto Condensed', 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
     color: var(--text-primary);
-    line-height: 1.1;
-    letter-spacing: -0.01em;
+    line-height: 1.2;
+    letter-spacing: 0.01em;
     text-transform: uppercase;
     overflow: hidden;
     display: -webkit-box;
@@ -187,20 +192,20 @@
     -webkit-box-orient: vertical;
   }
 
-  /* ─── Logo Box - Minimal, no shadow ─────────────────────────────────────────── */
+  /* ─── Logo Cell — Square Box ─────────────────────────────────────────────────── */
   .logo-cell {
     justify-content: center;
+    padding: 4px;
   }
 
   .logo-box {
-    width: 64px;
-    height: 64px;
-    border: 1.5px solid rgba(0, 0, 0, 0.15);
-    border-radius: 2px;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--grid-border);
     display: flex;
     align-items: center;
     justify-content: center;
-    background: transparent;
+    background: white;
     overflow: hidden;
   }
 
@@ -211,25 +216,28 @@
   }
 
   .logo-text {
-    font-size: 14px;
-    font-weight: 800;
+    font-family: 'Roboto Condensed', 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
     color: var(--text-secondary);
-    letter-spacing: 0.01em;
+    letter-spacing: 0.02em;
   }
 
-  /* ─── Photo Cell (Presidential) ──────────────────────────────────────────────── */
+  /* ─── Photo Cell (Presidential) — Square Box ─────────────────────────────────── */
   .photo-cell {
     justify-content: center;
+    padding: 4px;
   }
 
   .candidate-photo-container {
-    width: 64px;
-    height: 64px;
-    border-radius: 2px;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--grid-border);
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    background: white;
   }
 
   .candidate-photo-img {
@@ -239,9 +247,9 @@
   }
 
   .candidate-photo {
-    width: 64px;
-    height: 64px;
-    border-radius: 2px;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--grid-border);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -249,29 +257,40 @@
   }
 
   .photo-text {
-    font-size: 9px;
+    font-family: 'Roboto Condensed', 'Inter', sans-serif;
+    font-size: 8px;
     font-weight: 700;
     color: white;
     letter-spacing: 0.04em;
   }
 
-  /* ─── Vote Boxes - Subtle by default ─────────────────────────────────────────── */
+  /* ─── Vote Cell — Square Box ─────────────────────────────────────────────────── */
   .vote-cell {
     justify-content: center;
+    padding: 4px;
   }
 
   .vote-box {
-    width: 64px;
-    height: 64px;
-    border: 1px solid rgba(0, 0, 0, 0.2);
-    border-radius: 2px;
-    background: transparent;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--grid-border);
+    background: white;
     transition: border-color 0.15s ease, background 0.15s ease;
   }
 
   .ballot-row:hover .vote-box {
-    border-color: rgba(0, 0, 0, 0.3);
-    background: rgba(255, 255, 255, 0.5);
+    border-color: var(--sky-blue-dark);
+    background: var(--sky-blue-light);
+  }
+
+  /* ─── Vote Indicator ──────────────────────────────────────────────────────────── */
+  .vote-indicator {
+    position: absolute;
+    left: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 5;
+    pointer-events: none;
   }
 
   /* ─── Spacer row for Frepap alignment ────────────────────────────────────────── */
@@ -288,5 +307,6 @@
   .spacer-content {
     flex: 1;
     height: 100%;
+    grid-column: 1 / -1;
   }
 </style>

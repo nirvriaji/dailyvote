@@ -57,13 +57,13 @@
   
   Structure:
     ┌───────────────────────────────────────────────┐
-    │ ContextBar                                   │
+    │ BallotHeader                                  │
     ├───────────────────────────────────────────────┤
-    │ ┌─────┬──┬───────────────────────────┬─────┐│
-    │ │ Ord │  │    STAGE (current +       │PREV ││
-    │ │ 60px│8px│     right preview)        │200px││
-    │ │     │  │                           │     ││
-    │ └─────┴──┴───────────────────────────┴─────┘│
+    │ ┌────┬──┬───────────────────────────┬─────┐│
+    │ │ Ord│  │    STAGE (current +       │PREV ││
+    │ │48px│4px│     right preview)        │200px││
+    │ │    │  │                           │     ││
+    │ └────┴──┴───────────────────────────┴─────┘│
     └───────────────────────────────────────────────┘
   
   Left side of current column is completely masked/hidden.
@@ -132,19 +132,19 @@
     flex-direction: column;
   }
 
-  /* Layout: ordinal (60px) + small gap (4px) + stage (flexible) */
+  /* Layout: ordinal (48px) + small gap (4px) + stage (flexible) */
   .ballot-container {
     flex: 1;
     min-height: 0;
-    margin-top: var(--bar-height, 56px);
+    margin-top: var(--bar-height, 48px);
     display: grid;
-    grid-template-columns: 60px 4px 1fr;
-    background: var(--doc-surface);
+    grid-template-columns: 48px 4px 1fr;
+    background: var(--paper-offwhite);
   }
 
   /* Ordinal column: fixed width */
   .ordinal-wrapper {
-    width: 60px;
+    width: 48px;
     height: 100%;
     overflow: hidden;
     flex-shrink: 0;
@@ -170,8 +170,8 @@
   /* ─── Desktop column navigation arrows ──────────────────────────────────────── */
   .col-arrows {
     position: fixed;
-    top: calc(var(--bar-height, 56px) + 50%);
-    left: 64px; /* After ordinals (60px) + gap (4px) */
+    top: calc(var(--bar-height, 48px) + 50%);
+    left: 52px; /* After ordinals (48px) + gap (4px) */
     right: 0;
     transform: translateY(-50%);
     display: flex;
@@ -184,28 +184,30 @@
 
   .arrow {
     pointer-events: auto;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: rgba(28, 27, 25, 0.72);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    color: rgba(255, 255, 255, 0.85);
-    font-size: 22px;
+    width: 32px;
+    height: 32px;
+    background: var(--paper-white);
+    border: 1px solid var(--grid-border);
+    border-radius: 2px;
+    color: var(--text-secondary);
+    font-size: 18px;
     line-height: 1;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    opacity: 0.65;
-    transition: opacity 0.15s;
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    opacity: 0.8;
+    transition: opacity 0.15s, background 0.15s, border-color 0.15s;
     -webkit-tap-highlight-color: transparent;
     padding-bottom: 1px;
   }
 
-  .arrow:hover   { opacity: 1; }
-  .arrow:active  { opacity: 0.8; }
+  .arrow:hover   { 
+    opacity: 1; 
+    background: var(--paper-cream);
+    border-color: var(--grid-border-light);
+  }
+  .arrow:active  { opacity: 0.6; }
 
   /* On narrow screens, swipe is the primary navigation method — hide arrows */
   @media (max-width: 600px) {

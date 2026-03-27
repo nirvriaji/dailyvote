@@ -91,7 +91,7 @@
   .backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.35);
+    background: rgba(0,0,0,0.3);
     z-index: 90;
     animation: fade 0.18s ease;
   }
@@ -105,8 +105,9 @@
     bottom: 0;
     z-index: 91;
     width: min(360px, 100vw);
-    background: var(--surface);
-    box-shadow: -4px 0 24px rgba(0,0,0,0.15);
+    background: var(--paper-white);
+    border-left: 1px solid var(--grid-border);
+    box-shadow: -4px 0 24px rgba(0,0,0,0.12);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -123,32 +124,48 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 20px 20px 8px;
-    padding-top: max(env(safe-area-inset-top, 0px), 20px);
-    border-bottom: 1px solid var(--border);
+    padding: 16px 16px 8px;
+    padding-top: max(env(safe-area-inset-top, 0px), 16px);
+    border-bottom: 1px solid var(--grid-border);
+    background: var(--sky-blue);
   }
 
   .panel-title {
-    font-size: 17px;
-    font-weight: 800;
-    color: var(--text-primary);
+    font-family: 'Roboto Condensed', 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--sky-text);
     margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
   }
 
   .close-btn {
-    background: none;
-    border: none;
-    font-size: 18px;
+    background: var(--paper-white);
+    border: 1px solid var(--grid-border);
+    border-radius: 2px;
+    font-family: 'Roboto Condensed', 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
     color: var(--text-muted);
     cursor: pointer;
-    padding: 4px;
+    padding: 4px 10px;
     -webkit-tap-highlight-color: transparent;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .close-btn:hover {
+    background: var(--paper-cream);
+    border-color: var(--grid-border-light);
   }
 
   .panel-sub {
-    font-size: 12px;
+    font-family: 'Roboto Condensed', 'Inter', sans-serif;
+    font-size: 11px;
     color: var(--text-muted);
-    margin: 8px 20px 4px;
+    margin: 8px 16px 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
   }
 
   /* ─── Vote list ────────────────────────────────────────────────────────────── */
@@ -161,7 +178,7 @@
   }
 
   .vote-item {
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--grid-border-light);
   }
 
   .vote-row {
@@ -169,7 +186,7 @@
     align-items: center;
     gap: 8px;
     width: 100%;
-    padding: 12px 16px;
+    padding: 10px 14px;
     background: none;
     border: none;
     cursor: pointer;
@@ -179,7 +196,7 @@
   }
 
   .vote-row:active {
-    background: var(--surface-alt);
+    background: var(--sky-blue-light);
   }
 
   .vote-col-name {
@@ -191,26 +208,29 @@
   }
 
   .col-index {
-    font-size: 11px;
+    font-family: 'Roboto Condensed', 'Inter', sans-serif;
+    font-size: 10px;
     font-weight: 700;
-    color: var(--text-muted);
+    color: var(--sky-text);
     flex-shrink: 0;
-    background: var(--surface-alt);
+    background: var(--sky-blue);
     width: 18px;
     height: 18px;
-    border-radius: 4px;
+    border-radius: 1px;
     display: flex;
     align-items: center;
     justify-content: center;
   }
 
   .col-title {
+    font-family: 'Roboto Condensed', 'Inter', sans-serif;
     font-size: 12px;
     font-weight: 600;
     color: var(--text-primary);
     line-height: 1.3;
     flex: 1;
     min-width: 0;
+    text-transform: uppercase;
   }
 
   .vote-result {
@@ -223,22 +243,28 @@
   }
 
   .result-party {
+    font-family: 'Roboto Condensed', 'Inter', sans-serif;
     font-size: 11px;
     font-weight: 600;
     color: var(--text-primary);
     text-align: right;
     line-height: 1.2;
+    text-transform: uppercase;
   }
 
   .result-zone {
-    font-size: 10px;
+    font-family: 'Roboto Condensed', 'Inter', sans-serif;
+    font-size: 9px;
     color: var(--text-muted);
+    text-transform: uppercase;
   }
 
   .pending-label {
-    font-size: 11px;
+    font-family: 'Roboto Condensed', 'Inter', sans-serif;
+    font-size: 10px;
     color: var(--text-muted);
     flex-shrink: 0;
+    text-transform: uppercase;
   }
 
   .pending-arrow {
@@ -250,39 +276,52 @@
   .remove-btn {
     display: block;
     width: 100%;
-    padding: 4px 16px 8px;
+    padding: 4px 14px 8px;
     background: none;
     border: none;
     color: var(--accent);
-    font-size: 11px;
+    font-family: 'Roboto Condensed', 'Inter', sans-serif;
+    font-size: 10px;
     font-weight: 600;
     text-align: right;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
+    transition: background 0.15s;
+  }
+
+  .remove-btn:hover {
+    background: var(--accent-light);
   }
 
   /* ─── Footer ───────────────────────────────────────────────────────────────── */
   .panel-footer {
-    padding: 12px 16px;
-    padding-bottom: max(env(safe-area-inset-bottom, 0px), 16px);
-    border-top: 1px solid var(--border);
+    padding: 12px 14px;
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 12px);
+    border-top: 1px solid var(--grid-border);
+    background: var(--paper-cream);
   }
 
   .reset-btn {
     width: 100%;
     padding: 12px;
-    background: var(--surface-dark);
-    color: white;
-    border: none;
-    border-radius: 10px;
-    font-size: 14px;
+    background: var(--paper-white);
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 2px;
+    font-family: 'Roboto Condensed', 'Inter', sans-serif;
+    font-size: 12px;
     font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
     cursor: pointer;
-    transition: opacity 0.15s;
+    transition: background 0.15s, color 0.15s;
     -webkit-tap-highlight-color: transparent;
   }
 
   .reset-btn:hover {
-    opacity: 0.85;
+    background: var(--accent);
+    color: white;
   }
 </style>
