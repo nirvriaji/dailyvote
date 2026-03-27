@@ -1,5 +1,3 @@
-import type { ZoneId } from '$lib/types';
-
 export const COLUMN_COUNT = 5;
 
 export const COLUMN_TITLES: string[] = [
@@ -12,10 +10,9 @@ export const COLUMN_TITLES: string[] = [
 
 class NavigationStore {
   column = $state(0);
-  zone = $state<ZoneId>('top');
   dragOffsetX = $state(0);
 
-  // Scroll vertical compartido entre todas las columnas
+  // Scroll vertical compartido entre todas las columnas (continuous, no zones)
   sharedScrollY = $state(0);
 
   // Hover state para resaltar filas entre columnas
@@ -41,7 +38,6 @@ class NavigationStore {
   goTo(index: number) {
     if (index < 0 || index >= COLUMN_COUNT) return;
     this.column = index;
-    this.zone = 'top';
     this.dragOffsetX = 0;
   }
 
@@ -53,11 +49,7 @@ class NavigationStore {
     this.goTo(this.column - 1);
   }
 
-  setZone(zone: ZoneId) {
-    this.zone = zone;
-  }
-
-  // Sincronizar scroll vertical entre todas las columnas
+  // Sincronizar scroll vertical entre todas las columnas (free scroll)
   syncScroll(y: number) {
     this.sharedScrollY = y;
   }

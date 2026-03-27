@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { BallotColumn, ZoneId } from '$lib/types';
+  import type { BallotColumn } from '$lib/types';
   import { nav } from '$lib/stores/navigation.svelte';
   import BallotRow from './BallotRow.svelte';
 
@@ -36,15 +36,6 @@
   // Referencias para scroll y sincronización
   let viewportEl = $state<HTMLElement | null>(null);
   let contentEl = $state<HTMLElement | null>(null);
-  let topAnchor    = $state<HTMLElement | null>(null);
-  let middleAnchor = $state<HTMLElement | null>(null);
-  let bottomAnchor = $state<HTMLElement | null>(null);
-
-  const byZone = $derived({
-    top:    column.rows.filter(r => r.zone === 'top'),
-    middle: column.rows.filter(r => r.zone === 'middle'),
-    bottom: column.rows.filter(r => r.zone === 'bottom'),
-  });
 
   // Register scroll container con BallotStage
   $effect(() => {
@@ -68,24 +59,6 @@
       nav.syncScroll(scrollTop);
       onScrollChange?.(scrollTop);
     }
-
-    // Detectar zona actual
-    const anchors: Array<{ id: ZoneId; el: HTMLElement | null }> = [
-      { id: 'top',    el: topAnchor },
-      { id: 'middle', el: middleAnchor },
-      { id: 'bottom', el: bottomAnchor },
-    ];
-
-    let nearest: ZoneId = 'top';
-    let minDist = Infinity;
-
-    for (const { id, el } of anchors) {
-      if (!el) continue;
-      const dist = Math.abs((el as HTMLElement).offsetTop - scrollTop);
-      if (dist < minDist) { minDist = dist; nearest = id; }
-    }
-
-    nav.setZone(nearest);
   }
 </script>
 
@@ -120,37 +93,16 @@
 
   <!-- Viewport que recorta el contenido -->
   <div class="col-viewport" bind:this={viewportEl}>
-    <!-- Contenido scrollable -->
+    <!-- Contenido scrollable - todas las filas de forma continua -->
     <div 
       class="col-content" 
       bind:this={contentEl}
       onscroll={onScroll}
       aria-label={column.title}
     >
-      <!-- Top zone -->
-      <div class="zone-anchor" bind:this={topAnchor} data-zone="top">
-        {#each byZone.top as row (row.id)}
-          <BallotRow {row} columnId={column.id} section={column.section} />
-        {/each}
-      </div>
-
-      <!-- Middle zone -->
-      {#if byZone.middle.length > 0}
-        <div class="zone-anchor" bind:this={middleAnchor} data-zone="middle">
-          {#each byZone.middle as row (row.id)}
-            <BallotRow {row} columnId={column.id} section={column.section} />
-          {/each}
-        </div>
-      {/if}
-
-      <!-- Bottom zone -->
-      {#if byZone.bottom.length > 0}
-        <div class="zone-anchor" bind:this={bottomAnchor} data-zone="bottom">
-          {#each byZone.bottom as row (row.id)}
-            <BallotRow {row} columnId={column.id} section={column.section} />
-          {/each}
-        </div>
-      {/if}
+      {#each column.rows as row (row.id)}
+        <BallotRow {row} columnId={column.id} section={column.section} />
+      {/each}
 
       <div class="col-spacer" aria-hidden="true"></div>
     </div>
@@ -271,7 +223,7 @@
     height: 100%;
     overflow-y: auto;
     overflow-x: hidden;
-    scroll-snap-type: y mandatory;
+    /* Free scroll - no zones */
     overscroll-behavior-y: contain;
     -webkit-overflow-scrolling: touch;
     /* Inherits tinted background from viewport */
@@ -282,11 +234,6 @@
   .col-content::-webkit-scrollbar {
     width: 0;
     height: 0;
-  }
-
-  .zone-anchor {
-    scroll-snap-align: start;
-    scroll-snap-stop: always;
   }
 
   /* ─── Fade superior ───────────────────────────────────────────────────────── */
