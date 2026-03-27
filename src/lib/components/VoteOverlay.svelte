@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { VoteZoneType, VoteZone } from '$lib/types';
+  import type { VoteZoneType } from '$lib/types';
   import { ui } from '$lib/stores/ui.svelte';
   import { vote } from '$lib/stores/vote.svelte';
   import { nav } from '$lib/stores/navigation.svelte';
@@ -9,6 +9,11 @@
   let columnId  = $derived(`col${nav.column}`);
   let existing  = $derived(vote.getVote(columnId));
   let isConflict = $derived(existing !== undefined && existing.rowId !== row?.id);
+  let isLegislative = $derived(nav.column > 0); // Columnas 2,3,4,5 son legislativas
+  
+  // Number picker state for legislative columns
+  let firstDigit = $state(0);
+  let secondDigit = $state(0);
 
   function castVote(zoneId: string, zoneType: VoteZoneType, zoneLabel: string) {
     if (!row) return;
@@ -25,9 +30,55 @@
     ui.closeOverlay();
   }
 
+  function castVoteWithNumber() {
+    if (!row) return;
+    const candidateNumber = firstDigit * 10 + secondDigit;
+    // Cast symbol vote
+    const symbolZone = row.voteZones.find(z => z.type === 'symbol');
+    if (symbolZone) {
+      vote.cast({
+        columnId,
+        rowId:       row.id,
+        partyName:   row.partyName,
+        partyNumber: row.partyNumber,
+        partyColor:  row.partyColor,
+        zoneId:      symbolZone.id,
+        zoneType:    symbolZone.type,
+        zoneLabel:   symbolZone.label,
+      });
+    }
+    // Cast number vote with selected candidate number
+    const numberZone = row.voteZones.find(z => z.type === 'number');
+    if (numberZone) {
+      vote.cast({
+        columnId,
+        rowId:       row.id,
+        partyName:   row.partyName,
+        partyNumber: row.partyNumber,
+        partyColor:  row.partyColor,
+        zoneId:      numberZone.id,
+        zoneType:    numberZone.type,
+        zoneLabel:   `${numberZone.label}: ${candidateNumber}`,
+      });
+    }
+    ui.closeOverlay();
+  }
+
   function clearVote() {
     vote.remove(columnId);
     ui.closeOverlay();
+  }
+
+  function handleDigitScroll(digit: 'first' | 'second', direction: 'up' | 'down') {
+    if (digit === 'first') {
+      firstDigit = direction === 'up' 
+        ? (firstDigit + 1) % 10 
+        : (firstDigit - 1 + 10) % 10;
+    } else {
+      secondDigit = direction === 'up' 
+        ? (secondDigit + 1) % 10 
+        : (secondDigit - 1 + 10) % 10;
+    }
   }
 </script>
 
@@ -105,40 +156,87 @@
       
       <!-- Third option: Mark both/all zones -->
       {#if row.voteZones.length > 1}
-        <button
-          class="zone-card"
-          onclick={() => {
-            // Cast vote for all zones
-            row.voteZones.forEach((z, i) => {
-              setTimeout(() => castVote(z.id, z.type, z.label), i * 100);
-            });
-          }}
-          aria-label="Marcar ambas opciones"
-          style:--pc={row.partyColor}
-        >
-          <div class="preview">
-            <div class="preview-badge" style:background={row.partyColor}>
-              <span>{row.partyNumber}</span>
+        {#if isLegislative}
+          <!-- Legislative columns: Number picker -->
+          <div class="zone-card number-picker-card" style:--pc={row.partyColor}>
+            <div class="zone-info">
+              <span class="zone-title">Marcar símbolo + número</span>
+              <span class="zone-desc">Selecciona el número de candidato</span>
             </div>
-            <div class="preview-zones">
-              {#each row.voteZones as z}
-                <div class="pz pz-on">
-                  <svg class="pz-x" viewBox="0 0 16 16" aria-hidden="true">
-                    <line x1="3.5" y1="3.5" x2="12.5" y2="12.5"
-                          stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
-                    <line x1="12.5" y1="3.5" x2="3.5" y2="12.5"
-                          stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
-                  </svg>
-                </div>
-              {/each}
+            
+            <div class="number-picker">
+              <div class="digit-container">
+                <button 
+                  class="digit-scroll digit-up" 
+                  onclick={() => handleDigitScroll('first', 'up')}
+                  aria-label="Aumentar primer dígito"
+                >▲</button>
+                <span class="digit-display">{firstDigit}</span>
+                <button 
+                  class="digit-scroll digit-down" 
+                  onclick={() => handleDigitScroll('first', 'down')}
+                  aria-label="Disminuir primer dígito"
+                >▼</button>
+              </div>
+              <div class="digit-container">
+                <button 
+                  class="digit-scroll digit-up" 
+                  onclick={() => handleDigitScroll('second', 'up')}
+                  aria-label="Aumentar segundo dígito"
+                >▲</button>
+                <span class="digit-display">{secondDigit}</span>
+                <button 
+                  class="digit-scroll digit-down" 
+                  onclick={() => handleDigitScroll('second', 'down')}
+                  aria-label="Disminuir segundo dígito"
+                >▼</button>
+              </div>
             </div>
+            
+            <button 
+              class="confirm-number-btn" 
+              onclick={castVoteWithNumber}
+              aria-label="Confirmar voto con número {firstDigit}{secondDigit}"
+            >
+              →
+            </button>
           </div>
-          <div class="zone-info">
-            <span class="zone-title">Marcar ambos</span>
-            <span class="zone-desc">Selecciona todas las opciones disponibles</span>
-          </div>
-          <span class="zone-cta" aria-hidden="true">→</span>
-        </button>
+        {:else}
+          <!-- Presidential column: Standard button -->
+          <button
+            class="zone-card"
+            onclick={() => {
+              row.voteZones.forEach((z, i) => {
+                setTimeout(() => castVote(z.id, z.type, z.label), i * 100);
+              });
+            }}
+            aria-label="Marcar ambas opciones"
+            style:--pc={row.partyColor}
+          >
+            <div class="preview">
+              <div class="preview-badge" style:background={row.partyColor}>
+                <span>{row.partyNumber}</span>
+              </div>
+              <div class="preview-zones">
+                {#each row.voteZones as z}
+                  <div class="pz pz-on">
+                    <svg class="pz-x" viewBox="0 0 16 16" aria-hidden="true">
+                      <line x1="3.5" y1="3.5" x2="12.5" y2="12.5"
+                            stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+                      <line x1="12.5" y1="3.5" x2="3.5" y2="12.5"
+                            stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                {/each}
+              </div>
+            </div>
+            <div class="zone-info">
+              <span class="zone-title">Marcar ambos</span>
+              <span class="zone-desc">Selecciona todas las opciones disponibles</span>
+            </div>
+            <span class="zone-cta" aria-hidden="true">→</span>
+          </button>
+        {/if}
       {/if}
     </div>
 
@@ -371,6 +469,97 @@
   }
 
   .zone-card:hover .zone-cta {
+    color: var(--pc);
+    transform: translateX(2px);
+  }
+
+  /* ─── Number picker for legislative columns ────────────────────────────────── */
+  .number-picker-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    padding: 10px 14px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+
+  .number-picker-card:hover {
+    border-color: color-mix(in srgb, var(--pc) 40%, var(--border) 60%);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
+  }
+
+  .number-picker {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-left: auto;
+    margin-right: 12px;
+  }
+
+  .digit-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .digit-scroll {
+    width: 32px;
+    height: 24px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface-alt);
+    color: var(--text-muted);
+    font-size: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.1s, color 0.1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .digit-scroll:hover {
+    background: var(--surface-hover);
+    color: var(--text-primary);
+  }
+
+  .digit-scroll:active {
+    background: var(--border);
+  }
+
+  .digit-display {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    min-width: 28px;
+    text-align: center;
+  }
+
+  .confirm-number-btn {
+    width: 36px;
+    height: 36px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text-muted);
+    font-size: 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: border-color 0.15s, color 0.15s, transform 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .confirm-number-btn:hover {
+    border-color: var(--pc);
     color: var(--pc);
     transform: translateX(2px);
   }
