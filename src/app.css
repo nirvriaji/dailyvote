@@ -35,6 +35,16 @@
   --accent:           #c8102e;
   --accent-light:     rgba(200, 16, 46, 0.08);
   
+  /* ─── Section Colors (Ballot Columns) — Pastel but saturated ──────────────── */
+  --col-presidente:           #7DD3FC;
+  --col-senadores-nacional:   #FDA4AF;
+  --col-senadores-regional:   #FDBA74;
+  --col-diputados:            #6EE7B7;
+  --col-parlamento:           #FDE047;
+  
+  /* ─── Vote Box Neutral Background ───────────────────────────────────────── */
+  --vote-box-bg:      #F4F4F4;
+  
   /* ─── Document Typography ───────────────────────────────────────────────── */
   font-family: 'Roboto Condensed', 'Inter', -apple-system, BlinkMacSystemFont, 
                'Segoe UI', system-ui, sans-serif;

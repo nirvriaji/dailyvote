@@ -22,17 +22,6 @@
 
   let active = $derived(distance === 0);
 
-  // Section-specific tint colors for body content (not headers) - Sky blue theme
-  const SECTION_TINTS: Record<string, string> = {
-    'presidente': 'rgba(207, 232, 243, 0.35)',        // Sky blue light
-    'senadores-nacional': 'rgba(217, 237, 247, 0.30)', // Sky blue lighter
-    'senadores-regional': 'rgba(184, 220, 232, 0.30)', // Sky blue dark
-    'diputados': 'rgba(207, 232, 243, 0.35)',          // Sky blue light
-    'parlamento-andino': 'rgba(217, 237, 247, 0.30)',  // Sky blue lighter
-  };
-
-  let sectionTint = $derived(SECTION_TINTS[column.section] || 'transparent');
-
   // Referencias para scroll y sincronización
   let viewportEl = $state<HTMLElement | null>(null);
   let contentEl = $state<HTMLElement | null>(null);
@@ -76,7 +65,6 @@
   class:depth-active={distance === 0}
   class:depth-near={distance === 1}
   class:depth-far={distance >= 2}
-  style="--section-tint: {sectionTint}"
   aria-hidden={distance > 1}
   onclick={distance > 0 ? onActivate : undefined}
   role={distance > 0 && onActivate ? 'button' : undefined}
@@ -215,9 +203,8 @@
     flex: 1;
     overflow: hidden;
     position: relative;
-    /* Section tint applied to body only, not header */
-    background: linear-gradient(to bottom, var(--section-tint), var(--section-tint)),
-                var(--paper-white);
+    /* Clean white background - colors applied at row level */
+    background: var(--paper-white);
   }
 
   /* ─── Contenido scrollable ──────────────────────────────────────────── */
