@@ -14,10 +14,15 @@
   let vw = $state(0);
 
   // ─── Layout ───────────────────────────────────────────────────────────────────
-  // Column width fills space leaving room for right preview (200px)
-  // Left side: no preview, column starts near ordinals
-  const PREVIEW_RIGHT = 200;
-  let colWidth = $derived(Math.max(500, vw - 60 - 8 - PREVIEW_RIGHT)); // Minus ordinals (60), gap (8), preview (200)
+  // Column width fills space leaving room for right preview
+  // Left side: no preview, column starts immediately after ordinals + small gap
+  // Gap: 4px between ordinals and current column (minimal)
+  // All columns except last have standard right preview (180px)
+  // Last column (Parlamento Andino): no right preview (0px), full width
+  const GAP = 4;
+  const PREVIEW_WIDTH = 180;
+  let previewRight = $derived(nav.column === 4 ? 0 : PREVIEW_WIDTH);
+  let colWidth = $derived(Math.max(480, vw - 60 - GAP - previewRight)); // Minus ordinals (60), gap (4), preview (variable)
   let stageW   = $derived(COLUMN_COUNT * colWidth);
 
   /*
@@ -25,13 +30,13 @@
    * transform: translateX(panX) scale(s) maps document x → screen x × s + panX.
    *
    * panXFor(c, s)   = −c × colWidth × s + offset
-   *                 → aligns column c at left edge (after ordinals + gap)
+   *                 → aligns column c at left edge (after ordinals + small gap)
    *
-   * The offset accounts for the 60px ordinal column + 8px gap
+   * The offset accounts for the 60px ordinal column + 4px gap
    */
   function panXFor(c: number, s: number): number {
-    // Align column c so it starts at position 68px (60 + 8 gap)
-    return 68 - (c * colWidth * s);
+    // Align column c so it starts at position 64px (60 + 4 gap)
+    return 64 - (c * colWidth * s);
   }
   function panXFitAll(s: number): number {
     return (vw - stageW * s) / 2;
@@ -40,8 +45,16 @@
   // ─── Navigation state ─────────────────────────────────────────────────────────
   let dragOffset    = $state(0);
   let animated      = $state(false); // off during onboarding; toggled by gesture
-  // Align current column at left edge (after ordinals + gap)
-  let navTranslateX = $derived(68 - (nav.column * colWidth) + dragOffset);
+  // Align current column at left edge (after ordinals + small gap of 4px)
+  let navTranslateX = $derived(64 - (nav.column * colWidth) + dragOffset);
+  
+  // Fade start percentage: dynamically calculated based on column width and preview
+  // Formula: fade starts at (colWidth / (colWidth + previewRight)) * 100%
+  // This ensures the current column is fully visible and only the preview gets faded
+  let fadeStart = $derived(
+    previewRight === 0 ? 100 : // No fade if no preview
+    Math.round((colWidth / (colWidth + previewRight)) * 100)
+  );
 
   // ─── Onboarding state ─────────────────────────────────────────────────────────
   let onbActive    = $state(true);
@@ -259,6 +272,7 @@
   class="stage-viewport"
   bind:clientWidth={vw}
   style:--col-width="{colWidth}px"
+  style:--fade-start="{fadeStart}%"
   use:gesture={{ onStart, onMove, onEnd }}
   aria-label="Cédula electoral — desliza para navegar entre columnas"
 >
@@ -307,21 +321,19 @@
     /* Unified paper background - no gradients, no visual noise */
     background: #ebe8e0;
     
-  /* Mask: hide left side completely, show current column fully, fade right side */
+  /* Mask: hide left side completely, show current column fully until fade-start, fade to right */
   -webkit-mask-image: linear-gradient(
     to right,
     transparent 0%,
-    transparent 0%,
     black 0%,
-    black 85%,
+    black var(--fade-start, 85%),
     transparent 100%
   );
   mask-image: linear-gradient(
     to right,
     transparent 0%,
-    transparent 0%,
     black 0%,
-    black 85%,
+    black var(--fade-start, 85%),
     transparent 100%
   );
   }

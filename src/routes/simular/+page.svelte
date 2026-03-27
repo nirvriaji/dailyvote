@@ -132,13 +132,13 @@
     flex-direction: column;
   }
 
-  /* Layout: ordinal (60px) + gap (8px) + stage (flexible) */
+  /* Layout: ordinal (60px) + small gap (4px) + stage (flexible) */
   .ballot-container {
     flex: 1;
     min-height: 0;
     margin-top: var(--bar-height, 56px);
     display: grid;
-    grid-template-columns: 60px 8px 1fr;
+    grid-template-columns: 60px 4px 1fr;
     background: var(--doc-surface);
   }
 
@@ -152,9 +152,9 @@
     z-index: 10;
   }
 
-  /* Gap between ordinals and stage */
+  /* Small gap between ordinals and stage */
   .gap-spacer {
-    width: 8px;
+    width: 4px;
     height: 100%;
     background: transparent;
   }
@@ -171,7 +171,7 @@
   .col-arrows {
     position: fixed;
     top: calc(var(--bar-height, 56px) + 50%);
-    left: 68px; /* After ordinals (60px) + gap (8px) */
+    left: 64px; /* After ordinals (60px) + gap (4px) */
     right: 0;
     transform: translateY(-50%);
     display: flex;
