@@ -14,54 +14,60 @@
   let vw = $state(0);
 
   // ─── Layout ───────────────────────────────────────────────────────────────────
-  // Carousel-style layout with gaps between column and previews
+  // Dynamic column widths: all columns can be wide up to 500px max
   // Left preview (prev column): 60px | Gap: 16px | Main column | Gap: 16px | Right preview (next column): 180px
   const GAP = 4;
-  const PREVIEW_LEFT = 60;  // Partial previous column visible
-  const PREVIEW_RIGHT = 180; // Standard right preview
-  const COLUMN_GAP = 16;     // Gap between main column and previews
-  const CENTER_OFFSET = 40;  // Adjusted for new layout
+  const PREVIEW_LEFT = 60;
+  const PREVIEW_RIGHT = 180;
+  const COLUMN_GAP = 16;
+  const MAX_COL_WIDTH = 500; // Maximum width for all columns on desktop
   
-  // Total available width minus all the fixed elements
-  let availableWidth = $derived(vw - 48 - GAP - PREVIEW_LEFT - COLUMN_GAP - COLUMN_GAP - PREVIEW_RIGHT);
-  let colWidth = $derived(Math.max(480, availableWidth));
+  // Calculate column width based on viewport (same for all columns, up to 500px max)
+  let colWidth = $derived(Math.min(MAX_COL_WIDTH, Math.max(400, vw - 48 - GAP - PREVIEW_LEFT - COLUMN_GAP - COLUMN_GAP - PREVIEW_RIGHT)));
   
-  // Stage width includes all columns plus gaps between them
+  // Function to get column width (same for all columns now)
+  function getColWidth(columnIndex: number): number {
+    return colWidth;
+  }
+  
+  // Calculate stage width with consistent column widths
   let stageW = $derived((COLUMN_COUNT * colWidth) + ((COLUMN_COUNT - 1) * COLUMN_GAP));
+  
+  // Function to get cumulative width up to a column
+  function getCumulativeWidth(upToColumn: number): number {
+    return upToColumn * (colWidth + COLUMN_GAP);
+  }
 
   /*
    * With transform-origin: 0 0 on the stage,
    * transform: translateX(panX) scale(s) maps document x → screen x × s + panX.
    *
-   * panXFor(c, s)   = −c × (colWidth + gap) × s + offset
-   *                 → aligns column c with proper gaps
-   *
-   * The offset accounts for ordinals + left preview + gap + centering
+   * Position calculation centers the target column in the viewport
    */
   function panXFor(c: number, s: number): number {
-    // Position: ordinals (48) + gap (4) + left preview (60) + gap (16) = 128px from left edge
-    const leftOffset = 48 + GAP + PREVIEW_LEFT + COLUMN_GAP;
-    // Each column position includes its index times (width + gap)
-    return leftOffset - (c * (colWidth + COLUMN_GAP) * s);
+    const cumulativeWidth = c * (colWidth + COLUMN_GAP);
+    // Center the column: subtract cumulative width and center offset
+    return -(cumulativeWidth * s) + ((vw - colWidth * s) / 2);
   }
   function panXFitAll(s: number): number {
-    // Total width includes columns plus gaps between them
-    const totalWidth = (COLUMN_COUNT * colWidth) + ((COLUMN_COUNT - 1) * COLUMN_GAP);
-    return (vw - totalWidth * s) / 2;
+    return (vw - stageW * s) / 2;
   }
 
   // ─── Navigation state ─────────────────────────────────────────────────────────
   let dragOffset    = $state(0);
   let animated      = $state(false); // off during onboarding; toggled by gesture
-  // Align column with gaps on both sides:
-  // Position: ordinals (48) + gap (4) + left preview (60) + gap (16) = 128px
-  const LEFT_MARGIN = 48 + GAP + PREVIEW_LEFT + COLUMN_GAP;
-  let navTranslateX = $derived(LEFT_MARGIN - (nav.column * (colWidth + COLUMN_GAP)) + dragOffset);
+  // Center the active column horizontally in the viewport
+  // Position = -(column index * (width + gap)) + (viewport center - column width / 2)
+  let navTranslateX = $derived(
+    -(nav.column * (colWidth + COLUMN_GAP)) + 
+    ((vw - colWidth) / 2) + 
+    dragOffset
+  );
   
   // Fade start percentage: ensure column is fully visible until the gap before right preview
   // The visible area is: left preview (60) + gap (16) + column + gap (16) of the 180 preview
-  // So the column ends at: 60 + 16 + colWidth = 76 + colWidth
-  // Total visible is: 60 + 16 + colWidth + 16 + 180 = 272 + colWidth
+  // So the column ends at: 60 + 16 + colWidth
+  // Total visible is: 60 + 16 + colWidth + 16 + 180
   // Column percentage: (76 + colWidth) / (272 + colWidth) * 100
   let fadeStart = $derived(Math.round(((PREVIEW_LEFT + COLUMN_GAP + colWidth) / (PREVIEW_LEFT + COLUMN_GAP + colWidth + COLUMN_GAP + PREVIEW_RIGHT)) * 100));
 
@@ -280,7 +286,6 @@
 <div
   class="stage-viewport"
   bind:clientWidth={vw}
-  style:--col-width="{colWidth}px"
   style:--fade-start="{fadeStart}%"
   use:gesture={{ onStart, onMove, onEnd }}
   aria-label="Cédula electoral — desliza para navegar entre columnas"
@@ -295,6 +300,7 @@
     {#each columns as column, i (column.id)}
       <BallotColumn
         {column}
+        width={colWidth}
         distance={depthDistance(i)}
         onActivate={!onbActive && i !== nav.column ? () => nav.goTo(i) : undefined}
         onScrollRef={(el) => { colScrollEls[i] = el; }}

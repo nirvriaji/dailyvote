@@ -10,6 +10,8 @@
      * Controls depth effect (opacity + scale).
      */
     distance?: number;
+    /** Width of the column in pixels */
+    width?: number;
     /** Called when an inactive column is clicked — navigates to it. */
     onActivate?: () => void;
     /** Called with the scroll container element after mount (used by onboarding). */
@@ -18,7 +20,7 @@
     onScrollChange?: (y: number) => void;
   }
 
-  let { column, distance = 0, onActivate, onScrollRef, onScrollChange }: Props = $props();
+  let { column, distance = 0, width = 480, onActivate, onScrollRef, onScrollChange }: Props = $props();
 
   let active = $derived(distance === 0);
 
@@ -65,6 +67,7 @@
   class:depth-active={distance === 0}
   class:depth-near={distance === 1}
   class:depth-far={distance >= 2}
+  style:width="{width}px"
   aria-hidden={distance > 1}
   onclick={distance > 0 ? onActivate : undefined}
   role={distance > 0 && onActivate ? 'button' : undefined}
@@ -103,8 +106,6 @@
 <style>
   /* ─── Document section shell ────────────────────────────────────────────────── */
   .col-outer {
-    /* Ancho fijo idéntico para todas las columnas */
-    width: var(--col-width);
     flex-shrink: 0;
     height: 100%;
     overflow: hidden;
