@@ -1,7 +1,5 @@
 <script lang="ts">
   import type { BallotColumn as BallotColumnData, GestureIntent } from '$lib/types';
-  import { nav, COLUMN_COUNT } from '$lib/stores/navigation.svelte';
-  import { ui } from '$lib/stores/ui.svelte';
   import { gesture } from '$lib/actions/gesture';
   import BallotColumn from './BallotColumn.svelte';
 
@@ -13,418 +11,148 @@
   // ─── Viewport ─────────────────────────────────────────────────────────────────
   let vw = $state(0);
 
-  // ─── Layout ───────────────────────────────────────────────────────────────────
-  // Dynamic column widths: all columns can be wide up to 500px max
-  // Left preview (prev column): 60px | Gap: 16px | Main column | Gap: 16px | Right preview (next column): 180px
-  const GAP = 4;
-  const PREVIEW_LEFT = 60;
-  const PREVIEW_RIGHT = 180;
+  // ─── Single Paper Sheet Layout ────────────────────────────────────────────────
+  // All 5 columns form one continuous sheet with responsive zoom
+  const COLUMN_COUNT = 5;
   const COLUMN_GAP = 16;
-  const MAX_COL_WIDTH = 500; // Maximum width for all columns on desktop
+  const BASE_COL_WIDTH = 320; // Base width per column at 100% zoom
+  const MIN_ZOOM = 0.5; // Minimum zoom (50%)
+  const MAX_ZOOM = 1.2; // Maximum zoom (120%)
+   
+  // Calculate optimal zoom to fit content ergonomically
+  let optimalZoom = $derived(
+    Math.min(MAX_ZOOM, 
+      Math.max(MIN_ZOOM, 
+        (vw - 100) / ((COLUMN_COUNT * BASE_COL_WIDTH) + ((COLUMN_COUNT - 1) * COLUMN_GAP))
+      )
+    )
+  );
   
-  // Calculate column width based on viewport (same for all columns, up to 500px max)
-  let colWidth = $derived(Math.min(MAX_COL_WIDTH, Math.max(400, vw - 48 - GAP - PREVIEW_LEFT - COLUMN_GAP - COLUMN_GAP - PREVIEW_RIGHT)));
+  // Column width at current zoom level
+  let colWidth = $derived(BASE_COL_WIDTH * optimalZoom);
   
-  // Function to get column width (same for all columns now)
-  function getColWidth(columnIndex: number): number {
-    return colWidth;
-  }
-  
-  // Calculate stage width with consistent column widths
+  // Stage width with all columns
   let stageW = $derived((COLUMN_COUNT * colWidth) + ((COLUMN_COUNT - 1) * COLUMN_GAP));
   
-  // Function to get cumulative width up to a column
-  function getCumulativeWidth(upToColumn: number): number {
-    return upToColumn * (colWidth + COLUMN_GAP);
-  }
-
-  /*
-   * With transform-origin: 0 0 on the stage,
-   * transform: translateX(panX) scale(s) maps document x → screen x × s + panX.
-   *
-   * Position calculation centers the target column in the viewport
-   */
-  function panXFor(c: number, s: number): number {
-    const cumulativeWidth = c * (colWidth + COLUMN_GAP);
-    // Center the column: subtract cumulative width and center offset
-    return -(cumulativeWidth * s) + ((vw - colWidth * s) / 2);
-  }
-  function panXFitAll(s: number): number {
-    return (vw - stageW * s) / 2;
-  }
-
-  // ─── Navigation state ─────────────────────────────────────────────────────────
-  let dragOffset    = $state(0);
-  let animated      = $state(false); // off during onboarding; toggled by gesture
-  // Center the active column horizontally in the viewport
-  // Position = -(column index * (width + gap)) + (viewport center - column width / 2)
-  let navTranslateX = $derived(
-    -(nav.column * (colWidth + COLUMN_GAP)) + 
-    ((vw - colWidth) / 2) + 
-    dragOffset
-  );
+  // Pan state - free positioning
+  let panX = $state(0);
+  let panY = $state(0);
+  let isDragging = $state(false);
   
-  // Fade start percentage: ensure column is fully visible until the gap before right preview
-  // The visible area is: left preview (60) + gap (16) + column + gap (16) of the 180 preview
-  // So the column ends at: 60 + 16 + colWidth
-  // Total visible is: 60 + 16 + colWidth + 16 + 180
-  // Column percentage: (76 + colWidth) / (272 + colWidth) * 100
-  let fadeStart = $derived(Math.round(((PREVIEW_LEFT + COLUMN_GAP + colWidth) / (PREVIEW_LEFT + COLUMN_GAP + colWidth + COLUMN_GAP + PREVIEW_RIGHT)) * 100));
+  // Allow free drag always
+  let isDraggable = $state(true);
 
-  // ─── Onboarding state ─────────────────────────────────────────────────────────
-  let onbActive    = $state(true);
-  let onbStarted   = false;
-  let onbCancelled = false;
-  let onbScale     = $state(1);
-  let onbPanX      = $state(0);
-  /*
-   * onbFocusCol drives depth during onboarding:
-   *  -1 → all columns at depth-active (overview / zoom-out)
-   *   c → depth relative to column c (same as normal navigation)
-   */
-  let onbFocusCol  = $state(-1);
+  // ─── Combined transform ────────────────────────────────────────────────────────
+  // Transform with zoom and pan
+  let stageTransform = $derived(`translateX(${panX}px) translateY(${panY}px) scale(${optimalZoom})`);
 
-  // Scroll container refs — registered by each BallotColumn via onScrollRef
-  const colScrollEls: (HTMLElement | null)[] = Array(COLUMN_COUNT).fill(null);
-
-  // ─── Combined transform (single expression for both modes) ────────────────────
-  let stageTransform = $derived(
-    onbActive
-      ? `translateX(${onbPanX}px) scale(${onbScale})`
-      : `translateX(${navTranslateX}px) scale(1)`
-  );
-
-  // Depth distance: during onboarding driven by onbFocusCol, else by nav.column
-  function depthDistance(i: number): number {
-    if (onbActive) return onbFocusCol < 0 ? 0 : Math.abs(i - onbFocusCol);
-    return Math.abs(i - nav.column);
-  }
-
-  // ─── Tween primitives ─────────────────────────────────────────────────────────
-  function easeInOutCubic(t: number): number {
-    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-  }
-  function easeOutExpo(t: number): number {
-    return t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
-  }
-
-  type TweenTarget = { get: () => number; set: (v: number) => void; to: number };
-
-  function tweenValues(targets: TweenTarget[], duration: number, ease = easeInOutCubic): Promise<void> {
-    const froms = targets.map(t => t.get());
-    return new Promise(resolve => {
-      const start = performance.now();
-      function tick(now: number) {
-        if (onbCancelled) { resolve(); return; }
-        const rawT = (now - start) / duration;
-        const e = ease(Math.min(1, rawT));
-        targets.forEach((t, i) => t.set(froms[i] + (t.to - froms[i]) * e));
-        if (rawT < 1) requestAnimationFrame(tick);
-        else resolve();
-      }
-      requestAnimationFrame(tick);
-    });
-  }
-
-  function tweenScroll(el: HTMLElement, to: number, duration: number): Promise<void> {
-    const from = el.scrollTop;
-    return new Promise(resolve => {
-      const start = performance.now();
-      function tick(now: number) {
-        if (onbCancelled) { resolve(); return; }
-        const rawT = (now - start) / duration;
-        const e = easeInOutCubic(Math.min(1, rawT));
-        el.scrollTop = from + (to - from) * e;
-        if (rawT < 1) requestAnimationFrame(tick);
-        else resolve();
-      }
-      requestAnimationFrame(tick);
-    });
-  }
-
-  function wait(ms: number): Promise<void> {
-    return new Promise(r => setTimeout(r, ms));
-  }
-
-  // ─── Onboarding sequence ──────────────────────────────────────────────────────
-  async function runOnboarding(): Promise<void> {
-    // Fit scale: show all 5 columns with a small margin
-    const fitS = (vw / stageW) * 0.92;
-
-    // Initial state: document zoomed out, all columns visible
-    onbFocusCol = -1;
-    onbScale    = fitS;
-    onbPanX     = panXFitAll(fitS);
-
-    await wait(700);
-    if (onbCancelled) return;
-
-    // Step 1 — zoom into column 5 (index 4), top zone
-    onbFocusCol = 4;
-    await tweenValues([
-      { get: () => onbScale, set: v => onbScale = v, to: 1 },
-      { get: () => onbPanX,  set: v => onbPanX  = v, to: panXFor(4, 1) },
-    ], 1100, easeOutExpo);
-    if (onbCancelled) return;
-
-    await wait(500);
-    if (onbCancelled) return;
-
-    // Step 2 — scroll down through column 5
-    const col5 = colScrollEls[4];
-    if (col5) await tweenScroll(col5, col5.scrollHeight - col5.clientHeight, 1000);
-    if (onbCancelled) return;
-
-    await wait(400);
-    if (onbCancelled) return;
-
-    // Pre-scroll column 1 (index 0) to bottom while it's off-screen —
-    // so the horizontal slide feels like the whole document is at the same level.
-    const col0 = colScrollEls[0];
-    if (col0) col0.scrollTop = col0.scrollHeight;
-
-    // Step 3 — slide horizontally from column 5 to column 1
-    onbFocusCol = 0;
-    await tweenValues([
-      { get: () => onbPanX, set: v => onbPanX = v, to: panXFor(0, 1) },
-    ], 1000, easeInOutCubic);
-    if (onbCancelled) return;
-
-    await wait(400);
-    if (onbCancelled) return;
-
-    // Step 4 — scroll up to top of column 1
-    if (col0) await tweenScroll(col0, 0, 900);
-    if (onbCancelled) return;
-
-    await wait(500);
-
-    endOnboarding();
-  }
-
-  function endOnboarding(): void {
-    if (!onbActive) return;
-    // Enable CSS transition for a seamless handoff to nav
-    animated  = true;
-    onbActive = false;
-    nav.goTo(0);
-    ui.skipOnboarding();
-    if (colScrollEls[0]) colScrollEls[0]!.scrollTop = 0;
-    // Let the transition settle, then disable it so gestures feel instant
-    setTimeout(() => { animated = false; }, 520);
-  }
-
-  function skipOnboarding(): void {
-    onbCancelled = true;
-    endOnboarding();
-  }
-
-  // Start onboarding once the viewport width is known
-  $effect(() => {
-    if (vw > 0 && !onbStarted) {
-      onbStarted = true;
-      runOnboarding();
-    }
-  });
-
-  // ─── Navigation gesture ───────────────────────────────────────────────────────
-  const VELOCITY_THRESHOLD = 0.32;  // px/ms
-  const DISTANCE_THRESHOLD = 0.25;  // fraction of colWidth
-
-  function rubberBand(delta: number): number {
-    const atLeft  = nav.column === 0 && delta > 0;
-    const atRight = nav.column === COLUMN_COUNT - 1 && delta < 0;
-    return (atLeft || atRight) ? delta * 0.12 : delta;
-  }
-
+  // ─── Free Pan Navigation ───────────────────────────────────────────────────────
+  // Pan freely in any direction to navigate the paper sheet
+  
   function onStart() {
-    if (onbActive) { skipOnboarding(); return; }
-    animated = false;
+    isDragging = true;
   }
 
-  function onMove(dx: number, _dy: number, intent: GestureIntent) {
-    if (onbActive || intent !== 'horizontal') return;
-    dragOffset += rubberBand(dx);
+  function onMove(dx: number, dy: number, _intent: GestureIntent) {
+    // Pan freely in both directions
+    panX += dx;
+    panY += dy;
   }
 
-  function onEnd(intent: GestureIntent, vx: number, _vy: number) {
-    if (onbActive) return;
-    animated = true;
-
-    if (intent !== 'horizontal') {
-      dragOffset = 0;
-      return;
+  function onEnd(_intent: GestureIntent, vx: number, vy: number) {
+    isDragging = false;
+    
+    // Add momentum/inertia for both directions
+    const decay = () => {
+      if (Math.abs(vx) < 0.1 && Math.abs(vy) < 0.1) return;
+      panX += vx * 16;
+      panY += vy * 16;
+      vx *= 0.95;
+      vy *= 0.95;
+      requestAnimationFrame(decay);
+    };
+    if (Math.abs(vx) > 0.5 || Math.abs(vy) > 0.5) {
+      requestAnimationFrame(decay);
     }
-
-    const distRatio = dragOffset / colWidth;
-    const fastFlick = Math.abs(vx) > VELOCITY_THRESHOLD;
-    const farEnough = Math.abs(distRatio) > DISTANCE_THRESHOLD;
-
-    if (fastFlick || farEnough) {
-      if (dragOffset < 0) nav.next();
-      else                nav.prev();
-    }
-
-    dragOffset = 0;
   }
 
-  $effect(() => {
-    void nav.column;
-    dragOffset = 0;
-  });
+  // No effect to reset position - keep free positioning
 </script>
 
 <!--
-  stage-viewport: the window through which you look at the ballot.
-  Clips to viewport width. mask-image fades the lateral edges smoothly.
-  Background provides depth context (looks like a desk surface).
-
-  stage: the physical document — all 5 columns in a single row, no gap.
-  transform-origin: 0 0 makes scale math predictable (origin = top-left of stage).
-  Both onboarding and navigation write to the same `stageTransform` expression.
+  stage-viewport: window to view the paper ballot sheet.
+  All 5 columns form a single continuous sheet with zoom.
+  Pan freely in any direction to navigate.
 -->
 <div
   class="stage-viewport"
   bind:clientWidth={vw}
-  style:--fade-start="{fadeStart}%"
   use:gesture={{ onStart, onMove, onEnd }}
-  aria-label="Cédula electoral — desliza para navegar entre columnas"
->
-  <!-- Document container with physical paper appearance -->
+  aria-label="Cédula electoral — hoja única"
+  >
+  <!-- Document container - single paper sheet with all columns -->
   <div
     class="document-sheet"
-    class:animated={animated && !onbActive}
+    class:dragging={isDragging}
     style:transform={stageTransform}
-    style:width="{stageW}px"
+    style:width="{(COLUMN_COUNT * BASE_COL_WIDTH) + ((COLUMN_COUNT - 1) * COLUMN_GAP)}px"
   >
     {#each columns as column, i (column.id)}
       <BallotColumn
         {column}
-        width={colWidth}
-        distance={depthDistance(i)}
-        onActivate={!onbActive && i !== nav.column ? () => nav.goTo(i) : undefined}
-        onScrollRef={(el) => { colScrollEls[i] = el; }}
+        width={BASE_COL_WIDTH}
       />
     {/each}
-    
-    <!-- Empty preview spacer for last column - acts as right margin -->
-    {#if nav.column === 4}
-      <div class="empty-preview" aria-hidden="true"></div>
-    {/if}
   </div>
-
-  {#if onbActive}
-    <!-- Tap anywhere or use this button to skip the cinematic intro -->
-    <button
-      class="skip-btn"
-      onclick={skipOnboarding}
-      onpointerdown={(e) => e.stopPropagation()}
-      aria-label="Saltar introducción"
-    >
-      Saltar
-    </button>
-  {/if}
 </div>
 
 <style>
-  /* ─── Stage viewport — Paper ballot background ──────────────────────────────── */
+  /* ─── Stage viewport — Clean view with natural scroll ───────────────────── */
   .stage-viewport {
     position: relative;
     width: 100%;
     height: 100%;
-    overflow: hidden;
-    touch-action: pan-y;
+    overflow: visible;
+    touch-action: none; /* We handle all gestures manually */
     cursor: grab;
     user-select: none;
     -webkit-user-select: none;
     
     /* Paper ballot background */
     background: var(--paper-offwhite);
-    
-    /* Mask: hide left side completely, show column fully until fade-start, fade preview area */
-    -webkit-mask-image: linear-gradient(
-      to right,
-      transparent 0%,
-      black 0%,
-      black var(--fade-start),
-      transparent 100%
-    );
-    mask-image: linear-gradient(
-      to right,
-      transparent 0%,
-      black 0%,
-      black var(--fade-start),
-      transparent 100%
-    );
   }
 
-  .stage-viewport:active { cursor: grabbing; }
+  .stage-viewport:active,
+  .stage-viewport:has(.dragging) { 
+    cursor: grabbing; 
+  }
 
-  /* ─── Document sheet — Official ballot paper ───────────────────────────────── */
+  /* ─── Document sheet — Single continuous paper ─────────────────────────────── */
   .document-sheet {
     display: flex;
     gap: 16px; /* Gap between columns */
-    height: 100%;
+    height: auto; /* Allow natural height */
+    min-height: 100%;
     will-change: transform;
     transition: none;
-    align-items: stretch;
+    align-items: flex-start; /* Align to top */
     
     /* Official ballot paper */
     background: var(--paper-white);
     
     /* Thin borders like printed paper */
-    border-left: 1px solid var(--grid-border-light);
-    border-right: 1px solid var(--grid-border-light);
+    border: 1px solid var(--grid-border-light);
     
-    /* Subtle paper texture effect */
+    /* Paper shadow for depth */
     box-shadow: 
-      inset 0 0 60px rgba(0, 0, 0, 0.02),
-      0 1px 3px rgba(0, 0, 0, 0.05);
+      0 4px 6px -1px rgba(0, 0, 0, 0.1),
+      0 2px 4px -1px rgba(0, 0, 0, 0.06);
     
     transform-origin: 0 0;
   }
 
-  /* Used only for the handoff transition at the end of onboarding */
-  .document-sheet.animated {
-    transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-  }
-
-  /* ─── Skip button — Document style ──────────────────────────────────────────── */
-  .skip-btn {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
-    z-index: 20;
-    padding: 8px 16px;
-    background: var(--paper-white);
-    color: var(--text-secondary);
-    border: 1px solid var(--grid-border);
-    border-radius: 2px;
-    font-family: 'Roboto Condensed', 'Inter', sans-serif;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: background 0.15s, border-color 0.15s;
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  .skip-btn:hover { 
-    background: var(--paper-cream);
-    border-color: var(--grid-border-light);
-  }
-  
-  .skip-btn:active { 
-    background: var(--paper-offwhite);
-  }
-
-  /* Empty preview for last column - acts as right margin */
-  .empty-preview {
-    width: 180px;
-    flex-shrink: 0;
-    height: 100%;
-    background: transparent;
-    pointer-events: none;
+  /* Dragging state */
+  .document-sheet.dragging {
+    transition: none;
   }
 </style>

@@ -1,80 +1,25 @@
 <script lang="ts">
   import type { BallotColumn } from '$lib/types';
-  import { nav } from '$lib/stores/navigation.svelte';
   import BallotRow from './BallotRow.svelte';
 
   interface Props {
     column: BallotColumn;
-    /**
-     * Distance from active column. 0 = active, 1 = adjacent, 2+ = far.
-     * Controls depth effect (opacity + scale).
-     */
-    distance?: number;
     /** Width of the column in pixels */
     width?: number;
-    /** Called when an inactive column is clicked — navigates to it. */
-    onActivate?: () => void;
-    /** Called with the scroll container element after mount (used by onboarding). */
-    onScrollRef?: (el: HTMLElement) => void;
-    /** Called when scroll position changes — for syncing with other columns. */
-    onScrollChange?: (y: number) => void;
   }
 
-  let { column, distance = 0, width = 480, onActivate, onScrollRef, onScrollChange }: Props = $props();
-
-  let active = $derived(distance === 0);
-
-  // Referencias para scroll y sincronización
-  let viewportEl = $state<HTMLElement | null>(null);
-  let contentEl = $state<HTMLElement | null>(null);
-
-  // Register scroll container con BallotStage
-  $effect(() => {
-    if (contentEl) onScrollRef?.(contentEl);
-  });
-
-  // Sincronizar scroll desde el store compartido
-  $effect(() => {
-    if (contentEl && !active && nav.sharedScrollY !== contentEl.scrollTop) {
-      contentEl.scrollTop = nav.sharedScrollY;
-    }
-  });
-
-  function onScroll() {
-    if (!contentEl) return;
-    
-    const scrollTop = contentEl.scrollTop;
-    
-    // Solo la columna activa actualiza el scroll compartido
-    if (active) {
-      nav.syncScroll(scrollTop);
-      onScrollChange?.(scrollTop);
-    }
-  }
+  let { column, width = 320 }: Props = $props();
 </script>
 
 <!--
-  Estructura con viewport real para evitar que el contenido se vea debajo del header:
-  
-  .col-outer (contenedor principal, overflow hidden)
-    ├── .col-header (header fijo, sticky)
-    └── .col-viewport (viewport que recorta contenido)
-        └── .col-content (contenido scrollable)
+  Columna simple - parte de la hoja única
+  No tiene scroll interno ni lógica de activación
 -->
-<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 <div
   class="col-outer"
-  class:depth-active={distance === 0}
-  class:depth-near={distance === 1}
-  class:depth-far={distance >= 2}
   style:width="{width}px"
-  aria-hidden={distance > 1}
-  onclick={distance > 0 ? onActivate : undefined}
-  role={distance > 0 && onActivate ? 'button' : undefined}
-  tabindex={distance > 0 && onActivate ? 0 : undefined}
-  onkeydown={distance > 0 && onActivate ? (e) => (e.key === 'Enter' || e.key === ' ') && onActivate() : undefined}
 >
-  <!-- Header fijo (fuera del viewport de scroll) -->
+  <!-- Header de la columna -->
   <header class="col-header">
     <h2 class="col-title">{column.title}</h2>
     {#if column.subtitle}
@@ -82,25 +27,12 @@
     {/if}
   </header>
 
-  <!-- Viewport que recorta el contenido -->
-  <div class="col-viewport" bind:this={viewportEl}>
-    <!-- Contenido scrollable - todas las filas de forma continua -->
-    <div 
-      class="col-content" 
-      bind:this={contentEl}
-      onscroll={onScroll}
-      aria-label={column.title}
-    >
-      {#each column.rows as row (row.id)}
-        <BallotRow {row} columnId={column.id} section={column.section} />
-      {/each}
-
-      <div class="col-spacer" aria-hidden="true"></div>
-    </div>
+  <!-- Contenido - todas las filas visibles sin scroll -->
+  <div class="col-content">
+    {#each column.rows as row (row.id)}
+      <BallotRow {row} columnId={column.id} section={column.section} />
+    {/each}
   </div>
-  
-  <!-- Fade superior para ocultar cualquier glitch visual -->
-  <div class="header-fade" aria-hidden="true"></div>
 </div>
 
 <style>
@@ -199,31 +131,21 @@
     line-height: 1.2;
   }
 
-  /* ─── Viewport (recorta el contenido) ──────────────────────────────── */
+  /* ─── Viewport (sin scroll, muestra todo el contenido) ──────────────────────── */
   .col-viewport {
     flex: 1;
-    overflow: hidden;
+    overflow: visible;
     position: relative;
     /* Clean white background - colors applied at row level */
     background: var(--paper-white);
   }
 
-  /* ─── Contenido scrollable ──────────────────────────────────────────── */
+  /* ─── Contenido completo (sin scroll interno) ───────────────────────────────── */
   .col-content {
-    height: 100%;
-    overflow-y: auto;
-    overflow-x: hidden;
-    /* Free scroll - no zones */
-    overscroll-behavior-y: contain;
-    -webkit-overflow-scrolling: touch;
+    height: auto;
+    overflow: visible;
     /* Inherits tinted background from viewport */
     background: transparent;
-  }
-
-  /* Ocultar scrollbar pero mantener funcionalidad */
-  .col-content::-webkit-scrollbar {
-    width: 0;
-    height: 0;
   }
 
   /* ─── Fade superior ───────────────────────────────────────────────────────── */
