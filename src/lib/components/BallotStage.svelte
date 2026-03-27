@@ -20,6 +20,7 @@
   // All columns have standard right preview (180px)
   const GAP = 4;
   const PREVIEW_WIDTH = 180;
+  const CENTER_OFFSET = 64; // Half of (180 - 52) to balance left/right space visually
   let previewRight = $derived(PREVIEW_WIDTH);
   let colWidth = $derived(Math.max(480, vw - 48 - GAP - previewRight)); // Minus ordinals (48), gap (4), preview (180)
   let stageW   = $derived(COLUMN_COUNT * colWidth);
@@ -29,13 +30,13 @@
    * transform: translateX(panX) scale(s) maps document x → screen x × s + panX.
    *
    * panXFor(c, s)   = −c × colWidth × s + offset
-   *                 → aligns column c at left edge (after ordinals + small gap)
+   *                 → aligns column c visually centered
    *
-   * The offset accounts for the 48px ordinal column + 4px gap
+   * The offset accounts for the 48px ordinal column + 4px gap + centering offset
    */
   function panXFor(c: number, s: number): number {
-    // Align column c so it starts at position 52px (48 + 4 gap)
-    return 52 - (c * colWidth * s);
+    // Align column c centered: base position 52px (48 + 4 gap) + center offset
+    return 52 + CENTER_OFFSET - (c * colWidth * s);
   }
   function panXFitAll(s: number): number {
     return (vw - stageW * s) / 2;
@@ -44,8 +45,10 @@
   // ─── Navigation state ─────────────────────────────────────────────────────────
   let dragOffset    = $state(0);
   let animated      = $state(false); // off during onboarding; toggled by gesture
-  // Align current column at left edge (after ordinals + small gap of 4px)
-  let navTranslateX = $derived(64 - (nav.column * colWidth) + dragOffset);
+  // Align current column visually centered:
+  // Left side has ~52px (ordinals 48 + gap 4), right side has 180px preview
+  // Difference is 128px, so shift column 64px right to center it visually
+  let navTranslateX = $derived(64 + CENTER_OFFSET - (nav.column * colWidth) + dragOffset);
   
   // Fade start percentage: dynamically calculated based on column width and preview
   // Formula: fade starts at (colWidth / (colWidth + previewRight)) * 100%
