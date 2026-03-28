@@ -1,13 +1,50 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { vote } from '$lib/stores/vote.svelte';
+  import { fade, fly } from 'svelte/transition';
   import { goto } from '$app/navigation';
+  import { vote } from '$lib/stores/vote.svelte';
+  import { BALLOT_COLUMNS } from '$lib/data/mock';
+  
+  // Get party data from BALLOT_COLUMNS
+  const presidentialRows = BALLOT_COLUMNS[0].rows.filter(r => r.partyName);
+  const legislativeRows = BALLOT_COLUMNS[1].rows.filter(r => r.partyName);
+  
+  // Create party lookup maps
+  const partyData = new Map();
+  
+  // Presidential parties (with photos)
+  presidentialRows.forEach(row => {
+    partyData.set(row.partyName, {
+      id: row.partyAbbr,
+      name: row.partyName,
+      color: row.partyColor,
+      symbolUrl: row.partySymbolUrl,
+      photoUrl: row.presidentialPhoto,
+      isPresidential: true
+    });
+  });
+  
+  // Legislative parties (with symbols only)
+  legislativeRows.forEach(row => {
+    if (!partyData.has(row.partyName)) {
+      partyData.set(row.partyName, {
+        id: row.partyAbbr,
+        name: row.partyName,
+        color: row.partyColor,
+        symbolUrl: row.partySymbolUrl,
+        photoUrl: null,
+        isPresidential: false
+      });
+    }
+  });
   
   // Types
   interface ElectionResult {
     partyId: string;
     partyName: string;
     partyColor: string;
+    partySymbolUrl: string;
+    photoUrl: string | null;
     votes: number;
     percentage: number;
     seats?: number;
@@ -15,7 +52,9 @@
   
   interface CategoryResults {
     category: string;
+    categoryId: string;
     totalVotes: number;
+    totalSeats: number;
     results: ElectionResult[];
     userVote?: string;
   }
@@ -38,7 +77,7 @@
     nextResetTime = midnight;
   }
   
-  // Generate simulated results with user's vote weighted
+  // Generate simulated results using real party data
   function generateSimulatedResults(): CategoryResults[] {
     const categories = [
       { id: 'presidente', name: 'Presidente y Vicepresidentes', totalSeats: 1 },
@@ -48,22 +87,32 @@
       { id: 'parlamento-andino', name: 'Parlamento Andino', totalSeats: 5 }
     ];
     
-    const parties = [
-      { id: 'av', name: 'Alianza Venceremos', color: '#4A90A4' },
-      { id: 'ppp', name: 'Partido Patriótico del Perú', color: '#2C3E50' },
-      { id: 'pco', name: 'Partido Cívico Obras', color: '#27AE60' },
-      { id: 'frepap', name: 'Frepap', color: '#8E44AD' },
-      { id: 'pdv', name: 'Partido Demócrata Verde', color: '#16A085' },
-      { id: 'pbg', name: 'Partido del Buen Gobierno', color: '#F39C12' },
-      { id: 'pa', name: 'Perú Acción', color: '#C0392B' },
-      { id: 'prin', name: 'PRIN', color: '#E74C3C' },
-      { id: 'progre', name: 'Progresemos', color: '#D35400' },
-      { id: 'sc', name: 'Sí Creo', color: '#7F8C8D' },
-      { id: 'ppt', name: 'País Para Todos', color: '#F1C40F' },
-      { id: 'fde', name: 'Frente de la Esperanza', color: '#1ABC9C' },
-      { id: 'pl', name: 'Perú Libre', color: '#E74C3C' },
-      { id: 'plg', name: 'Primero La Gente', color: '#3498DB' }
-    ];
+    // Get array of parties for this category
+    function getPartiesForCategory(catId: string): ElectionResult[] {
+      if (catId === 'presidente') {
+        // Use presidential parties (with photos)
+        return presidentialRows.map(row => ({
+          partyId: row.partyAbbr,
+          partyName: row.partyName,
+          partyColor: row.partyColor,
+          partySymbolUrl: row.partySymbolUrl || '',
+          photoUrl: row.presidentialPhoto || null,
+          votes: 0,
+          percentage: 0
+        }));
+      } else {
+        // Use legislative parties (symbols only)
+        return legislativeRows.map(row => ({
+          partyId: row.partyAbbr,
+          partyName: row.partyName,
+          partyColor: row.partyColor,
+          partySymbolUrl: row.partySymbolUrl || '',
+          photoUrl: null,
+          votes: 0,
+          percentage: 0
+        }));
+      }
+    }
     
     // Get user's votes from store
     const userVotes = Array.from(vote.votes.entries());
@@ -71,69 +120,85 @@
     return categories.map(cat => {
       // Find user's vote for this category
       const userVoteForCategory = userVotes.find(([colId]) => {
-        if (cat.id === 'presidente') return colId === 'presidente';
-        if (cat.id === 'senadores-nacional') return colId === 'senadores-nacional';
-        if (cat.id === 'senadores-regional') return colId === 'senadores-regional';
-        if (cat.id === 'diputados') return colId === 'diputados';
-        if (cat.id === 'parlamento-andino') return colId === 'parlamento-andino';
-        return false;
+        return colId === cat.id;
       });
       
-      const userPartyId = userVoteForCategory ? userVoteForCategory[1].partyName.substring(0, 3).toLowerCase() : null;
+      const userPartyName = userVoteForCategory ? userVoteForCategory[1].partyName : null;
       
-      // Generate random percentages that sum to 100
+      // Get parties for this category
+      let parties = getPartiesForCategory(cat.id);
+      
+      // Generate random percentages
       let remaining = 100;
-      const results: ElectionResult[] = parties.slice(0, 8).map((party, index) => {
+      const partyCount = parties.length;
+      
+      parties = parties.map((party, index) => {
         let percentage;
-        if (index === parties.length - 1) {
+        if (index === partyCount - 1) {
           percentage = remaining;
         } else {
           // Give user's party a boost
-          if (party.id === userPartyId) {
-            percentage = Math.random() * 15 + 20; // 20-35%
+          if (party.partyName === userPartyName) {
+            percentage = Math.random() * 12 + 18; // 18-30%
           } else {
-            percentage = Math.random() * 12 + 3; // 3-15%
+            percentage = Math.random() * 8 + 2; // 2-10%
           }
+          remaining -= percentage;
         }
-        remaining -= percentage;
         
         return {
-          partyId: party.id,
-          partyName: party.name,
-          partyColor: party.color,
-          votes: Math.floor(percentage * 100),
+          ...party,
           percentage: Math.max(0, percentage)
         };
       });
       
       // Normalize to 100%
-      const total = results.reduce((sum, r) => sum + r.percentage, 0);
-      results.forEach(r => {
-        r.percentage = (r.percentage / total) * 100;
-        r.votes = Math.floor(r.percentage * 1845); // ~18,450 total votes
+      const total = parties.reduce((sum, r) => sum + r.percentage, 0);
+      parties = parties.map(r => {
+        const normalizedPercentage = (r.percentage / total) * 100;
+        return {
+          ...r,
+          percentage: normalizedPercentage,
+          votes: Math.floor(normalizedPercentage * 184.5) // ~18,450 total votes
+        };
       });
       
-      // Sort by percentage
-      results.sort((a, b) => b.percentage - a.percentage);
+      // Sort by percentage (descending)
+      parties.sort((a, b) => b.percentage - a.percentage);
       
       return {
         category: cat.name,
-        totalVotes: results.reduce((sum, r) => sum + r.votes, 0),
-        results: results,
-        userVote: userVoteForCategory ? userVoteForCategory[1].partyName : undefined
+        categoryId: cat.id,
+        totalVotes: parties.reduce((sum, r) => sum + r.votes, 0),
+        totalSeats: cat.totalSeats,
+        results: parties,
+        userVote: userPartyName || undefined
       };
     });
   }
   
   // Calculate seats for congressional categories
   function calculateSeats(results: ElectionResult[], totalSeats: number): ElectionResult[] {
-    // Simple proportional allocation
     const totalPercentage = results.reduce((sum, r) => sum + r.percentage, 0);
     
-    return results.map(r => ({
+    // First pass: calculate proportional seats
+    let calculated = results.map(r => ({
       ...r,
-      seats: Math.round((r.percentage / totalPercentage) * totalSeats)
+      seats: Math.floor((r.percentage / totalPercentage) * totalSeats)
     }));
+    
+    // Check if we need to distribute remaining seats
+    const assignedSeats = calculated.reduce((sum, r) => sum + (r.seats || 0), 0);
+    const remainingSeats = totalSeats - assignedSeats;
+    
+    // Assign remaining seats to top parties
+    if (remainingSeats > 0) {
+      for (let i = 0; i < remainingSeats && i < calculated.length; i++) {
+        calculated[i].seats = (calculated[i].seats || 0) + 1;
+      }
+    }
+    
+    return calculated;
   }
   
   // Check if any presidential candidate has >50%
@@ -180,6 +245,12 @@
     goto('/simular');
   }
   
+  // Reset for new day
+  function resetForNewDay() {
+    vote.reset();
+    goto('/simular');
+  }
+  
   // Save daily winner to localStorage
   function saveDailyWinner() {
     const today = new Date().toISOString().split('T')[0];
@@ -198,17 +269,26 @@
     localStorage.setItem(`dailyvote_winner_${today}`, JSON.stringify(winners));
   }
   
-  // Reset for new day
-  function resetForNewDay() {
-    vote.reset();
-    goto('/simular');
-  }
-  
   $effect(() => {
     if (isVotingClosed) {
       saveDailyWinner();
     }
   });
+  
+  // Generate grid layout for seats visualization
+  function generateSeatsGrid(results: ElectionResult[], totalSeats: number): ElectionResult[] {
+    const withSeats = calculateSeats(results, totalSeats);
+    const grid: ElectionResult[] = [];
+    
+    withSeats.forEach(party => {
+      const count = party.seats || 0;
+      for (let i = 0; i < count; i++) {
+        grid.push(party);
+      }
+    });
+    
+    return grid;
+  }
 </script>
 
 <svelte:head>
@@ -241,25 +321,36 @@
 
   <!-- Presidential Results -->
   {#if allResults[0]}
-    <section class="category-section presidential">
-      <h2>1️⃣ Presidente y Vicepresidentes</h2>
+    <section class="category-section presidential" in:fly={{ y: 20, duration: 500 }}>
+      <h2>Presidente y Vicepresidentes</h2>
       
-      <div class="results-list">
-        {#each allResults[0].results as result, i}
-          <div class="result-item" class:winner={i === 0} class:user-vote={result.partyName === allResults[0].userVote}>
-            <div class="rank">{i + 1}</div>
+      <div class="presidential-grid">
+        {#each allResults[0].results.slice(0, 6) as result, i}
+          <div class="presidential-card" 
+               class:winner={i === 0} 
+               class:user-vote={result.partyName === allResults[0].userVote}>
+            <div class="photo-container">
+              {#if result.photoUrl}
+                <img src={result.photoUrl} alt={result.partyName} class="candidate-photo" />
+              {:else}
+                <div class="photo-placeholder" style="background-color: {result.partyColor}">
+                  {result.partyId}
+                </div>
+              {/if}
+              <div class="rank-badge">{i + 1}</div>
+            </div>
+            
             <div class="party-info">
-              <div class="party-name">{result.partyName}</div>
-              <div class="party-bar" style="width: {result.percentage}%">
-                <div class="bar-fill" style="background-color: {result.partyColor}"></div>
+              <div class="party-symbol-small">
+                <img src={result.partySymbolUrl} alt="" />
               </div>
+              <div class="party-name">{result.partyName}</div>
+              <div class="percentage">{result.percentage.toFixed(1)}%</div>
+              <div class="votes">{result.votes.toLocaleString()} votos</div>
             </div>
-            <div class="stats">
-              <span class="percentage">{result.percentage.toFixed(1)}%</span>
-              <span class="votes">{result.votes.toLocaleString()} votos</span>
-            </div>
+            
             {#if result.partyName === allResults[0].userVote}
-              <div class="user-badge">TU VOTO</div>
+              <div class="user-vote-badge">TU VOTO</div>
             {/if}
           </div>
         {/each}
@@ -269,20 +360,20 @@
       <div class="analysis">
         {#if hasAbsoluteMajority(allResults[0].results)}
           <div class="majority-win">
-            🏆 <strong>{allResults[0].results[0].partyName}</strong> gana con mayoría absoluta (>50%)
+            🏆 <strong>{allResults[0].results[0].partyName}</strong> gana con mayoría absoluta
           </div>
         {:else}
-          <div class="runoff-alert">
-            📢 <strong>Sin mayoría absoluta</strong> - Segunda vuelta requerida
-          </div>
-          <div class="runoff-candidates">
-            <p>Pasan a segunda vuelta (7 de junio 2026):</p>
-            <div class="runoff-pair">
+          <div class="runoff-section">
+            <div class="runoff-title">📢 Segunda Vuelta Requerida</div>
+            <p>Al no alcanzar ningún candidato más del 50% de los votos válidos, los 2 candidatos más votados pasan a segunda vuelta el <strong>7 de junio de 2026</strong>.</p>
+            
+            <div class="runoff-candidates">
               {#each getRunoffCandidates(allResults[0].results) as candidate, i}
-                <div class="candidate-card" class:first={i === 0}>
-                  <div class="candidate-rank">{i === 0 ? '🥇' : '🥈'}</div>
-                  <div class="candidate-name">{candidate.partyName}</div>
-                  <div class="candidate-percentage">{candidate.percentage.toFixed(1)}%</div>
+                <div class="runoff-card" class:first={i === 0}>
+                  <div class="runoff-rank">{i === 0 ? '🥇' : '🥈'}</div>
+                  <img src={candidate.photoUrl || candidate.partySymbolUrl} alt="" class="runoff-photo" />
+                  <div class="runoff-name">{candidate.partyName}</div>
+                  <div class="runoff-percentage">{candidate.percentage.toFixed(1)}%</div>
                 </div>
               {/each}
             </div>
@@ -292,70 +383,81 @@
     </section>
   {/if}
 
-  <!-- Congressional Results -->
+  <!-- Congressional Categories -->
   {#each allResults.slice(1) as category, index}
-    <section class="category-section">
-      <h2>
-        {index === 0 ? '2️⃣' : index === 1 ? '3️⃣' : index === 2 ? '4️⃣' : '5️⃣'}
-        {category.category}
-      </h2>
-      
-      <div class="seats-summary">
-        Total de escaños: <strong>{[30, 30, 130, 5][index]}</strong>
+    <section class="category-section" in:fly={{ y: 20, duration: 500, delay: index * 100 }}>
+      <h2>{category.category}</h2>
+      <div class="seats-info">
+        <span class="total-seats">{category.totalSeats} escaños</span>
+        <span class="district-info">
+          {index === 0 ? 'Distrito: Nacional único' : index === 1 ? 'Distrito: Lima Metropolitana' : index === 2 ? 'Distrito: Lima' : 'Distrito: Nacional único'}
+        </span>
       </div>
       
-      <div class="results-list compact">
-        {#each calculateSeats(category.results, [30, 30, 130, 5][index]) as result, i}
-          <div class="result-item" class:user-vote={result.partyName === category.userVote}>
+      <!-- Results List with Symbols -->
+      <div class="congress-list">
+        {#each calculateSeats(category.results, category.totalSeats).slice(0, 8) as result, i}
+          <div class="congress-item" class:user-vote={result.partyName === category.userVote}>
             <div class="rank">{i + 1}</div>
-            <div class="party-info">
-              <div class="party-name">{result.partyName}</div>
-              <div class="party-bar compact" style="width: {result.percentage}%">
-                <div class="bar-fill" style="background-color: {result.partyColor}"></div>
+            <img src={result.partySymbolUrl} alt="" class="party-symbol" />
+            <div class="party-details">
+              <div class="name">{result.partyName}</div>
+              <div class="bar-container">
+                <div class="bar" style="width: {result.percentage}%; background-color: {result.partyColor}"></div>
               </div>
             </div>
             <div class="stats">
-              <span class="seats">{result.seats || 0} escaños</span>
-              <span class="percentage">{result.percentage.toFixed(1)}%</span>
+              <div class="seats">{result.seats || 0} escaños</div>
+              <div class="percentage">{result.percentage.toFixed(1)}%</div>
             </div>
             {#if result.partyName === category.userVote}
-              <div class="user-badge small">TU VOTO</div>
+              <div class="user-badge">TU VOTO</div>
             {/if}
           </div>
         {/each}
       </div>
       
-      <!-- Visual representation of seats -->
-      <div class="seats-visual">
-        <div class="seats-label">Distribución de escaños:</div>
-        <div class="seats-container">
-          {#each calculateSeats(category.results, [30, 30, 130, 5][index]).slice(0, 6) as result}
-            {#each Array(Math.min(result.seats || 0, index === 3 ? 5 : 12)) as _, i}
-              <div 
-                class="seat" 
-                style="background-color: {result.partyColor}"
-                title="{result.partyName}"
-              ></div>
-            {/each}
+      <!-- Visual Seat Distribution -->
+      <div class="seats-visualization">
+        <h3>Distribución de Escaños</h3>
+        <div class="seats-grid" style="--cols: {Math.ceil(Math.sqrt(category.totalSeats))}">
+          {#each generateSeatsGrid(category.results, category.totalSeats) as seat, i}
+            <div class="seat" 
+                 style="background-color: {seat.partyColor}"
+                 title="{seat.partyName}">
+            </div>
+          {/each}
+        </div>
+        
+        <!-- Legend -->
+        <div class="legend">
+          {#each calculateSeats(category.results, category.totalSeats).slice(0, 6) as result}
+            <div class="legend-item">
+              <div class="legend-color" style="background-color: {result.partyColor}"></div>
+              <img src={result.partySymbolUrl} alt="" class="legend-symbol" />
+              <span class="legend-name">{result.partyName}</span>
+              <span class="legend-seats">{result.seats} esc.</span>
+            </div>
           {/each}
         </div>
       </div>
     </section>
   {/each}
 
-  <!-- Footer Actions -->
+  <!-- Footer -->
   <footer class="results-footer">
     {#if isVotingClosed}
-      <div class="winner-announcement">
-        <h3>🏆 Ganadores de Hoy ({new Date().toLocaleDateString()})</h3>
+      <div class="winners-section">
+        <h3>🏆 Ganadores del Día {new Date().toLocaleDateString()}</h3>
         <div class="winners-grid">
           {#each allResults as result}
-            <div class="winner-card">
+            <div class="winner-mini-card">
               <div class="winner-category">{result.category}</div>
+              <img src={result.results[0].photoUrl || result.results[0].partySymbolUrl} alt="" class="winner-image" />
               <div class="winner-party" style="color: {result.results[0].partyColor}">
                 {result.results[0].partyName}
               </div>
-              <div class="winner-stats">{result.results[0].percentage.toFixed(1)}%</div>
+              <div class="winner-stats">{result.results[0].percentage.toFixed(1)}% - {result.totalSeats === 1 ? '1 cargo' : result.results[0].seats + ' escaños'}</div>
             </div>
           {/each}
         </div>
@@ -365,17 +467,14 @@
         <button class="btn-primary" onclick={resetForNewDay}>
           Volver Mañana
         </button>
-        <button class="btn-secondary" onclick={() => goto('/historial')}>
-          Ver Histórico
+        <button class="btn-secondary" onclick={goBack}>
+          ← Volver a Simular
         </button>
       </div>
     {:else}
       <div class="actions">
         <button class="btn-secondary" onclick={goBack}>
           ← Volver a la Cédula
-        </button>
-        <button class="btn-primary" disabled>
-          Esperando cierre (20:00 hrs)
         </button>
       </div>
     {/if}
@@ -385,64 +484,69 @@
 <style>
   .results-page {
     min-height: 100vh;
-    background: var(--paper-offwhite);
-    padding: 24px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    padding: 20px;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 
   .results-header {
     text-align: center;
-    margin-bottom: 32px;
-    padding: 24px;
+    margin-bottom: 30px;
+    padding: 30px;
     background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   }
 
   .results-header h1 {
-    font-size: 2rem;
-    margin: 0 0 8px 0;
-    color: var(--text-primary);
+    font-size: 2.5rem;
+    margin: 0 0 10px 0;
+    color: #1a1a2e;
+    font-weight: 800;
   }
 
   .subtitle {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 16px;
-    font-size: 1.1rem;
-    color: var(--text-secondary);
+    gap: 20px;
+    font-size: 1.2rem;
+    color: #4a4a6a;
+    flex-wrap: wrap;
+  }
+
+  .live-badge, .closed-badge {
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    text-transform: uppercase;
   }
 
   .live-badge {
     background: #28a745;
     color: white;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: bold;
     animation: pulse 2s infinite;
   }
 
   .closed-badge {
     background: #dc3545;
     color: white;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: bold;
   }
 
   @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
+    50% { opacity: 0.9; box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
   }
 
   .countdown {
-    margin-top: 16px;
-    font-size: 1.5rem;
+    margin-top: 20px;
+    font-size: 2rem;
     font-weight: bold;
-    color: var(--accent);
+    color: #C8102E;
     font-family: 'Courier New', monospace;
+    letter-spacing: 2px;
   }
 
   .countdown.reset {
@@ -451,303 +555,513 @@
 
   .category-section {
     background: white;
-    border-radius: 12px;
-    padding: 24px;
-    margin-bottom: 24px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 16px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   }
 
   .category-section h2 {
-    margin: 0 0 16px 0;
-    color: var(--text-primary);
-    font-size: 1.3rem;
+    margin: 0 0 20px 0;
+    color: #1a1a2e;
+    font-size: 1.5rem;
+    font-weight: 700;
+    border-left: 4px solid #C8102E;
+    padding-left: 15px;
   }
 
   .presidential {
-    border-left: 4px solid #C8102E;
+    border-top: 4px solid #C8102E;
   }
 
-  .results-list {
+  /* Presidential Grid */
+  .presidential-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+  }
+
+  .presidential-card {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 15px;
+    text-align: center;
+    position: relative;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+  }
+
+  .presidential-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  }
+
+  .presidential-card.winner {
+    background: #fff3cd;
+    border-color: #ffc107;
+    box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+  }
+
+  .presidential-card.user-vote {
+    border-color: #28a745;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+  }
+
+  .photo-container {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 10px;
+  }
+
+  .candidate-photo, .photo-placeholder {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid white;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  }
+
+  .photo-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 0.8rem;
+  }
+
+  .rank-badge {
+    position: absolute;
+    top: -5px;
+    left: -5px;
+    width: 28px;
+    height: 28px;
+    background: #C8102E;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.9rem;
+    border: 2px solid white;
+  }
+
+  .party-symbol-small {
+    width: 30px;
+    height: 30px;
+    margin: 0 auto 5px;
+  }
+
+  .party-symbol-small img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .party-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #1a1a2e;
+    margin-bottom: 5px;
+    line-height: 1.2;
+  }
+
+  .percentage {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #C8102E;
+  }
+
+  .votes {
+    font-size: 0.75rem;
+    color: #6c757d;
+  }
+
+  .user-vote-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #28a745;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.65rem;
+    font-weight: bold;
+  }
+
+  /* Analysis Section */
+  .analysis {
+    background: #e3f2fd;
+    border-radius: 12px;
+    padding: 25px;
+    border-left: 4px solid #2196f3;
+  }
+
+  .majority-win {
+    font-size: 1.2rem;
+    color: #155724;
+    background: #d4edda;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+  }
+
+  .runoff-section {
+    text-align: center;
+  }
+
+  .runoff-title {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #856404;
+    margin-bottom: 10px;
+  }
+
+  .runoff-section p {
+    color: #4a4a6a;
+    margin-bottom: 20px;
+    font-size: 0.95rem;
+  }
+
+  .runoff-candidates {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
+  }
+
+  .runoff-card {
+    background: white;
+    border-radius: 16px;
+    padding: 25px;
+    text-align: center;
+    border: 3px solid #dee2e6;
+    min-width: 150px;
+    transition: all 0.3s ease;
+  }
+
+  .runoff-card.first {
+    border-color: #ffc107;
+    background: #fff8e1;
+    transform: scale(1.05);
+    box-shadow: 0 8px 30px rgba(255, 193, 7, 0.3);
+  }
+
+  .runoff-rank {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+  }
+
+  .runoff-photo {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 15px;
+    border: 4px solid white;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  }
+
+  .runoff-name {
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: #1a1a2e;
+    margin-bottom: 5px;
+  }
+
+  .runoff-percentage {
+    font-size: 1.5rem;
+    color: #C8102E;
+    font-weight: bold;
+  }
+
+  /* Congress List */
+  .seats-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 10px 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+  }
+
+  .total-seats {
+    font-weight: bold;
+    color: #1a1a2e;
+    font-size: 1.1rem;
+  }
+
+  .district-info {
+    color: #6c757d;
+    font-size: 0.9rem;
+  }
+
+  .congress-list {
     display: flex;
     flex-direction: column;
     gap: 12px;
+    margin-bottom: 30px;
   }
 
-  .results-list.compact {
-    gap: 8px;
-  }
-
-  .result-item {
+  .congress-item {
     display: grid;
-    grid-template-columns: 30px 1fr auto auto;
+    grid-template-columns: 40px 50px 1fr auto auto;
     align-items: center;
-    gap: 12px;
-    padding: 12px;
+    gap: 15px;
+    padding: 15px;
     background: #f8f9fa;
-    border-radius: 8px;
-    transition: all 0.2s;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+    border-left: 4px solid transparent;
   }
 
-  .result-item:hover {
+  .congress-item:hover {
     background: #e9ecef;
-    transform: translateX(4px);
+    transform: translateX(5px);
   }
 
-  .result-item.winner {
-    background: #fff3cd;
-    border: 2px solid #ffc107;
-  }
-
-  .result-item.user-vote {
-    border-left: 4px solid #28a745;
+  .congress-item.user-vote {
+    border-left-color: #28a745;
+    background: #d4edda;
   }
 
   .rank {
     font-weight: bold;
     color: #6c757d;
     text-align: center;
+    font-size: 1.1rem;
   }
 
-  .party-info {
+  .party-symbol {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    border-radius: 4px;
+  }
+
+  .party-details {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 5px;
   }
 
-  .party-name {
+  .party-details .name {
     font-weight: 600;
-    color: var(--text-primary);
+    color: #1a1a2e;
   }
 
-  .party-bar {
+  .bar-container {
     height: 8px;
     background: #dee2e6;
     border-radius: 4px;
     overflow: hidden;
   }
 
-  .party-bar.compact {
-    height: 6px;
-  }
-
-  .bar-fill {
+  .bar {
     height: 100%;
     border-radius: 4px;
     transition: width 1s ease;
   }
 
   .stats {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 2px;
-  }
-
-  .percentage {
-    font-weight: bold;
-    color: var(--text-primary);
-    font-size: 1.1rem;
-  }
-
-  .votes {
-    font-size: 0.8rem;
-    color: #6c757d;
+    text-align: right;
   }
 
   .seats {
     font-weight: bold;
-    color: #495057;
+    color: #1a1a2e;
+    font-size: 1rem;
+  }
+
+  .percentage {
+    color: #6c757d;
+    font-size: 0.85rem;
   }
 
   .user-badge {
     background: #28a745;
     color: white;
-    padding: 4px 8px;
-    border-radius: 4px;
+    padding: 4px 10px;
+    border-radius: 12px;
     font-size: 0.7rem;
     font-weight: bold;
   }
 
-  .user-badge.small {
-    padding: 2px 6px;
-    font-size: 0.6rem;
+  /* Seats Visualization */
+  .seats-visualization {
+    margin-top: 30px;
+    padding-top: 30px;
+    border-top: 2px solid #e9ecef;
   }
 
-  .analysis {
-    margin-top: 20px;
-    padding: 16px;
-    background: #e7f3ff;
-    border-radius: 8px;
-    border-left: 4px solid #0066cc;
-  }
-
-  .majority-win {
-    font-size: 1.1rem;
-    color: #155724;
-    background: #d4edda;
-    padding: 12px;
-    border-radius: 8px;
-  }
-
-  .runoff-alert {
-    font-size: 1.1rem;
-    color: #856404;
-    background: #fff3cd;
-    padding: 12px;
-    border-radius: 8px;
-    margin-bottom: 12px;
-  }
-
-  .runoff-candidates {
-    margin-top: 12px;
-  }
-
-  .runoff-pair {
-    display: flex;
-    gap: 16px;
-    justify-content: center;
-    margin-top: 12px;
-  }
-
-  .candidate-card {
-    flex: 1;
-    max-width: 200px;
-    padding: 16px;
-    background: white;
-    border-radius: 8px;
-    text-align: center;
-    border: 2px solid #dee2e6;
-  }
-
-  .candidate-card.first {
-    border-color: #ffc107;
-    background: #fff3cd;
-  }
-
-  .candidate-rank {
-    font-size: 2rem;
-    margin-bottom: 8px;
-  }
-
-  .candidate-name {
-    font-weight: bold;
-    margin-bottom: 4px;
-  }
-
-  .candidate-percentage {
+  .seats-visualization h3 {
+    margin: 0 0 20px 0;
+    color: #1a1a2e;
     font-size: 1.2rem;
-    color: #6c757d;
   }
 
-  .seats-summary {
-    font-size: 0.9rem;
-    color: #6c757d;
-    margin-bottom: 12px;
-  }
-
-  .seats-visual {
-    margin-top: 16px;
-    padding-top: 16px;
-    border-top: 1px solid #dee2e6;
-  }
-
-  .seats-label {
-    font-size: 0.85rem;
-    color: #6c757d;
-    margin-bottom: 8px;
-  }
-
-  .seats-container {
-    display: flex;
-    flex-wrap: wrap;
+  .seats-grid {
+    display: grid;
+    grid-template-columns: repeat(var(--cols, 12), 1fr);
     gap: 4px;
+    margin-bottom: 30px;
+    max-width: 100%;
+    overflow-x: auto;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 12px;
   }
 
   .seat {
-    width: 20px;
-    height: 20px;
+    aspect-ratio: 1;
     border-radius: 50%;
     border: 2px solid white;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease;
+    cursor: pointer;
   }
 
+  .seat:hover {
+    transform: scale(1.2);
+    z-index: 10;
+  }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: center;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border-radius: 20px;
+    font-size: 0.85rem;
+  }
+
+  .legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+  }
+
+  .legend-symbol {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+  }
+
+  .legend-name {
+    font-weight: 500;
+    color: #1a1a2e;
+  }
+
+  .legend-seats {
+    color: #6c757d;
+    font-size: 0.8rem;
+  }
+
+  /* Footer */
   .results-footer {
-    margin-top: 32px;
-    padding: 24px;
+    margin-top: 40px;
+    padding: 30px;
     background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   }
 
-  .winner-announcement {
-    margin-bottom: 24px;
-  }
-
-  .winner-announcement h3 {
+  .winners-section h3 {
     text-align: center;
-    margin: 0 0 16px 0;
-    color: var(--text-primary);
+    margin: 0 0 25px 0;
+    color: #1a1a2e;
+    font-size: 1.4rem;
   }
 
   .winners-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
   }
 
-  .winner-card {
-    padding: 16px;
-    background: #f8f9fa;
-    border-radius: 8px;
+  .winner-mini-card {
     text-align: center;
-    border: 2px solid #dee2e6;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+  }
+
+  .winner-mini-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
   }
 
   .winner-category {
     font-size: 0.8rem;
     color: #6c757d;
-    margin-bottom: 4px;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+
+  .winner-image {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 10px;
+    border: 3px solid white;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
   }
 
   .winner-party {
     font-weight: bold;
-    font-size: 1.1rem;
-    margin-bottom: 4px;
+    font-size: 0.9rem;
+    margin-bottom: 5px;
   }
 
   .winner-stats {
-    font-size: 0.9rem;
-    color: #495057;
+    font-size: 0.8rem;
+    color: #6c757d;
   }
 
   .actions {
     display: flex;
     justify-content: center;
-    gap: 12px;
+    gap: 15px;
     flex-wrap: wrap;
   }
 
   .btn-primary, .btn-secondary {
-    padding: 12px 24px;
+    padding: 14px 28px;
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
     font-weight: bold;
+    font-size: 1rem;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s ease;
   }
 
   .btn-primary {
-    background: var(--accent);
+    background: linear-gradient(135deg, #C8102E, #a00d25);
     color: white;
+    box-shadow: 0 4px 15px rgba(200, 16, 46, 0.3);
   }
 
-  .btn-primary:hover:not(:disabled) {
-    background: #a00d25;
-  }
-
-  .btn-primary:disabled {
-    background: #6c757d;
-    cursor: not-allowed;
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(200, 16, 46, 0.4);
   }
 
   .btn-secondary {
@@ -757,41 +1071,72 @@
 
   .btn-secondary:hover {
     background: #5a6268;
+    transform: translateY(-2px);
   }
 
+  /* Mobile Responsive */
   @media (max-width: 768px) {
     .results-page {
-      padding: 16px;
+      padding: 15px;
     }
 
     .results-header h1 {
-      font-size: 1.5rem;
+      font-size: 1.8rem;
     }
 
-    .result-item {
-      grid-template-columns: 25px 1fr;
-      grid-template-rows: auto auto;
-      gap: 8px;
+    .presidential-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
     }
 
-    .stats {
-      grid-column: 2;
-      flex-direction: row;
-      justify-content: space-between;
-    }
-
-    .user-badge {
-      grid-column: 2;
-      justify-self: start;
-    }
-
-    .runoff-pair {
+    .runoff-candidates {
       flex-direction: column;
       align-items: center;
     }
 
-    .candidate-card {
-      max-width: 100%;
+    .runoff-card {
+      width: 100%;
+      max-width: 250px;
+    }
+
+    .congress-item {
+      grid-template-columns: 30px 40px 1fr;
+      grid-template-rows: auto auto auto;
+    }
+
+    .stats, .user-badge {
+      grid-column: 3;
+    }
+
+    .seats-grid {
+      --cols: 8;
+    }
+
+    .winners-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 480px) {
+    .presidential-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .runoff-card {
+      transform: none !important;
+    }
+
+    .seats-grid {
+      --cols: 6;
+    }
+
+    .legend {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .legend-item {
+      justify-content: flex-start;
     }
   }
 </style>
