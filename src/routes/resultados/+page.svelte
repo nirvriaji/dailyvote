@@ -277,7 +277,7 @@
   </header>
 
   <!-- Presidential Results - Featured -->
-  {#if allResults[0]}
+  {#if allResults[0]?.results?.length > 0}
     <section class="featured-section presidential" in:fly={{ y: 30, duration: 600, delay: 200 }}>
       <div class="section-header">
         <h2>Presidente y Vicepresidentes</h2>
@@ -296,7 +296,7 @@
             
             <div class="photo-frame">
               {#if candidate.photoUrl}
-                <img src={candidate.photoUrl} alt={candidate.partyName} class="candidate-photo" />
+                <img src={candidate.photoUrl} alt={candidate.partyName} class="candidate-photo" loading="lazy" />
               {:else}
                 <div class="photo-placeholder" style="background: {candidate.partyColor}">
                   <img src={candidate.partySymbolUrl} alt="" class="fallback-symbol" />
