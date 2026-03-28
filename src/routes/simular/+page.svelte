@@ -8,10 +8,15 @@
   import BallotStage from '$lib/components/BallotStage.svelte';
   import VoteOverlay from '$lib/components/VoteOverlay.svelte';
   import ProgressPanel from '$lib/components/ProgressPanel.svelte';
+  import OnboardingTour from '$lib/components/OnboardingTour.svelte';
+  import ShareResults from '$lib/components/ShareResults.svelte';
 
   // ─── Check voting hours ─────────────────────────────────────────────────────
   let isVotingClosed = $state(false);
   let nextOpenTime = $state<Date | null>(null);
+  
+  // ─── Onboarding Tour ─────────────────────────────────────────────────────────
+  let showTour = $state(false);
   
   function checkVotingHours() {
     const now = new Date();
@@ -37,10 +42,26 @@
       return;
     }
     
+    // Check if user has seen the tour
+    const hasSeenTour = localStorage.getItem('dailyvote_seen_tour');
+    if (!hasSeenTour) {
+      showTour = true;
+    }
+    
     // Restore any votes from a previous session in the same browser tab
     const saved = sessionStorage.getItem('dailyvote');
     if (saved) vote.hydrate(saved);
   });
+
+  function completeTour() {
+    showTour = false;
+    localStorage.setItem('dailyvote_seen_tour', 'true');
+  }
+
+  function skipTour() {
+    showTour = false;
+    localStorage.setItem('dailyvote_seen_tour', 'true');
+  }
 
   // Persist votes on every change
   $effect(() => {
@@ -79,6 +100,12 @@
   
   Left side of current column is completely masked/hidden.
 -->
+
+<!-- Onboarding Tour for first-time users -->
+{#if showTour}
+  <OnboardingTour onComplete={completeTour} onSkip={skipTour} />
+{/if}
+
 <div class="app-shell">
 
   <!-- Voting closed overlay -->

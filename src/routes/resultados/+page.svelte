@@ -5,6 +5,7 @@
   import { vote } from '$lib/stores/vote.svelte';
   import { BALLOT_COLUMNS } from '$lib/data/mock';
   import ParliamentHemicycle from '$lib/components/ParliamentHemicycle.svelte';
+  import ShareResults from '$lib/components/ShareResults.svelte';
   
   // Get party data from BALLOT_COLUMNS
   const presidentialRows = BALLOT_COLUMNS[0].rows.filter(r => r.partyName);
@@ -38,6 +39,13 @@
     userVote?: string;
   }
   
+  interface SharedResult {
+    category: string;
+    partyName: string;
+    partyColor: string;
+    percentage: number;
+  }
+  
   // State
   let allResults = $state<CategoryResults[]>([]);
   let isVotingClosed = $state(false);
@@ -45,6 +53,17 @@
   let nextResetTime = $state<Date | null>(null);
   let activeCategory = $state<string | null>(null);
   let showConfetti = $state(false);
+  let showShareModal = $state(false);
+  
+  // Prepare data for sharing
+  let shareData = $derived<SharedResult[]>(
+    allResults.map(r => ({
+      category: r.category,
+      partyName: r.results[0]?.partyName || 'Sin datos',
+      partyColor: r.results[0]?.partyColor || '#ccc',
+      percentage: r.results[0]?.percentage || 0
+    }))
+  );
   
   // Check if voting is closed (after 20:00)
   function checkVotingStatus() {
@@ -412,6 +431,11 @@
     </section>
   {/each}
 
+  <!-- Share Modal -->
+  {#if showShareModal}
+    <ShareResults results={shareData} onClose={() => showShareModal = false} />
+  {/if}
+
   <!-- Footer Actions -->
   <footer class="results-footer" in:fly={{ y: 30, duration: 600, delay: 800 }}>
     <div class="actions">
@@ -426,6 +450,11 @@
           Seguir Votando
         </button>
       {/if}
+      
+      <button class="btn-share" onclick={() => showShareModal = true}>
+        <span class="btn-icon">📤</span>
+        Compartir
+      </button>
       
       <button class="btn-ghost" onclick={() => goto('/historial')}>
         Ver Histórico
@@ -944,6 +973,25 @@
   .btn-ghost:hover {
     border-color: #999;
     background: #f8f9fa;
+  }
+
+  .btn-share {
+    background: linear-gradient(135deg, #1da1f2, #0d8ecf);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    padding: 14px 28px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-share:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(29, 161, 242, 0.3);
   }
 
   .footer-note {
