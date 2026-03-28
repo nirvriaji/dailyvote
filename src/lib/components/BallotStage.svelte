@@ -1,6 +1,5 @@
 <script lang="ts">
-  import type { BallotColumn as BallotColumnData, GestureIntent } from '$lib/types';
-  import { gesture } from '$lib/actions/gesture';
+  import type { BallotColumn as BallotColumnData } from '$lib/types';
   import BallotColumn from './BallotColumn.svelte';
 
   interface Props {
@@ -8,151 +7,91 @@
   }
   let { columns }: Props = $props();
 
-  // ─── Viewport ─────────────────────────────────────────────────────────────────
-  let vw = $state(0);
-
-  // ─── Single Paper Sheet Layout ────────────────────────────────────────────────
-  // All 5 columns form one continuous sheet with responsive zoom
-  const COLUMN_COUNT = 5;
-  const COLUMN_GAP = 16;
-  const BASE_COL_WIDTH = 320; // Base width per column at 100% zoom
-  const MIN_ZOOM = 0.5; // Minimum zoom (50%)
-  const MAX_ZOOM = 1.2; // Maximum zoom (120%)
-   
-  // Calculate optimal zoom to fit content ergonomically
-  let optimalZoom = $derived(
-    Math.min(MAX_ZOOM, 
-      Math.max(MIN_ZOOM, 
-        (vw - 100) / ((COLUMN_COUNT * BASE_COL_WIDTH) + ((COLUMN_COUNT - 1) * COLUMN_GAP))
-      )
-    )
-  );
-  
-  // Column width at current zoom level
-  let colWidth = $derived(BASE_COL_WIDTH * optimalZoom);
-  
-  // Stage width with all columns
-  let stageW = $derived((COLUMN_COUNT * colWidth) + ((COLUMN_COUNT - 1) * COLUMN_GAP));
-  
-  // Pan state - free positioning
-  let panX = $state(0);
-  let panY = $state(0);
-  let isDragging = $state(false);
-  
-  // Allow free drag always
-  let isDraggable = $state(true);
-
-  // ─── Combined transform ────────────────────────────────────────────────────────
-  // Transform with zoom and pan
-  let stageTransform = $derived(`translateX(${panX}px) translateY(${panY}px) scale(${optimalZoom})`);
-
-  // ─── Free Pan Navigation ───────────────────────────────────────────────────────
-  // Pan freely in any direction to navigate the paper sheet
-  
-  function onStart() {
-    isDragging = true;
-  }
-
-  function onMove(dx: number, dy: number, _intent: GestureIntent) {
-    // Pan freely in both directions
-    panX += dx;
-    panY += dy;
-  }
-
-  function onEnd(_intent: GestureIntent, vx: number, vy: number) {
-    isDragging = false;
-    
-    // Add momentum/inertia for both directions
-    const decay = () => {
-      if (Math.abs(vx) < 0.1 && Math.abs(vy) < 0.1) return;
-      panX += vx * 16;
-      panY += vy * 16;
-      vx *= 0.95;
-      vy *= 0.95;
-      requestAnimationFrame(decay);
-    };
-    if (Math.abs(vx) > 0.5 || Math.abs(vy) > 0.5) {
-      requestAnimationFrame(decay);
-    }
-  }
-
-  // No effect to reset position - keep free positioning
+  // ─── Layout Constants ─────────────────────────────────────────────────────────
+  const BASE_COL_WIDTH = 320;
+  const BORDER_SIZE = 24; // 24px uniform border on all sides
 </script>
 
 <!--
-  stage-viewport: window to view the paper ballot sheet.
-  All 5 columns form a single continuous sheet with zoom.
-  Pan freely in any direction to navigate.
+  stage-viewport: scrollable window to view the entire ballot.
+  Uniform border visible on all sides when scrolling to extremes.
 -->
 <div
   class="stage-viewport"
-  bind:clientWidth={vw}
-  use:gesture={{ onStart, onMove, onEnd }}
   aria-label="Cédula electoral — hoja única"
-  >
-  <!-- Document container - single paper sheet with all columns -->
-  <div
-    class="document-sheet"
-    class:dragging={isDragging}
-    style:transform={stageTransform}
-    style:width="{(COLUMN_COUNT * BASE_COL_WIDTH) + ((COLUMN_COUNT - 1) * COLUMN_GAP)}px"
-  >
-    {#each columns as column, i (column.id)}
-      <BallotColumn
-        {column}
-        width={BASE_COL_WIDTH}
-      />
-    {/each}
+>
+  <div class="scroll-container">
+    <!-- Top spacer -->
+    <div class="spacer-top"></div>
+    
+    <!-- Middle row with left spacer, content, right spacer -->
+    <div class="content-row">
+      <div class="spacer-left"></div>
+      
+      <!-- The ballot sheet -->
+      <div class="ballot-content">
+        {#each columns as column, i (column.id)}
+          <BallotColumn
+            {column}
+            width={BASE_COL_WIDTH}
+          />
+        {/each}
+      </div>
+      
+      <div class="spacer-right"></div>
+    </div>
+    
+    <!-- Bottom spacer -->
+    <div class="spacer-bottom"></div>
   </div>
 </div>
 
 <style>
-  /* ─── Stage viewport — Clean view with natural scroll ───────────────────── */
+  /* ─── Stage viewport ─────────────────────────────────────────────────────────── */
   .stage-viewport {
-    position: relative;
     width: 100%;
     height: 100%;
-    overflow: visible;
-    touch-action: none; /* We handle all gestures manually */
-    cursor: grab;
-    user-select: none;
-    -webkit-user-select: none;
-    
-    /* Paper ballot background */
+    overflow: auto; /* Scroll both directions */
     background: var(--paper-offwhite);
   }
 
-  .stage-viewport:active,
-  .stage-viewport:has(.dragging) { 
-    cursor: grabbing; 
-  }
-
-  /* ─── Document sheet — Single continuous paper ─────────────────────────────── */
-  .document-sheet {
+  /* ─── Scroll container ─────────────────────────────────────────────────────────── */
+  .scroll-container {
     display: flex;
-    gap: 16px; /* Gap between columns */
-    height: auto; /* Allow natural height */
+    flex-direction: column;
+    width: fit-content;
+    min-width: 100%;
     min-height: 100%;
-    will-change: transform;
-    transition: none;
-    align-items: flex-start; /* Align to top */
-    
-    /* Official ballot paper */
-    background: var(--paper-white);
-    
-    /* Thin borders like printed paper */
-    border: 1px solid var(--grid-border-light);
-    
-    /* Paper shadow for depth */
-    box-shadow: 
-      0 4px 6px -1px rgba(0, 0, 0, 0.1),
-      0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    
-    transform-origin: 0 0;
   }
 
-  /* Dragging state */
-  .document-sheet.dragging {
-    transition: none;
+  /* ─── Spacers ─────────────────────────────────────────────────────────────────── */
+  .spacer-top,
+  .spacer-bottom {
+    height: 24px;
+    flex-shrink: 0;
+    background: var(--paper-offwhite);
+  }
+
+  .spacer-left,
+  .spacer-right {
+    width: 24px;
+    flex-shrink: 0;
+    background: var(--paper-offwhite);
+  }
+
+  /* ─── Content row ────────────────────────────────────────────────────────────── */
+  .content-row {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  /* ─── Ballot content ─────────────────────────────────────────────────────────── */
+  .ballot-content {
+    display: flex;
+    gap: 16px;
+    height: auto;
+    align-items: flex-start;
+    background: var(--paper-white);
   }
 </style>

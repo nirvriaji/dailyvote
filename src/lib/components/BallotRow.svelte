@@ -20,8 +20,24 @@
 
   let isEvenRow = $derived(row.rowIndex % 2 === 0);
 
-  function handleTap() {
-    ui.selectRow(row);
+  // Toggle vote on image click
+  function toggleVote() {
+    if (isThisRowVoted) {
+      // Remove vote if already voted
+      vote.remove(columnId);
+    } else {
+      // Cast vote for this row
+      vote.cast({
+        columnId,
+        rowId: row.id,
+        partyName: row.partyName,
+        partyNumber: row.partyNumber,
+        partyColor: row.partyColor,
+        zoneId: 'direct',
+        zoneType: 'symbol',
+        zoneLabel: 'Voto Directo'
+      });
+    }
   }
 
   function handleMouseEnter() {
@@ -45,8 +61,6 @@
   role="button"
   tabindex="0"
   aria-label="Partido {row.partyName}, número {row.partyNumber}"
-  onclick={handleTap}
-  onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && handleTap()}
   onmouseenter={handleMouseEnter}
   onmouseleave={handleMouseLeave}
 >
@@ -55,32 +69,50 @@
     <span class="party-name">{row.partyName}</span>
   </div>
 
-  <!-- Celda 2: Logo del partido -->
+  <!-- Celda 2: Logo del partido (clickeable para votar) -->
   <div class="cell image-cell">
-    <div class="image-frame">
+    <div class="image-frame vote-target" onclick={toggleVote} role="button" tabindex="0" onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && toggleVote()}>
       {#if row.partySymbolUrl}
         <img src={row.partySymbolUrl} alt="Logo {row.partyAbbr}" />
       {:else}
         <span class="image-placeholder">{row.partyAbbr}</span>
       {/if}
+      <!-- X mark when voted -->
+      {#if isThisRowVoted}
+        <div class="vote-x-overlay" aria-label="Votado">
+          <VoteMark type="symbol" size={36} animate={false} color="#C8102E" />
+        </div>
+      {/if}
     </div>
   </div>
 
   {#if row.isPresidential}
-    <!-- Celda 3 (Presidencial): Foto del candidato -->
+    <!-- Celda 3 (Presidencial): Foto del candidato (clickeable para votar) -->
     <div class="cell image-cell">
       {#if row.presidentialPhoto}
-        <div class="image-frame is-photo">
+        <div class="image-frame is-photo vote-target" onclick={toggleVote} role="button" tabindex="0" onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && toggleVote()}>
           <img src={row.presidentialPhoto} alt={row.candidates[0]?.name || 'Candidato'} />
+          <!-- X mark when voted -->
+          {#if isThisRowVoted}
+            <div class="vote-x-overlay" aria-label="Votado">
+              <VoteMark type="symbol" size={36} animate={false} color="#C8102E" />
+            </div>
+          {/if}
         </div>
       {:else if row.candidates.length > 0}
-        <div class="image-frame is-photo" style:background-color={row.candidates[0].avatarColor}>
+        <div class="image-frame is-photo vote-target" style:background-color={row.candidates[0].avatarColor} onclick={toggleVote} role="button" tabindex="0" onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && toggleVote()}>
           <span class="photo-text">FOTO</span>
+          <!-- X mark when voted -->
+          {#if isThisRowVoted}
+            <div class="vote-x-overlay" aria-label="Votado">
+              <VoteMark type="symbol" size={36} animate={false} color="#C8102E" />
+            </div>
+          {/if}
         </div>
       {/if}
     </div>
   {:else}
-    <!-- Celdas de votación: 2 casillas para la mayoría, 1 para Senadores Regional -->
+    <!-- Para columnas legislativas: casillas vacías opcionales para ingresar números -->
     <div class="cell vote-cell">
       <div class="vote-box"></div>
     </div>
@@ -93,19 +125,13 @@
       <div class="cell vote-cell empty"></div>
     {/if}
   {/if}
-
-  <!-- Marca de voto -->
-  {#if isThisRowVoted && currentVote}
-    <div class="vote-indicator" aria-label="Voto registrado">
-      <VoteMark type={currentVote.zoneType} size={28} animate={false} />
-    </div>
-  {/if}
 </div>
 {:else}
   <!-- Spacer row for Frepap alignment -->
   <div
     class="ballot-row is-spacer section-{section}"
     class:is-even={isEvenRow}
+    class:is-faded={columnHasOtherVote}
     aria-label="Espacio reservado"
   >
     <div class="spacer-content"></div>
@@ -179,40 +205,9 @@
     filter: brightness(0.94);
   }
 
-  /* Voted state - accent color tint */
-  .ballot-row.is-voted {
-    box-shadow: inset 0 0 0 1000px var(--accent-light);
-  }
-
-  /* Remove the old ::before hover styles that were hiding the pattern */
-  .ballot-row:hover:not(.is-faded)::before,
-  .ballot-row.is-active::before,
-  .ballot-row.is-voted::before {
-    display: none;
-  }
-
-  .ballot-row:last-child {
-    border-bottom: 1px solid var(--grid-border);
-  }
-
-  /* Hover state - subtle dark overlay */
-  .ballot-row:hover:not(.is-faded) {
-    background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.05));
-  }
-
-  /* Active/Focus state - stronger overlay */
-  .ballot-row.is-active {
-    background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.08));
-  }
-
-  /* Voted state - accent color overlay */
-  .ballot-row.is-voted {
-    background-image: linear-gradient(to bottom, var(--accent-light), var(--accent-light));
-  }
-
   /* Faded state (other row selected in column) */
   .ballot-row.is-faded {
-    opacity: 0.35;
+    filter: brightness(0.6);
     pointer-events: none;
   }
 
@@ -293,6 +288,39 @@
   /* Empty cell for Senadores Regional - just space, no content */
   .vote-cell.empty {
     background: transparent;
+  }
+
+  /* ─── Vote Target — Clickable images for voting ─────────────────────────────── */
+  .vote-target {
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.1s ease, box-shadow 0.2s ease;
+  }
+
+  .vote-target:hover {
+    transform: scale(1.02);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 10;
+  }
+
+  .vote-target:active {
+    transform: scale(0.98);
+  }
+
+  /* X mark overlay on voted images */
+  .vote-x-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.4);
+    pointer-events: none;
+    z-index: 20;
+  }
+
+  .vote-x-overlay :global(svg) {
+    filter: drop-shadow(0 2px 6px rgba(200, 16, 46, 0.5));
   }
 
   /* ─── Vote Indicator ──────────────────────────────────────────────────────────── */
