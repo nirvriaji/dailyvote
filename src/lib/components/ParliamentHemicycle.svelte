@@ -18,11 +18,10 @@
   function calculateSeatPositions(): Array<{ x: number; y: number; seat: Seat }> {
     const positions: Array<{ x: number; y: number; seat: Seat }> = [];
     const startAngle = -arcAngle / 2;
-    const angleStep = arcAngle / (totalSeats / rows);
     
     // Create concentric arcs
     for (let row = 0; row < rows; row++) {
-      const radius = 30 + (row * 12); // Increasing radius for each row
+      const radius = 30 + (row * 12);
       const seatsInRow = Math.floor(totalSeats / rows) + (row * 2);
       const rowAngleStep = arcAngle / (seatsInRow - 1);
       
@@ -30,9 +29,8 @@
         const angle = startAngle + (i * rowAngleStep);
         const radian = (angle * Math.PI) / 180;
         
-        // Calculate position
-        const x = 50 + (radius * Math.sin(radian)); // 50 is center x%
-        const y = 80 - (radius * Math.cos(radian)); // 80 is bottom y%
+        const x = 50 + (radius * Math.sin(radian));
+        const y = 80 - (radius * Math.cos(radian));
         
         positions.push({
           x,
@@ -47,10 +45,9 @@
 
   let seatPositions = $derived(calculateSeatPositions());
   
-  // For smaller seat counts (like Parlamento Andino = 5), use a simpler layout
+  // Simple layout for small seat counts
   function calculateSimplePositions(): Array<{ x: number; y: number; seat: Seat }> {
     if (totalSeats <= 10) {
-      // Semi-circle layout for small numbers
       return seats.map((seat, i) => {
         const angle = -90 + ((i / (totalSeats - 1)) * 180);
         const radian = (angle * Math.PI) / 180;
@@ -73,12 +70,24 @@
 </script>
 
 <div class="hemicycle-container">
+  <!-- Legend at top -->
+  {#if hoveredSeat}
+    <div class="seat-info-bar">
+      <img src={hoveredSeat.seat.partySymbolUrl} alt="" class="info-symbol" />
+      <span class="info-name">{hoveredSeat.seat.partyName}</span>
+    </div>
+  {:else}
+    <div class="seat-info-bar hint">
+      <span class="info-hint">Pasa el mouse sobre los escaños para ver los partidos</span>
+    </div>
+  {/if}
+
   <svg 
     viewBox="0 0 100 100" 
     class="hemicycle-svg"
     preserveAspectRatio="xMidYMax meet"
   >
-    <!-- Background arc lines for reference -->
+    <!-- Background arcs (only for large counts) -->
     {#if totalSeats > 10}
       {#each Array(rows) as _, row}
         <path
@@ -102,6 +111,7 @@
         onmouseenter={() => hoveredSeat = { seat: pos.seat, index: i }}
         onmouseleave={() => hoveredSeat = null}
       >
+        <!-- Main seat circle - NO extra circles, NO transforms -->
         <circle
           cx="0"
           cy="0"
@@ -110,10 +120,11 @@
           stroke="white"
           stroke-width="0.5"
           class="seat-circle"
-          style="animation-delay: {i * 20}ms"
+          class:highlighted={hoveredSeat?.index === i}
+          style="animation-delay: {i * 15}ms"
         />
         
-        <!-- Party symbol inside seat for larger seats -->
+        <!-- Party symbol for small layouts -->
         {#if totalSeats <= 10}
           <image
             x="-3"
@@ -125,36 +136,12 @@
             preserveAspectRatio="xMidYMid slice"
           />
         {/if}
-        
-        <!-- Highlight on hover -->
-        {#if hoveredSeat && hoveredSeat.index === i}
-          <circle
-            cx="0"
-            cy="0"
-            r={totalSeats <= 10 ? 7 : 4.5}
-            fill="none"
-            stroke="rgba(255,255,255,0.8)"
-            stroke-width="1"
-            class="hover-ring"
-          />
-        {/if}
       </g>
     {/each}
     
-    <!-- Center podium reference -->
+    <!-- Center podium -->
     <circle cx="50" cy="80" r="2" fill="#ddd" opacity="0.3" />
   </svg>
-  
-  <!-- Tooltip -->
-  {#if hoveredSeat}
-    <div 
-      class="seat-tooltip"
-      style="left: {(hoveredSeat.index / displayPositions.length) * 100}%"
-    >
-      <img src={hoveredSeat.seat.partySymbolUrl} alt="" class="tooltip-symbol" />
-      <span class="tooltip-name">{hoveredSeat.seat.partyName}</span>
-    </div>
-  {/if}
 </div>
 
 <style>
@@ -166,26 +153,72 @@
     aspect-ratio: 2/1;
   }
 
+  /* Info bar at top - static position */
+  .seat-info-bar {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.85);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 25px;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 10;
+    min-width: 200px;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  }
+
+  .seat-info-bar.hint {
+    background: rgba(100, 100, 100, 0.7);
+  }
+
+  .info-symbol {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: white;
+    padding: 2px;
+  }
+
+  .info-name {
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .info-hint {
+    font-size: 0.85rem;
+    opacity: 0.9;
+  }
+
   .hemicycle-svg {
     width: 100%;
     height: 100%;
     overflow: visible;
+    padding-top: 40px; /* Space for the info bar */
   }
 
   .seat-group {
     cursor: pointer;
-    transition: transform 0.2s ease;
-  }
-
-  .seat-group:hover {
-    transform: scale(1.2);
-    z-index: 10;
   }
 
   .seat-circle {
-    animation: popIn 0.4s ease-out forwards;
+    animation: popIn 0.3s ease-out forwards;
     opacity: 0;
-    transform-origin: center;
+    transition: filter 0.15s ease, stroke-width 0.15s ease;
+  }
+
+  /* Simple highlight on hover - NO transforms, NO extra elements */
+  .seat-circle.highlighted {
+    filter: brightness(1.3);
+    stroke-width: 1.5;
+    stroke: rgba(255, 255, 255, 0.9);
   }
 
   @keyframes popIn {
@@ -193,58 +226,13 @@
       opacity: 0;
       transform: scale(0);
     }
-    50% {
-      transform: scale(1.2);
+    70% {
+      transform: scale(1.1);
     }
     100% {
       opacity: 1;
       transform: scale(1);
     }
-  }
-
-  .hover-ring {
-    animation: pulse 1.5s infinite;
-    pointer-events: none;
-  }
-
-  @keyframes pulse {
-    0%, 100% {
-      opacity: 0.8;
-      transform: scale(1);
-    }
-    50% {
-      opacity: 0.4;
-      transform: scale(1.1);
-    }
-  }
-
-  .seat-tooltip {
-    position: absolute;
-    bottom: 100%;
-    transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.9);
-    color: white;
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-size: 0.85rem;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    pointer-events: none;
-    white-space: nowrap;
-    z-index: 100;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  }
-
-  .tooltip-symbol {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    object-fit: cover;
-  }
-
-  .tooltip-name {
-    font-weight: 500;
   }
 
   /* Responsive */
@@ -253,14 +241,15 @@
       aspect-ratio: 2.5/1;
     }
     
-    .seat-tooltip {
-      font-size: 0.75rem;
-      padding: 6px 10px;
+    .seat-info-bar {
+      font-size: 0.8rem;
+      padding: 8px 15px;
+      min-width: 180px;
     }
     
-    .tooltip-symbol {
-      width: 16px;
-      height: 16px;
+    .info-symbol {
+      width: 20px;
+      height: 20px;
     }
   }
 </style>
