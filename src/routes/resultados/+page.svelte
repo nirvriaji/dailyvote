@@ -126,17 +126,32 @@
           ...r,
           percentage: normalizedPercentage,
           votes: Math.floor(normalizedPercentage * 184.5),
-          seats: cat.totalSeats === 1 ? 0 : Math.round((normalizedPercentage / 100) * cat.totalSeats)
+          seats: 0 // Will be calculated below
         };
       });
       
       // Sort by percentage
       parties.sort((a, b) => b.percentage - a.percentage);
       
+      // Assign seats - for small totals, use simple allocation
+      let remainingSeats = cat.totalSeats;
+      if (cat.totalSeats > 1) {
+        // Distribute seats starting from top party
+        parties = parties.map((p, i) => {
+          let seatCount = 0;
+          if (i < cat.totalSeats && remainingSeats > 0) {
+            // Simple allocation: at least 1 seat to top parties
+            seatCount = Math.max(1, Math.round((p.percentage / 100) * cat.totalSeats));
+            seatCount = Math.min(seatCount, remainingSeats); // Don't exceed remaining
+            remainingSeats -= seatCount;
+          }
+          return { ...p, seats: seatCount };
+        });
+      }
+      
       // For small seat counts, only keep parties that actually got seats
       if (cat.totalSeats <= 10) {
-        // Keep only top parties that have at least 1 seat
-        parties = parties.filter(p => (p.seats || 0) > 0).slice(0, cat.totalSeats);
+        parties = parties.filter(p => (p.seats || 0) > 0);
       }
       
       // Generate seat distribution - create individual seat objects
