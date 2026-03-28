@@ -11,6 +11,12 @@
   const legislativeRows = BALLOT_COLUMNS[1].rows.filter(r => r.partyName);
   
   // Types
+  interface Seat {
+    partyColor: string;
+    partyName: string;
+    partySymbolUrl: string;
+  }
+  
   interface ElectionResult {
     partyId: string;
     partyName: string;
@@ -28,6 +34,7 @@
     totalVotes: number;
     totalSeats: number;
     results: ElectionResult[];
+    seatDistribution: Seat[]; // Individual seats for hemicycle
     userVote?: string;
   }
   
@@ -82,7 +89,7 @@
           percentage: 0
         }));
       } else {
-        parties = legislativeRows.slice(0, 8).map(row => ({
+        parties = legislativeRows.map(row => ({
           partyId: row.partyAbbr,
           partyName: row.partyName,
           partyColor: row.partyColor,
@@ -126,12 +133,29 @@
       // Sort by percentage
       parties.sort((a, b) => b.percentage - a.percentage);
       
+      // Generate seat distribution - create individual seat objects
+      let seatDistribution: Seat[] = [];
+      if (cat.totalSeats > 1) {
+        // Create individual seats based on party results
+        parties.forEach(party => {
+          const partySeats = party.seats || 0;
+          for (let i = 0; i < partySeats; i++) {
+            seatDistribution.push({
+              partyColor: party.partyColor,
+              partyName: party.partyName,
+              partySymbolUrl: party.partySymbolUrl
+            });
+          }
+        });
+      }
+      
       return {
         category: cat.name,
         categoryId: cat.id,
         totalVotes: parties.reduce((sum, r) => sum + r.votes, 0),
         totalSeats: cat.totalSeats,
         results: parties,
+        seatDistribution,
         userVote: userPartyName || undefined
       };
     });
@@ -319,7 +343,7 @@
       <!-- Hemicycle Visualization -->
       <div class="hemicycle-wrapper">
         <ParliamentHemicycle 
-          seats={category.results}
+          seats={category.seatDistribution}
           totalSeats={category.totalSeats}
         />
       </div>
