@@ -133,6 +133,12 @@
       // Sort by percentage
       parties.sort((a, b) => b.percentage - a.percentage);
       
+      // For small seat counts, only keep parties that actually got seats
+      if (cat.totalSeats <= 10) {
+        // Keep only top parties that have at least 1 seat
+        parties = parties.filter(p => (p.seats || 0) > 0).slice(0, cat.totalSeats);
+      }
+      
       // Generate seat distribution - create individual seat objects
       let seatDistribution: Seat[] = [];
       if (cat.totalSeats > 1) {

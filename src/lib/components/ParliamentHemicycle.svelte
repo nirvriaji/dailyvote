@@ -134,6 +134,9 @@
         transform="translate({pos.x}, {pos.y})"
         onmouseenter={() => hoveredSeat = { seat: pos.seat, index: i }}
         onmouseleave={() => hoveredSeat = null}
+        role="button"
+        aria-label="Escaño de {pos.seat.partyName}"
+        tabindex="0"
       >
         <!-- Main seat circle -->
         <circle
