@@ -66,6 +66,11 @@
   <div class="tour-backdrop" onclick={skipTour}></div>
   
   <div class="tour-card" transition:fly={{ y: 20, duration: 400 }}>
+    <!-- Close button (X) -->
+    <button class="btn-close" onclick={skipTour} aria-label="Cerrar tour">
+      ✕
+    </button>
+    
     <!-- Progress bar -->
     <div class="progress-bar">
       <div class="progress-fill" style="width: {progress}%"></div>
@@ -87,7 +92,9 @@
             ← Anterior
           </button>
         {:else}
-          <span></span> <!-- Spacer -->
+          <button class="btn-skip-inline" onclick={skipTour}>
+            Saltar intro
+          </button>
         {/if}
         
         <button class="btn-next" onclick={nextStep}>
@@ -95,8 +102,8 @@
         </button>
       </div>
       
-      <button class="btn-skip" onclick={skipTour}>
-        Saltar tour
+      <button class="btn-skip-bottom" onclick={skipTour}>
+        Omitir tutorial y comenzar a votar
       </button>
     </div>
     
@@ -232,18 +239,72 @@
     box-shadow: 0 8px 20px rgba(200, 16, 46, 0.3);
   }
 
-  .btn-skip {
-    background: transparent;
+  /* Close button (X) in top-right corner */
+  .btn-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
     border: none;
-    color: #999;
-    font-size: 14px;
+    background: #f0f0f0;
+    color: #666;
+    font-size: 18px;
+    font-weight: 300;
     cursor: pointer;
-    padding: 8px;
-    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    z-index: 10;
   }
 
-  .btn-skip:hover {
+  .btn-close:hover {
+    background: #e0e0e0;
+    color: #333;
+    transform: scale(1.05);
+  }
+
+  /* Inline skip button (shown on first step instead of previous) */
+  .btn-skip-inline {
+    background: transparent;
+    border: 2px solid #ddd;
+    color: #888;
+    padding: 14px 24px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-skip-inline:hover {
+    border-color: #999;
     color: #666;
+    background: #f8f9fa;
+  }
+
+  /* Bottom skip button - more prominent */
+  .btn-skip-bottom {
+    background: transparent;
+    border: none;
+    color: #C8102E;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 12px;
+    margin-top: 8px;
+    transition: all 0.2s;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+
+  .btn-skip-bottom:hover {
+    color: #a00d25;
+    text-decoration: none;
+    background: rgba(200, 16, 46, 0.05);
+    border-radius: 8px;
   }
 
   /* Dots */
