@@ -63,31 +63,6 @@
     border-right: none;
   }
 
-  /* ─── Depth states — Refined, minimal ────────────────────────────────────────── */
-  /* Active column: full presence */
-  .col-outer.depth-active {
-    opacity: 1;
-    transform: scale(1);
-    filter: blur(0);
-    z-index: 10;
-  }
-
-  /* Adjacent columns: slight fade, no blur */
-  .col-outer.depth-near {
-    opacity: 0.7;
-    transform: scale(0.98);
-    cursor: pointer;
-    z-index: 5;
-  }
-
-  /* Far columns: more fade, still readable */
-  .col-outer.depth-far {
-    opacity: 0.5;
-    transform: scale(0.96);
-    cursor: pointer;
-    z-index: 1;
-  }
-
   /* ─── Column header - Official document style ─────────────────────────────── */
   .col-header {
     padding: 8px 12px 6px;
@@ -131,15 +106,6 @@
     line-height: 1.2;
   }
 
-  /* ─── Viewport (sin scroll, muestra todo el contenido) ──────────────────────── */
-  .col-viewport {
-    flex: 1;
-    overflow: visible;
-    position: relative;
-    /* Clean white background - colors applied at row level */
-    background: var(--paper-white);
-  }
-
   /* ─── Contenido completo (sin scroll interno) ───────────────────────────────── */
   .col-content {
     height: auto;
@@ -147,19 +113,4 @@
     /* Inherits tinted background from viewport */
     background: transparent;
   }
-
-  /* ─── Fade superior ───────────────────────────────────────────────────────── */
-  .header-fade {
-    position: absolute;
-    top: 46px;
-    left: 0;
-    right: 0;
-    height: 8px;
-    /* Fade matching gray header */
-    background: linear-gradient(to bottom, var(--col-header-bg), transparent);
-    z-index: 15;
-    pointer-events: none;
-  }
-
-  .col-spacer { height: 64px; }
 </style>
