@@ -8,48 +8,16 @@
   interface Props {
     seats: Seat[];
     totalSeats: number;
-    rows?: number;
-    arcAngle?: number;
   }
 
-  let { seats, totalSeats, rows = 8, arcAngle = 180 }: Props = $props();
+  let { seats, totalSeats }: Props = $props();
 
-  // Calculate seat positions in a hemicycle
+  // Standard hemicycle layout - each row gets progressively more seats
   function calculateSeatPositions(): Array<{ x: number; y: number; seat: Seat }> {
-    const positions: Array<{ x: number; y: number; seat: Seat }> = [];
-    const startAngle = -arcAngle / 2;
-    
-    // Create concentric arcs
-    for (let row = 0; row < rows; row++) {
-      const radius = 30 + (row * 12);
-      const seatsInRow = Math.floor(totalSeats / rows) + (row * 2);
-      const rowAngleStep = arcAngle / (seatsInRow - 1);
-      
-      for (let i = 0; i < seatsInRow && positions.length < seats.length; i++) {
-        const angle = startAngle + (i * rowAngleStep);
-        const radian = (angle * Math.PI) / 180;
-        
-        const x = 50 + (radius * Math.sin(radian));
-        const y = 80 - (radius * Math.cos(radian));
-        
-        positions.push({
-          x,
-          y,
-          seat: seats[positions.length]
-        });
-      }
-    }
-    
-    return positions;
-  }
-
-  let seatPositions = $derived(calculateSeatPositions());
-  
-  // Simple layout for small seat counts
-  function calculateSimplePositions(): Array<{ x: number; y: number; seat: Seat }> {
     if (totalSeats <= 10) {
+      // Simple semi-circle for small numbers
       return seats.map((seat, i) => {
-        const angle = -90 + ((i / (totalSeats - 1)) * 180);
+        const angle = -90 + ((i / Math.max(1, totalSeats - 1)) * 180);
         const radian = (angle * Math.PI) / 180;
         const radius = 35;
         return {
@@ -59,18 +27,73 @@
         };
       });
     }
-    return [];
+
+    // For larger numbers (30, 130), use proper hemicycle rows
+    const positions: Array<{ x: number; y: number; seat: Seat }> = [];
+    
+    // Define rows with specific seat counts for realistic hemicycle
+    // Inner rows have fewer seats, outer rows have more
+    const rowConfig = getRowConfiguration(totalSeats);
+    
+    let seatIndex = 0;
+    for (let row = 0; row < rowConfig.length && seatIndex < seats.length; row++) {
+      const { radius, count } = rowConfig[row];
+      const angleStep = 180 / (count - 1);
+      
+      for (let i = 0; i < count && seatIndex < seats.length; i++) {
+        const angle = -90 + (i * angleStep); // -90 to 90 degrees
+        const radian = (angle * Math.PI) / 180;
+        
+        positions.push({
+          x: 50 + (radius * Math.cos(radian)),
+          y: 50 + (radius * Math.sin(radian)),
+          seat: seats[seatIndex++]
+        });
+      }
+    }
+    
+    return positions;
   }
 
-  let simplePositions = $derived(totalSeats <= 10 ? calculateSimplePositions() : []);
-  let displayPositions = $derived(totalSeats <= 10 ? simplePositions : seatPositions);
+  // Get row configuration based on total seats
+  function getRowConfiguration(total: number): Array<{ radius: number; count: number }> {
+    if (total <= 30) {
+      // For 30 seats (Senadores): 5 rows
+      return [
+        { radius: 25, count: 4 },   // Inner: 4 seats
+        { radius: 32, count: 5 },   // Row 2: 5 seats
+        { radius: 39, count: 6 },   // Row 3: 6 seats
+        { radius: 46, count: 7 },   // Row 4: 7 seats
+        { radius: 53, count: 8 },   // Outer: 8 seats
+        // Total: 30 seats
+      ];
+    } else {
+      // For 130 seats (Diputados): 8 rows
+      return [
+        { radius: 20, count: 10 },   // Row 1: 10
+        { radius: 28, count: 14 },  // Row 2: 14
+        { radius: 36, count: 16 },  // Row 3: 16
+        { radius: 44, count: 18 },  // Row 4: 18
+        { radius: 52, count: 20 },  // Row 5: 20
+        { radius: 60, count: 18 },  // Row 6: 18
+        { radius: 68, count: 16 },  // Row 7: 16
+        { radius: 76, count: 10 },  // Row 8: 10
+        // Total: 130 seats
+      ];
+    }
+  }
+
+  let displayPositions = $derived(calculateSeatPositions());
   
   // Track hovered seat
   let hoveredSeat: { seat: Seat; index: number } | null = $state(null);
+  
+  // Get arc rows for background
+  let arcRows = $derived(totalSeats <= 10 ? [] : getRowConfiguration(totalSeats));
 </script>
 
 <div class="hemicycle-container">
-  <!-- Legend at top -->
+  <!-- Info bar at top -->
   {#if hoveredSeat}
     <div class="seat-info-bar">
       <img src={hoveredSeat.seat.partySymbolUrl} alt="" class="info-symbol" />
@@ -78,7 +101,7 @@
     </div>
   {:else}
     <div class="seat-info-bar hint">
-      <span class="info-hint">Pasa el mouse sobre los escaños para ver los partidos</span>
+      <span class="info-hint">Pasa el mouse sobre los escaños ({totalSeats} total)</span>
     </div>
   {/if}
 
@@ -87,18 +110,17 @@
     class="hemicycle-svg"
     preserveAspectRatio="xMidYMax meet"
   >
-    <!-- Background arcs (only for large counts) -->
-    {#if totalSeats > 10}
-      {#each Array(rows) as _, row}
+    <!-- Background arcs -->
+    {#if arcRows.length > 0}
+      {#each arcRows as row}
         <path
-          d="M {50 + (30 + row * 12) * Math.sin((-arcAngle/2 * Math.PI) / 180)} {80 - (30 + row * 12) * Math.cos((-arcAngle/2 * Math.PI) / 180)} 
-             A {30 + row * 12} {30 + row * 12} 0 0 1 
-             {50 + (30 + row * 12) * Math.sin((arcAngle/2 * Math.PI) / 180)} {80 - (30 + row * 12) * Math.cos((arcAngle/2 * Math.PI) / 180)}"
+          d="M {50 + row.radius * Math.cos((-90 * Math.PI) / 180)} {50 + row.radius * Math.sin((-90 * Math.PI) / 180)} 
+             A {row.radius} {row.radius} 0 0 1 
+             {50 + row.radius * Math.cos((90 * Math.PI) / 180)} {50 + row.radius * Math.sin((90 * Math.PI) / 180)}"
           fill="none"
-          stroke="#e0e0e0"
-          stroke-width="0.3"
-          stroke-dasharray="1,1"
-          opacity="0.5"
+          stroke="#d0d0d0"
+          stroke-width="0.8"
+          opacity="0.6"
         />
       {/each}
     {/if}
@@ -111,20 +133,20 @@
         onmouseenter={() => hoveredSeat = { seat: pos.seat, index: i }}
         onmouseleave={() => hoveredSeat = null}
       >
-        <!-- Main seat circle - NO extra circles, NO transforms -->
+        <!-- Main seat circle -->
         <circle
           cx="0"
           cy="0"
-          r={totalSeats <= 10 ? 6 : 3.5}
+          r={totalSeats <= 10 ? 6 : totalSeats <= 30 ? 3.5 : 2.8}
           fill={pos.seat.partyColor}
           stroke="white"
-          stroke-width="0.5"
+          stroke-width="0.4"
           class="seat-circle"
           class:highlighted={hoveredSeat?.index === i}
-          style="animation-delay: {i * 15}ms"
+          style="animation-delay: {i * 8}ms"
         />
         
-        <!-- Party symbol for small layouts -->
+        <!-- Party symbol for larger seats -->
         {#if totalSeats <= 10}
           <image
             x="-3"
@@ -139,8 +161,8 @@
       </g>
     {/each}
     
-    <!-- Center podium -->
-    <circle cx="50" cy="80" r="2" fill="#ddd" opacity="0.3" />
+    <!-- Center podium dot -->
+    <circle cx="50" cy="50" r="1.5" fill="#bbb" opacity="0.5" />
   </svg>
 </div>
 
@@ -148,39 +170,42 @@
   .hemicycle-container {
     position: relative;
     width: 100%;
-    max-width: 800px;
+    max-width: 900px;
     margin: 0 auto;
-    aspect-ratio: 2/1;
+    aspect-ratio: 2/1.1;
+    background: linear-gradient(180deg, #f5f5f5 0%, #e8e8e8 100%);
+    border-radius: 16px;
+    padding: 20px;
   }
 
-  /* Info bar at top - static position */
+  /* Info bar at top */
   .seat-info-bar {
     position: absolute;
-    top: 0;
+    top: 15px;
     left: 50%;
     transform: translateX(-50%);
     background: rgba(0, 0, 0, 0.85);
     color: white;
     padding: 10px 20px;
     border-radius: 25px;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     display: flex;
     align-items: center;
     gap: 10px;
     z-index: 10;
-    min-width: 200px;
+    min-width: 220px;
     justify-content: center;
-    transition: all 0.2s ease;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255,255,255,0.1);
   }
 
   .seat-info-bar.hint {
-    background: rgba(100, 100, 100, 0.7);
+    background: rgba(80, 80, 80, 0.7);
   }
 
   .info-symbol {
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
     object-fit: cover;
     background: white;
@@ -194,14 +219,13 @@
 
   .info-hint {
     font-size: 0.85rem;
-    opacity: 0.9;
+    opacity: 0.95;
   }
 
   .hemicycle-svg {
     width: 100%;
     height: 100%;
     overflow: visible;
-    padding-top: 40px; /* Space for the info bar */
   }
 
   .seat-group {
@@ -209,16 +233,15 @@
   }
 
   .seat-circle {
-    animation: popIn 0.3s ease-out forwards;
+    animation: popIn 0.4s ease-out forwards;
     opacity: 0;
     transition: filter 0.15s ease, stroke-width 0.15s ease;
   }
 
-  /* Simple highlight on hover - NO transforms, NO extra elements */
+  /* Simple highlight on hover */
   .seat-circle.highlighted {
-    filter: brightness(1.3);
-    stroke-width: 1.5;
-    stroke: rgba(255, 255, 255, 0.9);
+    filter: brightness(1.4) drop-shadow(0 0 3px rgba(255,255,255,0.9));
+    stroke-width: 1;
   }
 
   @keyframes popIn {
@@ -226,8 +249,8 @@
       opacity: 0;
       transform: scale(0);
     }
-    70% {
-      transform: scale(1.1);
+    60% {
+      transform: scale(1.15);
     }
     100% {
       opacity: 1;
@@ -238,18 +261,20 @@
   /* Responsive */
   @media (max-width: 768px) {
     .hemicycle-container {
-      aspect-ratio: 2.5/1;
+      aspect-ratio: 2/1.2;
+      padding: 15px;
     }
     
     .seat-info-bar {
       font-size: 0.8rem;
       padding: 8px 15px;
       min-width: 180px;
+      top: 10px;
     }
     
     .info-symbol {
-      width: 20px;
-      height: 20px;
+      width: 18px;
+      height: 18px;
     }
   }
 </style>
