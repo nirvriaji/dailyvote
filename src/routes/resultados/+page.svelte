@@ -133,6 +133,11 @@
       // Sort by percentage
       parties.sort((a, b) => b.percentage - a.percentage);
       
+      // For presidential category, keep only top 3 candidates
+      if (cat.totalSeats === 1) {
+        parties = parties.slice(0, 3);
+      }
+      
       // Assign seats - for small totals, use simple allocation
       let remainingSeats = cat.totalSeats;
       if (cat.totalSeats > 1) {
@@ -150,7 +155,9 @@
       }
       
       // For small seat counts, only keep parties that actually got seats
-      if (cat.totalSeats <= 10) {
+      // BUT: Always keep at least 3 parties for presidential (even with 0 seats)
+      if (cat.totalSeats <= 10 && cat.totalSeats > 1) {
+        // Only filter for congressional categories (not presidential)
         parties = parties.filter(p => (p.seats || 0) > 0);
       }
       
@@ -281,7 +288,6 @@
     <section class="featured-section presidential" in:fly={{ y: 30, duration: 600, delay: 200 }}>
       <div class="section-header">
         <h2>Presidente y Vicepresidentes</h2>
-        <span class="seat-count">1 cargo</span>
       </div>
       
       <div class="candidates-showcase">
