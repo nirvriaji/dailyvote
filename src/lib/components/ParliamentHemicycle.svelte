@@ -15,14 +15,15 @@
   // Standard hemicycle layout - each row gets progressively more seats
   function calculateSeatPositions(): Array<{ x: number; y: number; seat: Seat }> {
     if (totalSeats <= 10) {
-      // Simple semi-circle for small numbers
+      // Simple semi-circle for small numbers - HORIZONTAL orientation
       return seats.map((seat, i) => {
         const angle = -90 + ((i / Math.max(1, totalSeats - 1)) * 180);
         const radian = (angle * Math.PI) / 180;
         const radius = 35;
+        // Swapped sin/cos for horizontal hemicycle
         return {
-          x: 50 + (radius * Math.cos(radian)),
-          y: 50 + (radius * Math.sin(radian)),
+          x: 50 + (radius * Math.sin(radian)),  // horizontal spread
+          y: 50 - (radius * Math.cos(radian) * 0.6),  // vertical arc (flattened)
           seat
         };
       });
@@ -41,12 +42,13 @@
       const angleStep = 180 / (count - 1);
       
       for (let i = 0; i < count && seatIndex < seats.length; i++) {
-        const angle = -90 + (i * angleStep); // -90 to 90 degrees
+        const angle = -90 + (i * angleStep); // -90 (left) to 90 (right) degrees
         const radian = (angle * Math.PI) / 180;
         
+        // Horizontal hemicycle: arc at top, opening at bottom
         positions.push({
-          x: 50 + (radius * Math.cos(radian)),
-          y: 50 + (radius * Math.sin(radian)),
+          x: 50 + (radius * Math.sin(radian)),  // horizontal: -90°=left, 90°=right
+          y: 85 - (radius * Math.cos(radian) * 0.7),  // vertical: 0°=top (row 0), 90°=bottom
           seat: seats[seatIndex++]
         });
       }
@@ -110,17 +112,17 @@
     class="hemicycle-svg"
     preserveAspectRatio="xMidYMax meet"
   >
-    <!-- Background arcs -->
+    <!-- Background arcs - horizontal hemicycle -->
     {#if arcRows.length > 0}
       {#each arcRows as row}
         <path
-          d="M {50 + row.radius * Math.cos((-90 * Math.PI) / 180)} {50 + row.radius * Math.sin((-90 * Math.PI) / 180)} 
-             A {row.radius} {row.radius} 0 0 1 
-             {50 + row.radius * Math.cos((90 * Math.PI) / 180)} {50 + row.radius * Math.sin((90 * Math.PI) / 180)}"
+          d="M {50 + row.radius * Math.sin((-90 * Math.PI) / 180)} {85 - row.radius * Math.cos((-90 * Math.PI) / 180) * 0.7} 
+             A {row.radius} {row.radius * 0.7} 0 0 1 
+             {50 + row.radius * Math.sin((90 * Math.PI) / 180)} {85 - row.radius * Math.cos((90 * Math.PI) / 180) * 0.7}"
           fill="none"
-          stroke="#d0d0d0"
-          stroke-width="0.8"
-          opacity="0.6"
+          stroke="#c0c0c0"
+          stroke-width="1"
+          opacity="0.8"
         />
       {/each}
     {/if}
@@ -161,8 +163,8 @@
       </g>
     {/each}
     
-    <!-- Center podium dot -->
-    <circle cx="50" cy="50" r="1.5" fill="#bbb" opacity="0.5" />
+    <!-- Center podium reference at bottom center -->
+    <circle cx="50" cy="85" r="1.5" fill="#bbb" opacity="0.5" />
   </svg>
 </div>
 
@@ -170,10 +172,10 @@
   .hemicycle-container {
     position: relative;
     width: 100%;
-    max-width: 900px;
+    max-width: 1000px;
     margin: 0 auto;
-    aspect-ratio: 2/1.1;
-    background: linear-gradient(180deg, #f5f5f5 0%, #e8e8e8 100%);
+    aspect-ratio: 16/9;
+    background: linear-gradient(180deg, #f8f8f8 0%, #ececec 100%);
     border-radius: 16px;
     padding: 20px;
   }
