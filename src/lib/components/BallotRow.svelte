@@ -214,15 +214,21 @@
     filter: brightness(0.97);
   }
 
-  /* Active/Focus state - stronger darkening */
-  .ballot-row.is-active {
-    filter: brightness(0.94);
+  /* Selected row state - subtle highlight */
+  .ballot-row.is-voted {
+    filter: brightness(0.92);
+    box-shadow: inset 3px 0 0 0 rgba(0, 0, 0, 0.4);
   }
 
-  /* Faded state (other row selected in column) */
+  /* Active/Focus state - subtle */
+  .ballot-row.is-active {
+    filter: brightness(0.95);
+  }
+
+  /* Faded state (other row selected in column) - still visible but muted */
   .ballot-row.is-faded {
-    filter: brightness(0.6);
-    pointer-events: none;
+    filter: brightness(0.85) saturate(0.7);
+    opacity: 0.8;
   }
 
   /* ─── Cells ──────────────────────────────────────────────────────────────────── */
@@ -278,25 +284,24 @@
     letter-spacing: 0.04em;
   }
 
-  /* ─── Vote Cell — Square Box ─────────────────────────────────────────────────── */
+  /* ─── Vote Cell — Same as image cell ──────────────────────────────────────────── */
   .vote-cell {
     justify-content: center;
     padding: 4px;
+    display: flex;
+    gap: 16px;
   }
 
   .vote-box {
-    width: 44px;
-    height: 44px;
-    border: 1px solid var(--text-primary);
-    background-color: #FFFFFF !important;
-    background-image: none !important;
-    transition: border-color 0.15s ease, background-color 0.15s ease;
+    width: 52px;
+    height: 52px;
+    border: 2px solid #000000;
+    border-radius: 0;
+    background-color: #ffffff;
   }
 
   .ballot-row:hover .vote-box {
-    border-color: var(--text-primary);
-    background-color: #FFFFFF !important;
-    background-image: none !important;
+    background-color: #f5f5f5;
   }
 
   /* Empty cell for Senadores Regional - just space, no content */
@@ -308,33 +313,30 @@
   .vote-target {
     cursor: pointer;
     position: relative;
-    transition: transform 0.1s ease, box-shadow 0.2s ease;
+    /* Sin efectos modernos - estilo cédula rígida */
+    transition: none;
   }
 
   .vote-target:hover {
-    transform: scale(1.02);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    z-index: 10;
+    /* Sin scale ni shadow - solo ligero brillo */
+    filter: brightness(0.95);
   }
 
   .vote-target:active {
-    transform: scale(0.98);
+    /* Sin scale */
+    filter: brightness(0.9);
   }
 
-  /* X mark overlay on voted images */
+  /* X mark overlay on voted images - estilo neutral */
   .vote-x-overlay {
     position: absolute;
     inset: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.3);
     pointer-events: none;
     z-index: 20;
-  }
-
-  .vote-x-overlay :global(svg) {
-    filter: drop-shadow(0 2px 6px rgba(200, 16, 46, 0.5));
   }
 
   /* ─── Vote Indicator ──────────────────────────────────────────────────────────── */

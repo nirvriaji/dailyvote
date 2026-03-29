@@ -6,8 +6,7 @@
     clearPreferenceNumber,
     getPreferenceValue,
     isRowSelected,
-    replaceSelectedRow,
-    getSelectedRow
+    replaceSelectedRow
   } from '$lib/stores/preferencePicker.svelte';
   import type { ColumnKey } from '$lib/stores/preferencePicker.svelte';
   
@@ -21,31 +20,25 @@
   
   let slotElement: HTMLButtonElement;
   
-  // Verificar si esta fila está seleccionada en esta columna
+  // Verificar si esta fila está seleccionada
   let isThisRowSelected = $derived(isRowSelected(columnKey, rowId));
   
-  // Verificar si hay otra fila seleccionada en esta columna
-  let selectedRowId = $derived(getSelectedRow(columnKey));
-  let hasOtherRowSelected = $derived(selectedRowId !== null && selectedRowId !== rowId);
-  
-  // Obtener valor actual de esta casilla
+  // Obtener valor actual
   let value = $derived(getPreferenceValue(rowId, columnKey, slotIndex));
   
-  // Verificar si picker está activo para esta casilla
+  // Verificar si picker está activo
   let isPickerOpen = $derived(isPickerActive(rowId, slotIndex));
   
-  // Formatear valor para mostrar
+  // Formatear valor
   let displayValue = $derived(
     value !== null ? value.toString().padStart(2, '0') : ''
   );
   
-  // Manejar click en casilla
+  // Manejar click
   function handleSlotClick() {
-    // Si esta fila NO está seleccionada
     if (!isThisRowSelected) {
-      // Seleccionar esta fila (reemplaza cualquier otra)
+      // Seleccionar fila y abrir picker
       replaceSelectedRow(columnKey, rowId);
-      // Abrir picker
       openPicker({
         columnKey,
         rowId,
@@ -55,16 +48,13 @@
       return;
     }
     
-    // Si esta fila SÍ está seleccionada
+    // Fila ya seleccionada
     if (value !== null) {
-      // Casilla tiene valor: limpiarla
+      // Limpiar valor
       clearPreferenceNumber(rowId, columnKey, slotIndex);
-      // Cerrar picker si estaba abierto
-      if (isPickerOpen) {
-        closePicker();
-      }
+      if (isPickerOpen) closePicker();
     } else {
-      // Casilla vacía: abrir picker (toggle)
+      // Toggle picker
       if (isPickerOpen) {
         closePicker();
       } else {
@@ -78,7 +68,6 @@
     }
   }
   
-  // Manejar teclado
   function handleKeydown(event: KeyboardEvent) {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
@@ -88,7 +77,7 @@
 </script>
 
 <button
-  class="preference-slot"
+  class="ballot-slot"
   class:filled={value !== null}
   class:active={isPickerOpen}
   class:row-selected={isThisRowSelected}
@@ -96,86 +85,84 @@
   onclick={handleSlotClick}
   onkeydown={handleKeydown}
   type="button"
-  aria-label={value !== null ? `Número ${displayValue}, click para limpiar` : "Seleccionar número de voto preferencial"}
-  aria-expanded={isPickerOpen}
-  aria-haspopup="grid"
+  aria-label={value !== null ? `Número ${displayValue}` : "Seleccionar número"}
 >
   {#if value !== null}
-    <span class="slot-value">{displayValue}</span>
+    <span class="slot-number">{displayValue}</span>
   {:else}
     <span class="slot-placeholder">N°</span>
   {/if}
 </button>
 
 <style>
-  .preference-slot {
-    width: 56px;
-    height: 52px;
-    min-width: 56px;
-    min-height: 52px;
-    border: 2px solid #dee2e6;
-    border-radius: 12px;
-    background: white;
+  .ballot-slot {
+    /* Mismo tamaño exacto que el símbolo (44x44px) */
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    
+    /* Mismo borde que los símbolos */
+    border: 1.5px solid var(--grid-border);
+    
+    /* Sin border-radius */
+    border-radius: 0;
+    
+    /* Sin margen */
+    margin: 0;
+    
+    /* Fondo blanco igual que símbolo */
+    background: #ffffff !important;
+    
+    /* Layout */
     display: flex;
     align-items: center;
     justify-content: center;
+    
+    /* Cursor */
     cursor: pointer;
-    transition: all 0.2s ease;
+    
+    /* Reset */
     padding: 0;
     font-family: inherit;
-    /* Mantener mismo tamaño en todos los estados */
     box-sizing: border-box;
+    
+    /* Sin transiciones agresivas */
+    transition: none;
   }
 
-  .preference-slot:hover {
-    border-color: #C8102E;
+  /* Estado: fila seleccionada - sin cambio visible */
+  .ballot-slot.row-selected {
+    /* Sin cambio - solo el símbolo indica selección */
   }
 
-  .preference-slot.row-selected {
-    border-color: #C8102E;
-    background: rgba(200, 16, 46, 0.05);
+  /* Estado: picker activo - solo ligero cambio de fondo */
+  .ballot-slot.active {
+    background: #f5f5f5;
   }
 
-  .preference-slot.active {
-    border-color: #C8102E;
-    background: rgba(200, 16, 46, 0.1);
-    box-shadow: 0 0 0 3px rgba(200, 16, 46, 0.2);
+  /* Estado: con valor - sin cambio visual */
+  .ballot-slot.filled {
+    background: #ffffff;
   }
 
-  .preference-slot.filled {
-    background: #C8102E;
-    border-color: #C8102E;
-    color: white;
+  /* Hover sutil */
+  .ballot-slot:hover {
+    background: #f5f5f5;
   }
 
-  .preference-slot.filled:hover {
-    background: #a00d25;
-    border-color: #a00d25;
+  /* Número centrado */
+  .slot-number {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #000000;
+    font-family: monospace;
   }
 
-  .preference-slot.filled.row-selected {
-    background: #C8102E;
-    box-shadow: 0 0 0 2px rgba(200, 16, 46, 0.3);
-  }
-
-  .slot-value {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: inherit;
-  }
-
+  /* Placeholder */
   .slot-placeholder {
-    font-size: 0.9rem;
-    color: #adb5bd;
-    font-weight: 500;
-  }
-
-  @media (max-width: 768px) {
-    .preference-slot {
-      width: 52px;
-      height: 48px;
-      min-width: 52px;
-      min-height: 48px;
-    }
+    font-size: 0.8rem;
+    color: #666666;
+    font-weight: 400;
   }
 </style>
