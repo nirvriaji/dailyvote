@@ -79,7 +79,7 @@ class VoteStore {
     this.persistToLocalStorage();
   }
 
-  // Enviar TODOS los votos acumulados a Firebase (llamado al hacer "Entregar cédula")
+  // Enviar TODOS los votos acumulados a Firebase en paralelo (ultra rápido)
   async submitVotes(): Promise<boolean> {
     if (this.votes.size === 0) return false;
     
@@ -94,18 +94,25 @@ class VoteStore {
     };
 
     try {
-      // Enviar cada voto acumulado a Firebase
+      // Crear array de promesas para enviar TODOS en paralelo
+      const votePromises = [];
+      
       for (const [columnId, voteData] of this.votes) {
         const category = categoryMap[columnId] || columnId;
-        await saveVote(date, category, {
-          partyId: voteData.partyName,
-          partyName: voteData.partyName
-        });
+        votePromises.push(
+          saveVote(date, category, {
+            partyId: voteData.partyName,
+            partyName: voteData.partyName
+          })
+        );
       }
       
-      // Marcar como completado si hay 5 votos
+      // Enviar todos los votos simultáneamente (mucho más rápido)
+      await Promise.all(votePromises);
+      
+      // Marcar como completado si hay 5 votos (fire-and-forget)
       if (this.count === this.total) {
-        await markVoteCompleted(date);
+        markVoteCompleted(date).catch(() => {});
       }
       
       this.isSubmitting = false;

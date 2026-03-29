@@ -9,24 +9,17 @@
 
   let isSubmitting = $state(false);
 
-  // Función para entregar cédula
-  async function deliverBallot() {
+  // Función para entregar cédula - ultra rápida
+  function deliverBallot() {
     if (!isBallotReady() || isSubmitting) return;
     
     isSubmitting = true;
     
-    // Enviar todos los votos acumulados a Firebase
-    const success = await vote.submitVotes();
+    // Iniciar envío a Firebase en background (fire-and-forget)
+    vote.submitVotes();
     
-    isSubmitting = false;
-    
-    if (success) {
-      goto('/resultados');
-    } else {
-      // Si falla el envío, igual navegar (los votos están guardados localmente)
-      // El usuario puede intentar de nuevo o ver resultados parciales
-      goto('/resultados');
-    }
+    // Navegar INMEDIATAMENTE sin esperar a Firebase
+    goto('/resultados');
   }
 
   // Estados derivados
