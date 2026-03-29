@@ -20,16 +20,16 @@
   
   let { anchorEl, columnKey, rowId, slotIndex }: Props = $props();
   
-  // Configuración según columna
-  const config = {
+  // Configuración según columna - usar $derived para reactividad
+  let config = $derived({
     senadoNacional: { min: 1, max: 32, columns: 8, rows: 4 },
     senadoRegional: { min: 1, max: 32, columns: 8, rows: 4 },
     diputados: { min: 1, max: 32, columns: 8, rows: 4 },
     parlamentoAndino: { min: 1, max: 16, columns: 8, rows: 2 }
-  }[columnKey];
+  }[columnKey]);
   
-  // Generar array de números
-  const numbers = Array.from({ length: config.max - config.min + 1 }, (_, i) => config.min + i);
+  // Generar array de números - recalcular cuando cambia config
+  let numbers = $derived(Array.from({ length: config.max - config.min + 1 }, (_, i) => config.min + i));
   
   // Estado
   let pickerElement: HTMLDivElement;

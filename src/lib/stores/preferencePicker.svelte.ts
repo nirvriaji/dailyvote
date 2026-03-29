@@ -53,18 +53,18 @@ export function isRowSelected(columnKey: ColumnKey, rowId: string): boolean {
 
 // Seleccionar fila (reemplaza cualquier selección previa en esa columna)
 export function selectRow(columnKey: ColumnKey, rowId: string) {
-  selectedRowByColumn = {
+  updateSelectedRowByColumn({
     ...selectedRowByColumn,
     [columnKey]: rowId
-  };
+  });
 }
 
 // Deseleccionar fila
 export function deselectRow(columnKey: ColumnKey) {
-  selectedRowByColumn = {
+  updateSelectedRowByColumn({
     ...selectedRowByColumn,
     [columnKey]: null
-  };
+  });
 }
 
 // Limpiar preferencias de una fila específica en una columna
@@ -235,10 +235,11 @@ function persistSelectedRows() {
   }
 }
 
-// Suscribirse a cambios en selectedRowByColumn para persistir
-$effect(() => {
+// Helper para actualizar selectedRowByColumn y persistir
+function updateSelectedRowByColumn(newState: ColumnSelectionState) {
+  selectedRowByColumn = newState;
   persistSelectedRows();
-});
+}
 
 // Manejo global de tecla Escape para cerrar picker
 if (typeof window !== 'undefined') {
