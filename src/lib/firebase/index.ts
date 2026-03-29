@@ -82,6 +82,27 @@ export function checkFirebaseReady(): boolean {
 }
 
 /**
+ * Obtener estado de votación basado en hora actual
+ * Ciclo diario: 00:00 - 20:00 (abierto), 20:00 - 23:59 (cerrado)
+ */
+export function getVotingStatus(currentDate: Date = new Date()): 'open' | 'closed' {
+  const hours = currentDate.getHours();
+  
+  if (hours < 20) {
+    return 'open';
+  }
+  
+  return 'closed';
+}
+
+/**
+ * Verificar si se permite votar en este momento
+ */
+export function canVoteNow(): boolean {
+  return getVotingStatus() === 'open';
+}
+
+/**
  * Obtener el estado actual de Firebase como objeto
  */
 export function getFirebaseStatus() {

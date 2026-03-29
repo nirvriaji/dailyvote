@@ -49,6 +49,7 @@ export interface VoteEntry {
 export interface GlobalStats {
   date: string;
   totalVotes: number;
+  totalSimulations?: number; // Contador de simulaciones completadas (1 por cédula entregada)
   lastUpdated: number;
   categories: {
     president: Record<string, number>;  // partyId -> count

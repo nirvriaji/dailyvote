@@ -1,5 +1,6 @@
 import type { VoteSelection } from '$lib/types';
 import { saveVote, markVoteCompleted } from '$lib/firebase/votes';
+import { incrementSimulationCount } from '$lib/firebase/stats';
 import { getAnonymousDeviceId } from '$lib/firebase/device';
 
 class VoteStore {
@@ -94,6 +95,14 @@ class VoteStore {
     };
 
     try {
+      // Verificar primero si está dentro del horario de votación
+      const { getVotingStatus } = await import('$lib/firebase');
+      if (getVotingStatus() === 'closed') {
+        console.warn('🚫 Simulaciones cerradas (20:00 - 00:00). No se enviarán datos.');
+        this.isSubmitting = false;
+        return false;
+      }
+      
       // Crear array de promesas para enviar TODOS en paralelo
       const votePromises = [];
       
@@ -108,7 +117,23 @@ class VoteStore {
       }
       
       // Enviar todos los votos simultáneamente (mucho más rápido)
-      await Promise.all(votePromises);
+      const results = await Promise.all(votePromises);
+      
+      // Verificar si alguno falló por horario cerrado
+      const hasClosedError = results.some(r => r.error === 'VOTING_CLOSED');
+      if (hasClosedError) {
+        console.warn('🚫 Simulaciones cerradas. Los datos se guardaron localmente.');
+        this.isSubmitting = false;
+        return false;
+      }
+      
+      // Incrementar contador de simulaciones (1 por cada cédula completa entregada)
+      console.log('📊 Llamando incrementSimulationCount una vez...');
+      incrementSimulationCount(date).then(() => {
+        console.log('✅ incrementSimulationCount completado');
+      }).catch((err) => {
+        console.error('❌ Error en incrementSimulationCount:', err);
+      });
       
       // Marcar como completado si hay 5 votos (fire-and-forget)
       if (this.count === this.total) {

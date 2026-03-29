@@ -10,13 +10,19 @@
   let isSubmitting = $state(false);
 
   // Función para entregar cédula - ultra rápida
-  function deliverBallot() {
-    if (!isBallotReady() || isSubmitting) return;
+  async function deliverBallot() {
+    if (!isBallotReady() || isSubmitting) {
+      console.log('Botón bloqueado:', { isReady, isSubmitting });
+      return;
+    }
     
     isSubmitting = true;
+    console.log('🚀 Iniciando submitVotes...');
     
     // Iniciar envío a Firebase en background (fire-and-forget)
-    vote.submitVotes();
+    await vote.submitVotes();
+    
+    console.log('✅ submitVotes completado, navegando a resultados...');
     
     // Navegar INMEDIATAMENTE sin esperar a Firebase
     goto('/resultados');

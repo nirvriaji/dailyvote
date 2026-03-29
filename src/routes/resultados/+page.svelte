@@ -8,7 +8,7 @@
   import ParliamentHemicycle from '$lib/components/ParliamentHemicycle.svelte';
   import ShareResults from '$lib/components/ShareResults.svelte';
   import { getGlobalResultsWithPercentages, getGlobalStats, subscribeToGlobalStats } from '$lib/firebase/stats';
-  import { initializeFirebase, isFirebaseReady } from '$lib/firebase';
+  import { initializeFirebase, isFirebaseReady, getVotingStatus } from '$lib/firebase';
   import type { GlobalStats } from '$lib/firebase/config';
   import type { Unsubscribe } from 'firebase/firestore';
   
@@ -53,7 +53,7 @@
   
   // State
   let allResults = $state<CategoryResults[]>([]);
-  let isVotingClosed = $state(false);
+  let votingStatus = $state<'open' | 'closed'>('open');
   let currentTime = $state(new Date());
   let nextResetTime = $state<Date | null>(null);
   let activeCategory = $state<string | null>(null);
@@ -91,13 +91,12 @@
     goto('/simular');
   }
   
-  // Check if voting is closed (after 20:00)
+  // Check voting status (00:00 - 20:00 open, 20:00 - 23:59 closed)
   function checkVotingStatus() {
-    const now = new Date();
-    const hour = now.getHours();
-    isVotingClosed = hour >= 20;
+    votingStatus = getVotingStatus();
     
     // Calculate next reset time (midnight)
+    const now = new Date();
     const midnight = new Date(now);
     midnight.setHours(24, 0, 0, 0);
     nextResetTime = midnight;
@@ -127,9 +126,9 @@
       { id: 'andeanParliament', name: 'Parlamento', subtitle: 'Andino', totalSeats: 5, colId: 'col4' }
     ];
     
-    // Set total voters from global stats
-    totalVoters = globalStats?.totalVotes || 0;
-    const totalVoteCount = totalVoters; // Total de votos para decidir qué mostrar
+    // Set total simulations from global stats (cada simulación completa = 1, no 5 votos)
+    totalVoters = globalStats?.totalSimulations || Math.floor((globalStats?.totalVotes || 0) / 5) || 0;
+    const totalVoteCount = totalVoters; // Total de simulaciones para decidir qué mostrar
     
     return categories.map(cat => {
       // Find user's vote for this category
@@ -299,13 +298,14 @@
     if (isFirebaseReady) {
       const today = new Date().toISOString().split('T')[0];
       unsubscribe = subscribeToGlobalStats(today, (stats: GlobalStats | null) => {
-        if (stats) {
-          liveVoterCount = stats.totalVotes || 0;
-          lastUpdateTime = new Date();
-          
-          // If results changed significantly, reload them
-          if (Math.abs(liveVoterCount - totalVoters) > 0) {
-            totalVoters = liveVoterCount;
+      if (stats) {
+        // Usar totalSimulations si existe, sino calcular aproximado (totalVotes / 5)
+        liveVoterCount = stats.totalSimulations || Math.floor((stats.totalVotes || 0) / 5) || 0;
+        lastUpdateTime = new Date();
+        
+        // If results changed significantly, reload them
+        if (Math.abs(liveVoterCount - totalVoters) > 0) {
+          totalVoters = liveVoterCount;
             // Refresh results to show new data
             loadRealResults().then(newResults => {
               allResults = newResults;
@@ -368,7 +368,7 @@
   }
   
   $effect(() => {
-    if (isVotingClosed) {
+    if (votingStatus === 'closed') {
       // Winners are already saved in real-time as votes come in
       // No need for additional localStorage saving
     }
@@ -404,8 +404,8 @@
       <div class="live-stats-widget" in:fly={{ x: 30, duration: 600, delay: 300 }}>
         <div class="widget-header">
           <span class="live-pulse"></span>
-          <span class="live-label">{isVotingClosed ? 'VOTACIÓN CERRADA' : 'ACTIVIDAD EN VIVO'}</span>
-          {#if !isVotingClosed && nextResetTime}
+          <span class="live-label">{votingStatus === 'closed' ? 'VOTACIÓN CERRADA' : 'ACTIVIDAD EN VIVO'}</span>
+          {#if votingStatus === 'open' && nextResetTime}
             <span class="widget-timer">{formatCountdown(nextResetTime)}</span>
           {/if}
         </div>
@@ -419,6 +419,14 @@
         </div>
       </div>
     </div>
+    
+    <!-- Final Results Banner (when voting is closed) -->
+    {#if votingStatus === 'closed'}
+      <div class="final-results-banner" in:fade={{ duration: 300, delay: 400 }}>
+        <h2 class="final-title">Resultados finales del día</h2>
+        <p class="final-subtitle">Las simulaciones se cerraron a las 20:00. Estos resultados ya no cambian.</p>
+      </div>
+    {/if}
   </header>
 
   <!-- Presidential Results - Featured -->
@@ -1447,6 +1455,48 @@
     border-color: #2196F3;
     color: #2196F3;
     background: rgba(33, 150, 243, 0.05);
+  }
+
+  /* Final Results Banner (when voting is closed) */
+  .final-results-banner {
+    background: linear-gradient(135deg, #fff9e6 0%, #fff3cd 100%);
+    border: 2px solid #ffc107;
+    border-radius: 12px;
+    padding: 20px 30px;
+    margin-top: 20px;
+    text-align: center;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .final-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #856404;
+    margin: 0 0 8px 0;
+  }
+
+  .final-subtitle {
+    font-size: 0.95rem;
+    color: #856404;
+    margin: 0;
+    opacity: 0.9;
+  }
+
+  @media (max-width: 768px) {
+    .final-results-banner {
+      padding: 15px 20px;
+      margin: 15px 15px 0 15px;
+    }
+
+    .final-title {
+      font-size: 1.2rem;
+    }
+
+    .final-subtitle {
+      font-size: 0.85rem;
+    }
   }
 
   /* Responsive */

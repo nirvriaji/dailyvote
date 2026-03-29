@@ -12,7 +12,7 @@ import {
   onSnapshot,
   type Unsubscribe
 } from 'firebase/firestore';
-import { getDb, isFirebaseReady } from './index';
+import { getDb, isFirebaseReady, getVotingStatus } from './index';
 import { COLLECTIONS, type GlobalStats } from './config';
 import { BALLOT_COLUMNS } from '$lib/data/mock';
 
@@ -115,6 +115,67 @@ export async function addVoteToGlobalStats(
     return true;
   } catch (error: any) {
     console.error('❌ Error actualizando estadísticas:', error.message);
+    return false;
+  }
+}
+
+/**
+ * Incrementar contador de simulaciones completadas
+ * Se llama una vez por cada simulación completa (no por cada voto)
+ * Solo permite incrementar entre 00:00 y 20:00
+ */
+export async function incrementSimulationCount(date: string): Promise<boolean> {
+  console.log(`🔢 incrementSimulationCount llamado para fecha: ${date}`);
+  
+  if (!isFirebaseReady) {
+    console.warn('Firebase no disponible para contador de simulaciones');
+    return false;
+  }
+  
+  // Verificar si está dentro del horario de votación (00:00 - 20:00)
+  if (getVotingStatus() === 'closed') {
+    console.warn('🚫 No se pueden registrar nuevas simulaciones después de las 20:00');
+    return false;
+  }
+  
+  try {
+    const db = getDb();
+    const statsRef = doc(db, COLLECTIONS.GLOBAL_STATS, date);
+    
+    const docSnap = await getDoc(statsRef);
+    
+    if (docSnap.exists()) {
+      const currentData = docSnap.data();
+      const currentCount = currentData.totalSimulations || 0;
+      console.log(`📊 Incrementando de ${currentCount} a ${currentCount + 1}`);
+      
+      await updateDoc(statsRef, {
+        totalSimulations: increment(1),
+        lastUpdated: serverTimestamp()
+      });
+    } else {
+      console.log(`📊 Creando nuevo documento con totalSimulations: 1`);
+      const { setDoc } = await import('firebase/firestore');
+      await setDoc(statsRef, {
+        date,
+        totalVotes: 0,
+        totalSimulations: 1,
+        lastUpdated: serverTimestamp(),
+        categories: {
+          president: {},
+          senatorsNational: {},
+          senatorsRegional: {},
+          deputies: {},
+          andeanParliament: {}
+        },
+        metadata: {}
+      });
+    }
+    
+    console.log(`✅ Contador incrementado exitosamente para ${date}`);
+    return true;
+  } catch (error: any) {
+    console.error('❌ Error incrementando contador de simulaciones:', error.message);
     return false;
   }
 }

@@ -5,7 +5,7 @@ import {
   updateDoc,
   serverTimestamp
 } from 'firebase/firestore';
-import { getDb, isFirebaseReady } from './index';
+import { getDb, isFirebaseReady, getVotingStatus } from './index';
 import { getAnonymousDeviceId, hasDeviceVotedToday, markDeviceAsVoted } from './device';
 import { addVoteToGlobalStats } from './stats';
 import { COLLECTIONS, type UserVote, type UserDayVotes, type VoteEntry } from './config';
@@ -46,19 +46,26 @@ function findPartyInfo(category: string, partyName: string) {
 /**
  * Guardar voto anónimo de un dispositivo en Firestore
  * No requiere login - usa device fingerprinting
+ * Solo permite votar entre 00:00 y 20:00
  */
 export async function saveVote(
   date: string,
   category: string,
   voteData: { partyId: string; partyName: string }
-): Promise<boolean> {
+): Promise<{ success: boolean; error?: string }> {
+  // Verificar si está dentro del horario de votación (00:00 - 20:00)
+  if (getVotingStatus() === 'closed') {
+    console.warn('🚫 Simulaciones cerradas. Solo disponible 00:00 - 20:00.');
+    return { success: false, error: 'VOTING_CLOSED' };
+  }
+  
   // Siempre guardar en localStorage primero (fallback)
   markDeviceAsVoted(date);
   
   // Si Firebase no está listo, solo localStorage
   if (!isFirebaseReady) {
     console.log('💾 Voto guardado localmente (Firebase no activo)');
-    return true;
+    return { success: true };
   }
   
   try {
@@ -125,11 +132,11 @@ export async function saveVote(
     );
     
     console.log(`✅ Voto guardado en Firebase: ${category} -> ${voteData.partyName}`);
-    return true;
+    return { success: true };
   } catch (error: any) {
     console.error('❌ Error guardando voto en Firebase:', error.message);
-    // Aún así retornar true porque se guardó en localStorage
-    return true;
+    // Aún así retornar éxito porque se guardó en localStorage
+    return { success: true };
   }
 }
 

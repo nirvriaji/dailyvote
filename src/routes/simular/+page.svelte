@@ -5,16 +5,15 @@
   import { BALLOT_COLUMNS } from '$lib/data/mock';
   import { vote } from '$lib/stores/vote.svelte';
   import { ui } from '$lib/stores/ui.svelte';
-  import { initializeFirebase, isFirebaseReady } from '$lib/firebase';
+  import { initializeFirebase, isFirebaseReady, getVotingStatus } from '$lib/firebase';
   import BallotStage from '$lib/components/BallotStage.svelte';
   import BallotProgressHeader from '$lib/components/BallotProgressHeader.svelte';
   import VoteOverlay from '$lib/components/VoteOverlay.svelte';
   import ProgressPanel from '$lib/components/ProgressPanel.svelte';
   import ShareResults from '$lib/components/ShareResults.svelte';
 
-  // ─── Check voting hours ─────────────────────────────────────────────────────
-  let isVotingClosed = $state(false);
-  let nextOpenTime = $state<Date | null>(null);
+  // ─── Check voting status (00:00 - 20:00 open, 20:00 - 23:59 closed) ────────────
+  let votingStatus = $state<'open' | 'closed'>('open');
   
   // ─── Inline Help Banner ──────────────────────────────────────────────────────
   let showInlineHint = $state(false);
@@ -26,16 +25,8 @@
   let ballotScroller: HTMLDivElement | null = $state(null);
   let userHasInteracted = $state(false);
   
-  function checkVotingHours() {
-    const now = new Date();
-    const hour = now.getHours();
-    isVotingClosed = hour >= 20;
-    
-    if (isVotingClosed) {
-      const midnight = new Date(now);
-      midnight.setHours(24, 0, 0, 0);
-      nextOpenTime = midnight;
-    }
+  function checkVotingStatus() {
+    votingStatus = getVotingStatus();
   }
   
   function centerBallot() {
@@ -106,12 +97,8 @@
   }
 
   onMount(() => {
-    checkVotingHours();
-    
-    if (isVotingClosed) {
-      goto('/resultados');
-      return;
-    }
+    // Check voting status (00:00 - 20:00 open, 20:00 - 23:59 closed)
+    checkVotingStatus();
     
     // Initialize Firebase if not already ready
     if (!isFirebaseReady) {
@@ -131,19 +118,21 @@
       vote.hydrate(saved);
     }
     
-    // Center ballot immediately
-    centerBallot();
-    
-    showInlineHint = true;
-    
-    autoHideHintTimeout = window.setTimeout(() => {
-      showInlineHint = false;
-      hintDismissedThisVisit = true;
-    }, 6000);
-    
-    initialHintTimeout = window.setTimeout(() => {
-      hintPan2D();
-    }, 700);
+    // Center ballot immediately (solo si está abierto)
+    if (votingStatus === 'open') {
+      centerBallot();
+      
+      showInlineHint = true;
+      
+      autoHideHintTimeout = window.setTimeout(() => {
+        showInlineHint = false;
+        hintDismissedThisVisit = true;
+      }, 6000);
+      
+      initialHintTimeout = window.setTimeout(() => {
+        hintPan2D();
+      }, 700);
+    }
     
     return () => {
       if (autoHideHintTimeout) window.clearTimeout(autoHideHintTimeout);
@@ -172,24 +161,10 @@
 </svelte:head>
 
 <div class="app-shell">
-  {#if isVotingClosed}
-    <div class="closed-overlay" transition:fade={{ duration: 300 }}>
-      <div class="closed-message">
-        <span class="closed-icon">🌙</span>
-        <h2>Votación Cerrada</h2>
-        <p>La votación diaria cierra a las 8:00 PM.</p>
-        <p class="next-open">
-          Próxima votación: <strong>Mañana a medianoche</strong>
-        </p>
-        <div class="closed-actions">
-          <button class="btn-primary" onclick={() => goto('/resultados')}>
-            Ver Resultados de Hoy
-          </button>
-          <button class="btn-secondary" onclick={() => goto('/historial')}>
-            Ver Historial
-          </button>
-        </div>
-      </div>
+  <!-- Closed Banner - cuando las simulaciones están cerradas (20:00 - 00:00) -->
+  {#if votingStatus === 'closed'}
+    <div class="closed-banner" transition:fade={{ duration: 300 }}>
+      <p class="closed-text">Las simulaciones de hoy han cerrado. Vuelve mañana desde las 00:00.</p>
     </div>
   {/if}
 
@@ -217,6 +192,7 @@
 
   <div 
     class="ballot-sheet" 
+    class:disabled={votingStatus === 'closed'}
     onpointerdown={markUserInteraction}
     onwheel={markUserInteraction}
     ontouchstart={markUserInteraction}
@@ -342,16 +318,65 @@
     }
   }
   
-  .closed-overlay {
+  .closed-banner {
     position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.85);
-    backdrop-filter: blur(5px);
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
+    top: 70px;
+    left: 0;
+    right: 0;
+    z-index: 998;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    padding: 12px 16px;
+    text-align: center;
+  }
+  
+  .closed-text {
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: 0.2px;
+  }
+  
+  .ballot-sheet.disabled {
+    pointer-events: none;
+    opacity: 0.6;
+    filter: grayscale(0.3);
+  }
+  
+  @media (max-width: 768px) {
+    .inline-hint-banner {
+      top: 82px;
+      padding: 0 12px;
+      width: calc(100% - 24px);
+    }
+    
+    .hint-content {
+      padding: 10px 16px;
+    }
+    
+    .hint-text {
+      font-size: 13px;
+      padding-right: 32px;
+    }
+    
+    .hint-close-btn {
+      right: 0;
+      width: 24px;
+      height: 24px;
+      font-size: 18px;
+    }
+    
+    .ballot-sheet {
+      inset: 70px 0 0 0;
+    }
+    
+    .closed-banner {
+      top: 90px;
+    }
+    
+    .closed-text {
+      font-size: 13px;
+    }
   }
   
   .closed-message {
