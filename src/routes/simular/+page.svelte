@@ -113,12 +113,15 @@
     }
     
     const entryMode = sessionStorage.getItem('entry_mode');
-    if (entryMode === 'new_simulation') {
-      sessionStorage.removeItem('entry_mode');
-    }
-    
     const saved = sessionStorage.getItem('dailyvote');
-    if (!entryMode && saved) {
+    
+    if (entryMode === 'new_simulation') {
+      // Nueva simulación: no hidratar, empezar fresco
+      sessionStorage.removeItem('entry_mode');
+      // Asegurar que no hay votos residuales
+      vote.resetForNewSimulation();
+    } else if (saved && vote.count === 0) {
+      // Solo hidratar si hay datos guardados y no hay votos actuales
       vote.hydrate(saved);
     }
     

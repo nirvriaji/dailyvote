@@ -125,6 +125,8 @@ class VoteStore {
       localStorage.removeItem('dailyvote_selected_rows');
       localStorage.removeItem('dailyvote_president_selections');
       localStorage.removeItem('dailyvote_president_row');
+      // Limpiar también sessionStorage para la sesión actual
+      sessionStorage.removeItem('dailyvote');
       // NO eliminar dailyvote_device_id ni dailyvote_seen_tour
     }
   }
