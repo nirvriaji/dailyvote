@@ -4,11 +4,27 @@
     getRemainingColumnCount,
     isBallotReady
   } from '$lib/stores/preferencePicker.svelte';
+  import { vote } from '$lib/stores/vote.svelte';
   import { goto } from '$app/navigation';
 
+  let isSubmitting = $state(false);
+
   // Función para entregar cédula
-  function deliverBallot() {
-    if (isBallotReady()) {
+  async function deliverBallot() {
+    if (!isBallotReady() || isSubmitting) return;
+    
+    isSubmitting = true;
+    
+    // Enviar todos los votos acumulados a Firebase
+    const success = await vote.submitVotes();
+    
+    isSubmitting = false;
+    
+    if (success) {
+      goto('/resultados');
+    } else {
+      // Si falla el envío, igual navegar (los votos están guardados localmente)
+      // El usuario puede intentar de nuevo o ver resultados parciales
       goto('/resultados');
     }
   }
@@ -42,10 +58,15 @@
     <button 
       class="deliver-button" 
       class:disabled={!isReady}
-      disabled={!isReady}
+      class:submitting={isSubmitting}
+      disabled={!isReady || isSubmitting}
       onclick={deliverBallot}
     >
-      Entregar cédula
+      {#if isSubmitting}
+        Enviando...
+      {:else}
+        Entregar cédula
+      {/if}
     </button>
   </div>
 </div>
@@ -120,9 +141,11 @@
     transition: all 0.2s ease;
     text-transform: uppercase;
     letter-spacing: 0.02em;
+    min-width: 140px;
+    text-align: center;
   }
 
-  .deliver-button:hover:not(.disabled) {
+  .deliver-button:hover:not(.disabled):not(.submitting) {
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(200, 16, 46, 0.3);
   }
@@ -132,6 +155,12 @@
     color: var(--text-muted);
     cursor: not-allowed;
     opacity: 0.6;
+  }
+
+  .deliver-button.submitting {
+    background: linear-gradient(135deg, #666, #444);
+    cursor: wait;
+    opacity: 0.8;
   }
 
   /* Responsive */

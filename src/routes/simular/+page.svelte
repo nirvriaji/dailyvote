@@ -5,6 +5,7 @@
   import { BALLOT_COLUMNS } from '$lib/data/mock';
   import { vote } from '$lib/stores/vote.svelte';
   import { ui } from '$lib/stores/ui.svelte';
+  import { initializeFirebase, isFirebaseReady } from '$lib/firebase';
   import BallotStage from '$lib/components/BallotStage.svelte';
   import BallotProgressHeader from '$lib/components/BallotProgressHeader.svelte';
   import VoteOverlay from '$lib/components/VoteOverlay.svelte';
@@ -110,6 +111,11 @@
     if (isVotingClosed) {
       goto('/resultados');
       return;
+    }
+    
+    // Initialize Firebase if not already ready
+    if (!isFirebaseReady) {
+      initializeFirebase();
     }
     
     const entryMode = sessionStorage.getItem('entry_mode');

@@ -42,7 +42,7 @@
   let hasOtherRowSelected = $derived(hasOtherLegislativeRowSelected || hasOtherPresidentRow);
 
   // Toggle selección de símbolo (para columnas legislativas)
-  async function handleSymbolClick() {
+  function handleSymbolClick() {
     if (!columnKey) return;
     
     const isCurrentlySelected = isRowSelected(columnKey, row.id);
@@ -54,7 +54,7 @@
     } else {
       // Seleccionar: guardar voto
       toggleSymbolSelection(columnKey, row.id);
-      await castVoteFromSelection(
+      castVoteFromSelection(
         columnKey,
         row.id,
         {
@@ -69,13 +69,13 @@
   }
 
   // Toggle selección de símbolo del presidente (independiente)
-  async function handlePresidentSymbolClick() {
+  function handlePresidentSymbolClick() {
     const wasSelected = isPresidentSymbolSelected(row.id);
     togglePresidentSymbol(row.id);
     
     // Si se acaba de marcar (no estaba seleccionado antes), guardar voto
     if (!wasSelected) {
-      await castVoteFromSelection(
+      castVoteFromSelection(
         'presidente',
         row.id,
         {
@@ -90,13 +90,13 @@
   }
 
   // Toggle selección de foto del presidente (independiente)
-  async function handlePresidentPhotoClick() {
+  function handlePresidentPhotoClick() {
     const wasSelected = isPresidentPhotoSelected(row.id);
     togglePresidentPhoto(row.id);
     
     // Si se acaba de marcar (no estaba seleccionado antes), guardar voto
     if (!wasSelected) {
-      await castVoteFromSelection(
+      castVoteFromSelection(
         'presidente',
         row.id,
         {

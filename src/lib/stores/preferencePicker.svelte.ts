@@ -166,7 +166,7 @@ export function toggleSymbolSelection(columnKey: ColumnKey, rowId: string) {
 }
 
 // Función para guardar voto en el store (llamada desde BallotRow)
-export async function castVoteFromSelection(
+export function castVoteFromSelection(
   columnKey: ColumnKey,
   rowId: string,
   rowData: {
@@ -192,7 +192,7 @@ export async function castVoteFromSelection(
     preferenceNumbers
   };
   
-  await vote.cast(voteSelection);
+  vote.cast(voteSelection);
 }
 
 // Función para remover voto (cuando se deselecciona)

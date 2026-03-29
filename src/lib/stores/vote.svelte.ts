@@ -5,6 +5,7 @@ import { getAnonymousDeviceId } from '$lib/firebase/device';
 class VoteStore {
   votes = $state(new Map<string, VoteSelection>());
   deviceId = $state<string>('');
+  isSubmitting = $state(false);
 
   constructor() {
     // Generar/obtener ID del dispositivo al iniciar
@@ -67,12 +68,22 @@ class VoteStore {
     }
   }
 
-  async cast(selection: VoteSelection) {
+  // Guardar voto localmente (sin enviar a Firebase aún)
+  cast(selection: VoteSelection) {
     const next = new Map(this.votes);
     next.set(selection.columnId, selection);
     this.votes = next;
     
-    // Guardar automáticamente en Firebase (anónimo)
+    // Solo guardar en localStorage, NO en Firebase
+    // Firebase se usará solo al hacer submit
+    this.persistToLocalStorage();
+  }
+
+  // Enviar TODOS los votos acumulados a Firebase (llamado al hacer "Entregar cédula")
+  async submitVotes(): Promise<boolean> {
+    if (this.votes.size === 0) return false;
+    
+    this.isSubmitting = true;
     const date = new Date().toISOString().split('T')[0];
     const categoryMap: Record<string, string> = {
       'col0': 'president',
@@ -81,25 +92,28 @@ class VoteStore {
       'col3': 'deputies',
       'col4': 'andeanParliament'
     };
-    
-    const category = categoryMap[selection.columnId] || selection.columnId;
-    
+
     try {
-      await saveVote(date, category, {
-        partyId: selection.partyName, // Usar nombre del partido como ID consistente
-        partyName: selection.partyName
-      });
-    } catch (err) {
-      console.error('Error saving to Firebase:', err);
-    }
-    
-    // Si completó los 5, marcar como completado
-    if (this.count === this.total) {
-      try {
-        await markVoteCompleted(date);
-      } catch (err) {
-        console.error('Error marking completed:', err);
+      // Enviar cada voto acumulado a Firebase
+      for (const [columnId, voteData] of this.votes) {
+        const category = categoryMap[columnId] || columnId;
+        await saveVote(date, category, {
+          partyId: voteData.partyName,
+          partyName: voteData.partyName
+        });
       }
+      
+      // Marcar como completado si hay 5 votos
+      if (this.count === this.total) {
+        await markVoteCompleted(date);
+      }
+      
+      this.isSubmitting = false;
+      return true;
+    } catch (err) {
+      console.error('Error submitting votes to Firebase:', err);
+      this.isSubmitting = false;
+      return false;
     }
   }
 
