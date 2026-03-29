@@ -1,0 +1,167 @@
+<script lang="ts">
+  import { 
+    getValidColumnCount,
+    getRemainingColumnCount,
+    isBallotReady
+  } from '$lib/stores/preferencePicker.svelte';
+  import { goto } from '$app/navigation';
+
+  // Función para entregar cédula
+  function deliverBallot() {
+    if (isBallotReady()) {
+      goto('/resultados');
+    }
+  }
+
+  // Estados derivados
+  let validCount = $derived(getValidColumnCount());
+  let remainingCount = $derived(getRemainingColumnCount());
+  let isReady = $derived(isBallotReady());
+</script>
+
+<div class="progress-header" class:ready={isReady}>
+  <div class="progress-content">
+    <div class="progress-text">
+      <h2 class="progress-title">
+        {#if isReady}
+          Tu cédula ya está lista para entregar
+        {:else}
+          Completa tus 5 votos para entregar la cédula
+        {/if}
+      </h2>
+      <p class="progress-subtitle">
+        {#if isReady}
+          Revisa tus marcas y continúa
+        {:else}
+          Te faltan {remainingCount} columnas por marcar
+        {/if}
+      </p>
+      <span class="progress-counter">{validCount}/5 columnas completas</span>
+    </div>
+    
+    <button 
+      class="deliver-button" 
+      class:disabled={!isReady}
+      disabled={!isReady}
+      onclick={deliverBallot}
+    >
+      Entregar cédula
+    </button>
+  </div>
+</div>
+
+<style>
+  .progress-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background: var(--paper-white);
+    border-bottom: 1px solid var(--grid-border);
+    padding: 12px 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .progress-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1200px;
+    margin: 0 auto;
+    gap: 16px;
+  }
+
+  .progress-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+  }
+
+  .progress-title {
+    font-family: 'Roboto Condensed', 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    line-height: 1.3;
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+  }
+
+  .progress-subtitle {
+    font-family: 'Roboto Condensed', 'Inter', sans-serif;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 0;
+    line-height: 1.3;
+  }
+
+  .progress-counter {
+    font-family: 'Roboto Condensed', 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
+
+  .deliver-button {
+    font-family: 'Roboto Condensed', 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, var(--accent), #a00d25);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  .deliver-button:hover:not(.disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(200, 16, 46, 0.3);
+  }
+
+  .deliver-button.disabled {
+    background: var(--grid-border-light);
+    color: var(--text-muted);
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .progress-header {
+      padding: 10px 12px;
+    }
+
+    .progress-content {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 10px;
+    }
+
+    .progress-title {
+      font-size: 13px;
+    }
+
+    .progress-subtitle {
+      font-size: 11px;
+    }
+
+    .progress-counter {
+      font-size: 11px;
+    }
+
+    .deliver-button {
+      width: 100%;
+      padding: 12px 16px;
+      font-size: 12px;
+    }
+  }
+</style>

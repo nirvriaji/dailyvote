@@ -14,8 +14,11 @@
     isPresidentSymbolSelected,
     isPresidentPhotoSelected,
     isPresidentRowActive,
-    hasOtherPresidentRowSelected
+    hasOtherPresidentRowSelected,
+    castVoteFromSelection,
+    removeVote
   } from '$lib/stores/preferencePicker.svelte';
+  import { vote } from '$lib/stores/vote.svelte';
 
   interface Props {
     row: BallotRow;
@@ -39,19 +42,72 @@
   let hasOtherRowSelected = $derived(hasOtherLegislativeRowSelected || hasOtherPresidentRow);
 
   // Toggle selección de símbolo (para columnas legislativas)
-  function handleSymbolClick() {
+  async function handleSymbolClick() {
     if (!columnKey) return;
-    toggleSymbolSelection(columnKey, row.id);
+    
+    const isCurrentlySelected = isRowSelected(columnKey, row.id);
+    
+    if (isCurrentlySelected) {
+      // Deseleccionar: remover voto
+      toggleSymbolSelection(columnKey, row.id);
+      removeVote(columnKey);
+    } else {
+      // Seleccionar: guardar voto
+      toggleSymbolSelection(columnKey, row.id);
+      await castVoteFromSelection(
+        columnKey,
+        row.id,
+        {
+          partyName: row.partyName,
+          partyNumber: row.partyNumber,
+          partyColor: row.partyColor
+        },
+        'symbol',
+        'Símbolo del partido'
+      );
+    }
   }
 
   // Toggle selección de símbolo del presidente (independiente)
-  function handlePresidentSymbolClick() {
+  async function handlePresidentSymbolClick() {
+    const wasSelected = isPresidentSymbolSelected(row.id);
     togglePresidentSymbol(row.id);
+    
+    // Si se acaba de marcar (no estaba seleccionado antes), guardar voto
+    if (!wasSelected) {
+      await castVoteFromSelection(
+        'presidente',
+        row.id,
+        {
+          partyName: row.partyName,
+          partyNumber: row.partyNumber,
+          partyColor: row.partyColor
+        },
+        'symbol',
+        'Símbolo del partido'
+      );
+    }
   }
 
   // Toggle selección de foto del presidente (independiente)
-  function handlePresidentPhotoClick() {
+  async function handlePresidentPhotoClick() {
+    const wasSelected = isPresidentPhotoSelected(row.id);
     togglePresidentPhoto(row.id);
+    
+    // Si se acaba de marcar (no estaba seleccionado antes), guardar voto
+    if (!wasSelected) {
+      await castVoteFromSelection(
+        'presidente',
+        row.id,
+        {
+          partyName: row.partyName,
+          partyNumber: row.partyNumber,
+          partyColor: row.partyColor
+        },
+        'photo',
+        'Foto del candidato'
+      );
+    }
   }
 
   // Para presidente: verificar si símbolo o foto están marcados

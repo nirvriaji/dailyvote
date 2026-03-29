@@ -6,6 +6,7 @@
   import { vote } from '$lib/stores/vote.svelte';
   import { ui } from '$lib/stores/ui.svelte';
   import BallotStage from '$lib/components/BallotStage.svelte';
+  import BallotProgressHeader from '$lib/components/BallotProgressHeader.svelte';
   import VoteOverlay from '$lib/components/VoteOverlay.svelte';
   import ProgressPanel from '$lib/components/ProgressPanel.svelte';
   import OnboardingTour from '$lib/components/OnboardingTour.svelte';
@@ -68,14 +69,6 @@
     const _ = vote.votes; // reactive dependency
     sessionStorage.setItem('dailyvote', vote.serialize());
   });
-  
-  // Check if all 5 columns have been voted
-  let allVotesComplete = $derived(vote.count === 5);
-  
-  // Navigate to results
-  function viewResults() {
-    goto('/resultados');
-  }
 </script>
 
 <svelte:head>
@@ -130,21 +123,13 @@
     </div>
   {/if}
 
+  <!-- Sticky progress header - always visible -->
+  <BallotProgressHeader />
+
   <!-- Solo la hoja de cédula navegable -->
   <div class="ballot-sheet">
     <BallotStage columns={BALLOT_COLUMNS} />
   </div>
-  
-  <!-- Results button - appears when all 5 votes are complete -->
-  {#if allVotesComplete}
-    <div class="results-button-container" transition:fade={{ duration: 300 }}>
-      <button class="results-button" onclick={viewResults}>
-        <span class="button-icon">📊</span>
-        <span class="button-text">Ver Resultados</span>
-        <span class="button-subtitle">Has completado tus 5 votos</span>
-      </button>
-    </div>
-  {/if}
 
   <!-- Bottom-sheet vote selection overlay -->
   <VoteOverlay />
@@ -163,97 +148,17 @@
     background: var(--paper-offwhite);
   }
 
-  /* Solo la hoja de cédula - ocupa todo el espacio */
+  /* Solo la hoja de cédula - ocupa todo el espacio, con margen para el header */
   .ballot-sheet {
     position: absolute;
-    inset: 0;
+    inset: 70px 0 0 0;
     overflow: hidden;
   }
   
-  /* Results button container */
-  .results-button-container {
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    z-index: 100;
-    animation: slideIn 0.5s ease;
-  }
-  
-  @keyframes slideIn {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  
-  .results-button {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 16px 24px;
-    background: linear-gradient(135deg, var(--accent), #a00d25);
-    color: white;
-    border: none;
-    border-radius: 12px;
-    cursor: pointer;
-    box-shadow: 0 4px 12px rgba(200, 16, 46, 0.4);
-    transition: all 0.3s ease;
-    min-width: 180px;
-  }
-  
-  .results-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(200, 16, 46, 0.5);
-  }
-  
-  .button-icon {
-    font-size: 2rem;
-    margin-bottom: 4px;
-  }
-  
-  .button-text {
-    font-size: 1.1rem;
-    font-weight: bold;
-    margin-bottom: 2px;
-  }
-  
-  .button-subtitle {
-    font-size: 0.75rem;
-    opacity: 0.9;
-  }
-  
-  /* Mobile adjustment */
+  /* Mobile adjustment - menos espacio para el header en móvil */
   @media (max-width: 768px) {
-    .results-button-container {
-      bottom: 16px;
-      right: 16px;
-      left: 16px;
-    }
-    
-    .results-button {
-      flex-direction: row;
-      gap: 12px;
-      width: 100%;
-      justify-content: center;
-      padding: 14px 20px;
-    }
-    
-    .button-icon {
-      font-size: 1.5rem;
-      margin-bottom: 0;
-    }
-    
-    .button-text {
-      font-size: 1rem;
-      margin-bottom: 0;
-    }
-    
-    .button-subtitle {
-      display: none;
+    .ballot-sheet {
+      inset: 90px 0 0 0;
     }
   }
   

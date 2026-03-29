@@ -1,7 +1,19 @@
 // Estado global para manejar el picker de voto preferencial
 // Solo permite 1 picker abierto a la vez en toda la aplicación
 
+import type { VoteSelection, VoteZoneType } from '$lib/types';
+import { vote } from './vote.svelte';
+
 export type ColumnKey = 'presidente' | 'senadoNacional' | 'senadoRegional' | 'diputados' | 'parlamentoAndino';
+
+// Mapeo de columnKey a columnId
+const columnKeyToId: Record<ColumnKey, string> = {
+  presidente: 'col0',
+  senadoNacional: 'col1',
+  senadoRegional: 'col2',
+  diputados: 'col3',
+  parlamentoAndino: 'col4'
+};
 
 // Estado del picker activo (solo 1 en toda la app)
 export type ActivePicker = {
@@ -43,6 +55,27 @@ let selectedRowByColumn = $state<ColumnSelectionState>({
 
 // Estado de los valores de preferencia por fila
 let preferenceState = $state<Record<string, RowPreferences>>({});
+
+// Funciones derivadas para progreso de votación
+export function isColumnValid(columnKey: ColumnKey): boolean {
+  return selectedRowByColumn[columnKey] !== null;
+}
+
+export function getValidColumnCount(): number {
+  let count = 0;
+  (Object.keys(selectedRowByColumn) as ColumnKey[]).forEach(key => {
+    if (selectedRowByColumn[key] !== null) count++;
+  });
+  return count;
+}
+
+export function getRemainingColumnCount(): number {
+  return 5 - getValidColumnCount();
+}
+
+export function isBallotReady(): boolean {
+  return getValidColumnCount() === 5;
+}
 
 // Obtener fila seleccionada por columna
 export function getSelectedRow(columnKey: ColumnKey): string | null {
@@ -120,6 +153,42 @@ export function toggleSymbolSelection(columnKey: ColumnKey, rowId: string) {
     replaceSelectedRow(columnKey, rowId);
     closePicker();
   }
+}
+
+// Función para guardar voto en el store (llamada desde BallotRow)
+export async function castVoteFromSelection(
+  columnKey: ColumnKey,
+  rowId: string,
+  rowData: {
+    partyName: string;
+    partyNumber: number;
+    partyColor: string;
+  },
+  zoneType: VoteZoneType,
+  zoneLabel: string,
+  preferenceNumbers?: (number | null)[]
+) {
+  const columnId = columnKeyToId[columnKey];
+  
+  const voteSelection: VoteSelection = {
+    columnId,
+    rowId,
+    partyName: rowData.partyName,
+    partyNumber: rowData.partyNumber,
+    partyColor: rowData.partyColor,
+    zoneId: zoneType,
+    zoneType,
+    zoneLabel,
+    preferenceNumbers
+  };
+  
+  await vote.cast(voteSelection);
+}
+
+// Función para remover voto (cuando se deselecciona)
+export function removeVote(columnKey: ColumnKey) {
+  const columnId = columnKeyToId[columnKey];
+  vote.remove(columnId);
 }
 
 // Estado de selección independiente para presidente (símbolo y foto por separado)
