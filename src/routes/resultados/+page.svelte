@@ -460,7 +460,7 @@
                   <div class="bar-fill" style="width: {candidate.percentage}%; background: {candidate.partyColor}"></div>
                 </div>
               </div>
-              <span class="vote-count">{candidate.votes.toLocaleString()} votos</span>
+              <span class="vote-count">{candidate.votes.toLocaleString()} simulaciones</span>
             </div>
             
             {#if candidate.partyName === allResults[0].userVote}
@@ -511,7 +511,7 @@
         </div>
         <div class="header-stats">
           <span class="seat-count">{category.totalSeats} escaños</span>
-          <span class="vote-count">{category.totalVotes.toLocaleString()} votos</span>
+          <span class="vote-count">{category.totalVotes.toLocaleString()} simulaciones</span>
         </div>
       </div>
 
@@ -937,14 +937,18 @@
   }
 
   .vote-count {
-    background: linear-gradient(135deg, #C8102E, #a00d25);
-    color: white;
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-weight: 800;
-    font-size: 0.9rem;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-    box-shadow: 0 2px 8px rgba(200, 16, 46, 0.3);
+    background: #C8102E;
+    color: #FFFFFF;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.2px;
+    line-height: 1;
+    box-shadow: 0 4px 10px rgba(200, 16, 46, 0.25);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 
   /* Presidential Cards */
