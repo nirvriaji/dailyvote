@@ -16,12 +16,10 @@
   let nextOpenTime = $state<Date | null>(null);
   
   // ─── Inline Help Banner ──────────────────────────────────────────────────────
-  let showInlineHint = $state(true);
+  let showInlineHint = $state(false);
   let autoHideHintTimeout: ReturnType<typeof window.setTimeout> | null = null;
   let initialHintTimeout: ReturnType<typeof window.setTimeout> | null = null;
-  let hasVotedOnce = $state(false);
-  let isInitialized = $state(false);
-  let initialVoteCount = $state(0); // Track initial votes on load
+  let hintDismissedThisVisit = $state(false);
   
   // ─── Horizontal Scroll Hint ───────────────────────────────────────────────────
   let ballotScroller: HTMLDivElement | null = $state(null);
@@ -30,10 +28,9 @@
   function checkVotingHours() {
     const now = new Date();
     const hour = now.getHours();
-    isVotingClosed = hour >= 20; // Close at 8:00 PM
+    isVotingClosed = hour >= 20;
     
     if (isVotingClosed) {
-      // Calculate next opening (midnight)
       const midnight = new Date(now);
       midnight.setHours(24, 0, 0, 0);
       nextOpenTime = midnight;
@@ -60,16 +57,17 @@
     }, 500);
   }
   
-  function closeInlineHint() {
-    showInlineHint = false;
+  function dismissInlineHint() {
+    if (!showInlineHint) return;
     
-    // Clear auto-hide timeout if exists
+    showInlineHint = false;
+    hintDismissedThisVisit = true;
+    
     if (autoHideHintTimeout) {
       window.clearTimeout(autoHideHintTimeout);
       autoHideHintTimeout = null;
     }
     
-    // Trigger horizontal scroll animation immediately
     hintHorizontalScroll();
   }
   
@@ -77,71 +75,52 @@
     userHasInteracted = true;
   }
 
-  // ─── Session persistence ──────────────────────────────────────────────────────
-
   onMount(() => {
     checkVotingHours();
     
-    // If voting is closed, redirect to results
     if (isVotingClosed) {
       goto('/resultados');
       return;
     }
     
-    // Check if this is a new simulation (don't restore previous votes)
     const entryMode = sessionStorage.getItem('entry_mode');
     if (entryMode === 'new_simulation') {
       sessionStorage.removeItem('entry_mode');
     }
     
-    // Restore any votes from a previous session in the same browser tab
-    // Only if not coming from a new simulation
     const saved = sessionStorage.getItem('dailyvote');
     if (!entryMode && saved) {
       vote.hydrate(saved);
     }
     
-    // Show inline hint
     showInlineHint = true;
     
-    // Auto-hide hint after 20 seconds
     autoHideHintTimeout = window.setTimeout(() => {
       showInlineHint = false;
-    }, 20000);
+      hintDismissedThisVisit = true;
+    }, 6000);
     
-    // Trigger horizontal scroll hint after 700ms
     initialHintTimeout = window.setTimeout(() => {
       hintHorizontalScroll();
     }, 700);
     
-    // Mark as initialized and record initial vote count
-    window.setTimeout(() => {
-      initialVoteCount = vote.count;
-      isInitialized = true;
-    }, 100);
-    
     return () => {
-      // Cleanup timeouts on unmount
       if (autoHideHintTimeout) window.clearTimeout(autoHideHintTimeout);
       if (initialHintTimeout) window.clearTimeout(initialHintTimeout);
     };
   });
 
-  // Persist votes on every change
+  // Persist votes and hide hint on first vote
   $effect(() => {
-    const _ = vote.votes; // reactive dependency
+    const _ = vote.votes;
     sessionStorage.setItem('dailyvote', vote.serialize());
     
-    // Hide hint when user casts their first NEW vote (not counting existing votes on load)
-    if (isInitialized && vote.count > initialVoteCount && !hasVotedOnce) {
-      hasVotedOnce = true;
-      if (showInlineHint) {
-        showInlineHint = false;
-        // Clear auto-hide timeout since we're hiding it now
-        if (autoHideHintTimeout) {
-          window.clearTimeout(autoHideHintTimeout);
-          autoHideHintTimeout = null;
-        }
+    if (vote.count > 0 && showInlineHint && !hintDismissedThisVisit) {
+      showInlineHint = false;
+      hintDismissedThisVisit = true;
+      if (autoHideHintTimeout) {
+        window.clearTimeout(autoHideHintTimeout);
+        autoHideHintTimeout = null;
       }
     }
   });
@@ -152,8 +131,6 @@
 </svelte:head>
 
 <div class="app-shell">
-
-  <!-- Voting closed overlay -->
   {#if isVotingClosed}
     <div class="closed-overlay" transition:fade={{ duration: 300 }}>
       <div class="closed-message">
@@ -175,30 +152,29 @@
     </div>
   {/if}
 
-  <!-- Sticky progress header - always visible -->
   <BallotProgressHeader />
 
-  <!-- Inline Help Banner -->
   {#if showInlineHint}
     <div 
-      class="inline-hint-banner" 
-      in:fade={{ duration: 180, delay: 100 }}
+      class="inline-hint-banner"
+      in:fade={{ duration: 200, delay: 100 }}
       out:fade={{ duration: 150 }}
     >
-      <div class="hint-content">
-        <p class="hint-text">Haz clic para marcar o desmarcar. Desliza para recorrer la cédula.</p>
-        <button 
-          class="hint-close-btn" 
-          onclick={closeInlineHint}
-          aria-label="Cerrar ayuda"
-        >
-          ×
-        </button>
+      <div class="hint-content" transition:fade={{ duration: 200, delay: 100 }} style="transform: translateY(-8px);">
+        <div class="hint-inner" style="transform: translateY(8px);">
+          <p class="hint-text">Haz clic para marcar o desmarcar. Desliza para recorrer la cédula.</p>
+          <button 
+            class="hint-close-btn" 
+            onclick={dismissInlineHint}
+            aria-label="Cerrar ayuda"
+          >
+            ×
+          </button>
+        </div>
       </div>
     </div>
   {/if}
 
-  <!-- Solo la hoja de cédula navegable -->
   <div 
     class="ballot-sheet" 
     bind:this={ballotScroller}
@@ -209,10 +185,8 @@
     <BallotStage columns={BALLOT_COLUMNS} />
   </div>
 
-  <!-- Bottom-sheet vote selection overlay -->
   <VoteOverlay />
 
-  <!-- Slide-in summary panel (triggered from progress button in ContextBar) -->
   {#if ui.showSummary}
     <ProgressPanel />
   {/if}
@@ -226,7 +200,6 @@
     background: var(--paper-offwhite);
   }
 
-  /* Inline Help Banner */
   .inline-hint-banner {
     position: fixed;
     top: 70px;
@@ -238,17 +211,24 @@
   }
   
   .hint-content {
-    max-width: 1100px;
+    max-width: 1380px;
+    width: calc(100% - 32px);
     margin: 12px auto 16px;
-    padding: 14px 18px;
+    padding: 16px 20px;
     background: #F5F7FB;
     border: 1px solid #D9E2F2;
-    border-radius: 14px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
+    border-radius: 18px;
+    box-shadow: 0 6px 18px rgba(20, 35, 90, 0.06);
     pointer-events: auto;
     position: relative;
+    transition: transform 200ms ease-out;
+  }
+  
+  .hint-inner {
+    display: flex;
+    align-items: center;
+    position: relative;
+    transition: transform 200ms ease-out;
   }
   
   .hint-text {
@@ -259,65 +239,62 @@
     line-height: 1.5;
     color: #1F2A44;
     text-align: center;
+    padding-right: 40px;
   }
   
   .hint-close-btn {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
     width: 28px;
     height: 28px;
-    border-radius: 50%;
+    border-radius: 999px;
     border: none;
     background: transparent;
     color: #5B657A;
     font-size: 20px;
-    font-weight: 400;
+    line-height: 1;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
     transition: opacity 0.2s ease;
     padding: 0;
-    line-height: 1;
   }
   
   .hint-close-btn:hover {
-    opacity: 0.7;
+    opacity: 0.75;
   }
 
-  /* Solo la hoja de cédula - ocupa todo el espacio, con margen para el header */
   .ballot-sheet {
     position: absolute;
     inset: 70px 0 0 0;
     overflow: auto;
   }
   
-  /* Adjust for inline hint when visible */
   :global(.inline-hint-banner + .ballot-sheet) {
     top: 124px;
   }
   
-  /* Mobile adjustment */
   @media (max-width: 768px) {
     .inline-hint-banner {
       top: 90px;
-      padding: 0 12px;
+      padding: 0 10px;
     }
     
     .hint-content {
-      margin: 10px auto 12px;
-      padding: 14px 18px;
-      flex-wrap: wrap;
+      width: calc(100% - 20px);
+      padding: 14px 16px;
     }
     
     .hint-text {
       font-size: 13px;
       text-align: center;
-      flex: 1 1 auto;
+      padding-right: 36px;
     }
     
     .hint-close-btn {
-      position: absolute;
-      top: 8px;
       right: 8px;
     }
     
@@ -330,7 +307,6 @@
     }
   }
   
-  /* Voting closed overlay */
   .closed-overlay {
     position: fixed;
     inset: 0;
