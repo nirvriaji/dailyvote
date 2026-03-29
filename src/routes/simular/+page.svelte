@@ -118,10 +118,11 @@
       vote.hydrate(saved);
     }
     
-    // Center ballot immediately (solo si está abierto)
+    // Center ballot immediately (siempre, independientemente del estado)
+    centerBallot();
+    
+    // Mostrar ayuda y animación solo si está abierto
     if (votingStatus === 'open') {
-      centerBallot();
-      
       showInlineHint = true;
       
       autoHideHintTimeout = window.setTimeout(() => {
@@ -164,7 +165,7 @@
   <!-- Closed Banner - cuando las simulaciones están cerradas (20:00 - 00:00) -->
   {#if votingStatus === 'closed'}
     <div class="closed-banner" transition:fade={{ duration: 300 }}>
-      <p class="closed-text">Las simulaciones de hoy han cerrado. Vuelve mañana desde las 00:00.</p>
+      <p class="closed-text">Las simulaciones de hoy han cerrado. Vuelve desde las 00:00.</p>
     </div>
   {/if}
 

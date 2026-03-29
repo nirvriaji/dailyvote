@@ -414,7 +414,7 @@
           <div class="widget-icon">🗳️</div>
           <div class="widget-data">
             <span class="widget-number">{liveVoterCount.toLocaleString()}</span>
-            <span class="widget-unit">simulaciones hoy</span>
+            <span class="widget-unit">votos</span>
           </div>
         </div>
       </div>
@@ -468,7 +468,7 @@
                   <div class="bar-fill" style="width: {candidate.percentage}%; background: {candidate.partyColor}"></div>
                 </div>
               </div>
-              <span class="vote-count">{candidate.votes.toLocaleString()} simulaciones</span>
+              <span class="vote-count">{candidate.votes.toLocaleString()} votos</span>
             </div>
             
             {#if candidate.partyName === allResults[0].userVote}
@@ -519,7 +519,7 @@
         </div>
         <div class="header-stats">
           <span class="seat-count">{category.totalSeats} escaños</span>
-          <span class="vote-count">{category.totalVotes.toLocaleString()} simulaciones</span>
+          <span class="vote-count">{category.totalVotes.toLocaleString()} votos</span>
         </div>
       </div>
 
@@ -1081,7 +1081,7 @@
     transition: width 1s ease;
   }
 
-  .vote-count {
+  .vote-count-secondary {
     font-size: 0.85rem;
     color: #666;
   }

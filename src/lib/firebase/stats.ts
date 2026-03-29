@@ -92,6 +92,7 @@ export async function addVoteToGlobalStats(
       await setDoc(statsRef, {
         date,
         totalVotes: 1,
+        totalSimulations: 0, // Inicializar en 0, se incrementará con incrementSimulationCount
         lastUpdated: serverTimestamp(),
         categories: {
           president: category === 'president' ? { [partyId]: 1 } : {},
@@ -146,13 +147,25 @@ export async function incrementSimulationCount(date: string): Promise<boolean> {
     
     if (docSnap.exists()) {
       const currentData = docSnap.data();
+      
+      // Si totalSimulations no existe, inicializarlo a 0 primero
+      if (currentData.totalSimulations === undefined || currentData.totalSimulations === null) {
+        console.log(`📊 Inicializando totalSimulations a 0 para ${date}`);
+        await updateDoc(statsRef, {
+          totalSimulations: 0,
+          lastUpdated: serverTimestamp()
+        });
+      }
+      
       const currentCount = currentData.totalSimulations || 0;
-      console.log(`📊 Incrementando de ${currentCount} a ${currentCount + 1}`);
+      console.log(`📊 Incrementando totalSimulations de ${currentCount} a ${currentCount + 1}`);
       
       await updateDoc(statsRef, {
         totalSimulations: increment(1),
         lastUpdated: serverTimestamp()
       });
+      
+      console.log(`✅ Contador incrementado exitosamente para ${date}`);
     } else {
       console.log(`📊 Creando nuevo documento con totalSimulations: 1`);
       const { setDoc } = await import('firebase/firestore');
@@ -170,9 +183,9 @@ export async function incrementSimulationCount(date: string): Promise<boolean> {
         },
         metadata: {}
       });
+      console.log(`✅ Documento creado con totalSimulations: 1`);
     }
     
-    console.log(`✅ Contador incrementado exitosamente para ${date}`);
     return true;
   } catch (error: any) {
     console.error('❌ Error incrementando contador de simulaciones:', error.message);

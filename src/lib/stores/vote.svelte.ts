@@ -81,27 +81,35 @@ class VoteStore {
   }
 
   // Enviar TODOS los votos acumulados a Firebase en paralelo (ultra rápido)
+  // Si está cerrado (20:00-00:00), solo limpia localmente sin enviar a Firebase
   async submitVotes(): Promise<boolean> {
     if (this.votes.size === 0) return false;
     
     this.isSubmitting = true;
     const date = new Date().toISOString().split('T')[0];
-    const categoryMap: Record<string, string> = {
-      'col0': 'president',
-      'col1': 'senatorsNational',
-      'col2': 'senatorsRegional',
-      'col3': 'deputies',
-      'col4': 'andeanParliament'
-    };
-
+    
     try {
-      // Verificar primero si está dentro del horario de votación
+      // Verificar si está dentro del horario de votación
       const { getVotingStatus } = await import('$lib/firebase');
-      if (getVotingStatus() === 'closed') {
-        console.warn('🚫 Simulaciones cerradas (20:00 - 00:00). No se enviarán datos.');
+      const isClosed = getVotingStatus() === 'closed';
+      
+      if (isClosed) {
+        console.log('🔒 Simulaciones cerradas. Modo práctica local - no se envía a Firebase.');
+        // Limpiar datos locales (modo práctica)
+        this.clearLocalStorage();
+        this.votes = new Map();
         this.isSubmitting = false;
-        return false;
+        return true; // Permitir navegación a resultados
       }
+      
+      // Si está abierto, proceder con envío normal a Firebase
+      const categoryMap: Record<string, string> = {
+        'col0': 'president',
+        'col1': 'senatorsNational',
+        'col2': 'senatorsRegional',
+        'col3': 'deputies',
+        'col4': 'andeanParliament'
+      };
       
       // Crear array de promesas para enviar TODOS en paralelo
       const votePromises = [];
