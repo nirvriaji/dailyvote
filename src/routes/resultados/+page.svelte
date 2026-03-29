@@ -66,9 +66,83 @@
   let unsubscribe: Unsubscribe | null = null;
   let restarting = $state(false);
   
-  // Prepare data for sharing
+  // ─── Proyección de simulación ────────────────────────────────────────────────
+  let projectionMultiplier = $state(1);
+  
+  // Options for projection
+  const projectionOptions = [
+    { label: 'Solo tú (x1)', value: 1 },
+    { label: '10 personas', value: 10 },
+    { label: '100 personas', value: 100 },
+    { label: '1000 personas', value: 1000 }
+  ];
+  
+  // Load saved projection from sessionStorage
+  onMount(() => {
+    const savedMultiplier = sessionStorage.getItem('projection_multiplier');
+    if (savedMultiplier) {
+      projectionMultiplier = parseInt(savedMultiplier, 10);
+    }
+  });
+  
+  // Save projection to sessionStorage when changed
+  $effect(() => {
+    sessionStorage.setItem('projection_multiplier', projectionMultiplier.toString());
+  });
+  
+  function getHypotheticalExtra(multiplier: number) {
+    return Math.max(0, multiplier - 1);
+  }
+  
+  // Get user's current votes from store
+  let userVotes = $derived(Array.from(vote.votes.entries()).map(([colId, voteData]) => ({
+    colId,
+    partyName: voteData.partyName,
+    category: voteData.columnId
+  })));
+  
+  // Calculate projected results
+  let projectedResults = $derived(() => {
+    if (projectionMultiplier === 1 || allResults.length === 0) {
+      return allResults;
+    }
+    
+    const extra = getHypotheticalExtra(projectionMultiplier);
+    const cloned = structuredClone(allResults);
+    
+    // Apply extra votes to user's selections
+    for (const userVote of userVotes) {
+      const category = cloned.find(c => c.categoryId === userVote.colId || c.category === userVote.category);
+      if (category) {
+        const result = category.results.find(r => r.partyName === userVote.partyName);
+        if (result) {
+          result.votes += extra;
+        }
+        // Recalculate total votes for this category
+        category.totalVotes += extra;
+      }
+    }
+    
+    // Recalculate percentages for all results
+    for (const category of cloned) {
+      for (const result of category.results) {
+        result.percentage = category.totalVotes > 0 
+          ? (result.votes / category.totalVotes) * 100 
+          : 0;
+      }
+      // Re-sort by votes (descending)
+      category.results.sort((a, b) => b.votes - a.votes);
+    }
+    
+    return cloned;
+  });
+  
+  // Display results (real or projected)
+  let displayResults = $derived(projectionMultiplier === 1 ? allResults : projectedResults());
+  
+  // Prepare data for sharing (include projection info)
   let shareData = $derived<SharedResult[]>(
-    allResults.map(r => ({
+    displayResults.map(r => ({
       category: r.category,
       partyName: r.results[0]?.partyName || 'Sin datos',
       partyColor: r.results[0]?.partyColor || '#ccc',
@@ -429,20 +503,30 @@
     {/if}
   </header>
 
+  <!-- Projection Banner (when viewing projection) -->
+  {#if projectionMultiplier > 1}
+    <div class="projection-banner" in:fade={{ duration: 300 }}>
+      Viendo proyección: {projectionMultiplier} personas votarían igual que tú
+    </div>
+  {/if}
+
   <!-- Presidential Results - Featured -->
   <section class="featured-section presidential" in:fly={{ y: 30, duration: 600, delay: 200 }}>
     <div class="section-header">
       <h2>Presidente y Vicepresidentes</h2>
+      {#if projectionMultiplier > 1}
+        <p class="projection-subtitle">Resultados proyectados</p>
+      {/if}
     </div>
     
-    {#if allResults[0]?.results?.length > 0}
+    {#if displayResults[0]?.results?.length > 0}
       <div class="candidates-showcase">
-        {#each allResults[0].results.slice(0, 3) as candidate, i}
+        {#each displayResults[0].results.slice(0, 3) as candidate, i}
           <div 
             class="candidate-card"
             class:winner={i === 0}
-            class:user-vote={candidate.partyName === allResults[0].userVote}
-            in:scale={{ duration: 400, delay: i * 150, start: 0.8 }}
+            class:user-vote={candidate.partyName === displayResults[0].userVote}
+            in:fly={{ y: 30, duration: 500, delay: i * 150 }}
           >
             <div class="rank-badge">{i === 0 ? '🏆' : i === 1 ? '🥈' : '🥉'}</div>
             
@@ -471,7 +555,7 @@
               <span class="vote-count">{candidate.votes.toLocaleString()} votos</span>
             </div>
             
-            {#if candidate.partyName === allResults[0].userVote}
+            {#if candidate.partyName === displayResults[0].userVote}
               <div class="user-vote-ribbon">TU VOTO</div>
             {/if}
           </div>
@@ -479,7 +563,7 @@
       </div>
       
       <!-- Runoff Warning -->
-      {#if !hasAbsoluteMajority(allResults[0].results)}
+      {#if !hasAbsoluteMajority(displayResults[0].results)}
         <div class="runoff-banner" in:fly={{ y: 20, duration: 400, delay: 600 }}>
           <div class="runoff-icon">⚠️</div>
           <div class="runoff-content">
@@ -499,7 +583,7 @@
   </section>
 
   <!-- Congressional Categories with Hemicycle -->
-  {#each allResults.slice(1) as category, index}
+  {#each displayResults.slice(1) as category, index}
     <section 
       class="category-section"
       in:fly={{ y: 30, duration: 600, delay: 300 + index * 100 }}
@@ -507,6 +591,9 @@
       <div class="section-header">
         <div>
           <h2>{category.category}</h2>
+          {#if projectionMultiplier > 1}
+            <p class="projection-subtitle">Resultados proyectados</p>
+          {/if}
           {#if category.categoryId === 'senatorsNational'}
             <p class="district-label">Distrito Nacional</p>
           {:else if category.categoryId === 'senatorsRegional'}
@@ -621,6 +708,30 @@
       </button>
     </div>
   </div>
+
+  <!-- Projection Card -->
+  {#if userVotes.length > 0}
+    <div class="projection-card" in:fly={{ y: 30, duration: 600, delay: 900 }}>
+      <h2 class="projection-title">Proyección de tu simulación</h2>
+      <p class="projection-description">Simula cómo cambiarían los resultados si más personas votaran igual que tú.</p>
+      
+      <div class="projection-label">Escenario de proyección</div>
+      
+      <div class="projection-selector">
+        {#each projectionOptions as option}
+          <button 
+            class="projection-option"
+            class:active={projectionMultiplier === option.value}
+            onclick={() => projectionMultiplier = option.value}
+          >
+            {option.label}
+          </button>
+        {/each}
+      </div>
+      
+      <p class="projection-note">Esto es una proyección y no modifica los resultados reales del día.</p>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -1455,6 +1566,106 @@
     border-color: #2196F3;
     color: #2196F3;
     background: rgba(33, 150, 243, 0.05);
+  }
+
+  /* Projection Card */
+  .projection-card {
+    max-width: 720px;
+    margin: 0 auto 24px;
+    background: white;
+    border-radius: 18px;
+    padding: 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  }
+
+  .projection-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+    color: #1a1a2e;
+  }
+
+  .projection-description {
+    font-size: 1rem;
+    color: #666;
+    margin: 0 0 16px 0;
+    line-height: 1.5;
+  }
+
+  .projection-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1F2A44;
+    margin-bottom: 10px;
+  }
+
+  .projection-selector {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+
+  .projection-option {
+    height: 44px;
+    padding: 0 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    transition: all 0.2s ease;
+    background: #F5F7FB;
+    color: #1F2A44;
+    border: 1px solid #D9E2F2;
+    cursor: pointer;
+  }
+
+  .projection-option.active {
+    background: #2196F3;
+    color: #FFFFFF;
+    border: none;
+  }
+
+  .projection-option:hover:not(.active) {
+    background: #E8EDF5;
+  }
+
+  .projection-note {
+    font-size: 12px;
+    color: #888;
+    margin: 0;
+    font-style: italic;
+  }
+
+  /* Projection Banner */
+  .projection-banner {
+    background: #EAF3FF;
+    color: #174A8B;
+    border: 1px solid #CFE2FF;
+    border-radius: 12px;
+    padding: 10px 14px;
+    margin-bottom: 16px;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  /* Projection Subtitle */
+  .projection-subtitle {
+    font-size: 12px;
+    color: #2196F3;
+    font-weight: 600;
+    margin: 0 0 4px 0;
+  }
+
+  @media (max-width: 768px) {
+    .projection-selector {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .projection-option {
+      width: 100%;
+    }
   }
 
   /* Final Results Banner (when voting is closed) */
