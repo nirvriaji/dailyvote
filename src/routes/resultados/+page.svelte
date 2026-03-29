@@ -149,25 +149,34 @@
   });
   
   // Display results (real or projected)
-  let displayResults = $state([...allResults]);
+  let displayResults = $state<CategoryResults[]>([]);
   
   // Track previous values to force updates
   let previousMultiplier = $state(1);
   
-  // Update display results when projection changes
+  // Update display results when projection or allResults changes
   $effect(() => {
     const currentMultiplier = projectionMultiplier;
-    console.log('🎭 Efecto displayResults. Previo:', previousMultiplier, 'Actual:', currentMultiplier);
+    const currentResults = allResults;
     
-    if (currentMultiplier !== previousMultiplier) {
+    console.log('🎭 Efecto displayResults. Multiplier:', currentMultiplier, 'AllResults length:', currentResults.length);
+    
+    if (currentResults.length === 0) {
+      console.log('⏳ Esperando datos...');
+      return;
+    }
+    
+    // Always update on first load or when multiplier changes
+    if (displayResults.length === 0 || currentMultiplier !== previousMultiplier) {
       previousMultiplier = currentMultiplier;
       
       if (currentMultiplier === 1) {
-        displayResults = JSON.parse(JSON.stringify(allResults));
-        console.log('✅ displayResults actualizado con resultados reales');
+        displayResults = JSON.parse(JSON.stringify(currentResults));
+        console.log('✅ displayResults actualizado con resultados reales:', displayResults.length, 'categorías');
       } else {
         displayResults = JSON.parse(JSON.stringify(projectedResults));
-        console.log('✅ displayResults actualizado con proyección. Votos:', displayResults[0]?.results?.[0]?.votes);
+        console.log('✅ displayResults actualizado con proyección:', displayResults.length, 'categorías');
+        console.log('📊 Primera categoría - Votos:', displayResults[0]?.results?.[0]?.votes, 'Partido:', displayResults[0]?.results?.[0]?.partyName);
       }
     }
   });
