@@ -21,6 +21,7 @@
   let initialHintTimeout: ReturnType<typeof window.setTimeout> | null = null;
   let hasVotedOnce = $state(false);
   let isInitialized = $state(false);
+  let initialVoteCount = $state(0); // Track initial votes on load
   
   // ─── Horizontal Scroll Hint ───────────────────────────────────────────────────
   let ballotScroller: HTMLDivElement | null = $state(null);
@@ -113,8 +114,9 @@
       hintHorizontalScroll();
     }, 700);
     
-    // Mark as initialized after a short delay to ensure stores are settled
+    // Mark as initialized and record initial vote count
     window.setTimeout(() => {
+      initialVoteCount = vote.count;
       isInitialized = true;
     }, 100);
     
@@ -130,8 +132,8 @@
     const _ = vote.votes; // reactive dependency
     sessionStorage.setItem('dailyvote', vote.serialize());
     
-    // Hide hint when user casts their first vote (only after initialization)
-    if (isInitialized && vote.count > 0 && !hasVotedOnce) {
+    // Hide hint when user casts their first NEW vote (not counting existing votes on load)
+    if (isInitialized && vote.count > initialVoteCount && !hasVotedOnce) {
       hasVotedOnce = true;
       if (showInlineHint) {
         showInlineHint = false;
