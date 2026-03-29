@@ -9,15 +9,20 @@
   import BallotProgressHeader from '$lib/components/BallotProgressHeader.svelte';
   import VoteOverlay from '$lib/components/VoteOverlay.svelte';
   import ProgressPanel from '$lib/components/ProgressPanel.svelte';
-  import OnboardingTour from '$lib/components/OnboardingTour.svelte';
   import ShareResults from '$lib/components/ShareResults.svelte';
 
   // ─── Check voting hours ─────────────────────────────────────────────────────
   let isVotingClosed = $state(false);
   let nextOpenTime = $state<Date | null>(null);
   
-  // ─── Onboarding Tour ─────────────────────────────────────────────────────────
-  let showTour = $state(false);
+  // ─── Inline Help Banner ──────────────────────────────────────────────────────
+  let showInlineHint = $state(true);
+  let autoHideHintTimeout: ReturnType<typeof window.setTimeout> | null = null;
+  let initialHintTimeout: ReturnType<typeof window.setTimeout> | null = null;
+  
+  // ─── Horizontal Scroll Hint ───────────────────────────────────────────────────
+  let ballotScroller: HTMLDivElement | null = $state(null);
+  let userHasInteracted = $state(false);
   
   function checkVotingHours() {
     const now = new Date();
@@ -30,6 +35,43 @@
       midnight.setHours(24, 0, 0, 0);
       nextOpenTime = midnight;
     }
+  }
+  
+  function hintHorizontalScroll() {
+    if (!ballotScroller) return;
+    if (userHasInteracted) return;
+    
+    ballotScroller.scrollTo({
+      left: 96,
+      behavior: 'smooth'
+    });
+    
+    window.setTimeout(() => {
+      if (!ballotScroller) return;
+      if (userHasInteracted) return;
+      
+      ballotScroller.scrollTo({
+        left: 0,
+        behavior: 'smooth'
+      });
+    }, 500);
+  }
+  
+  function closeInlineHint() {
+    showInlineHint = false;
+    
+    // Clear auto-hide timeout if exists
+    if (autoHideHintTimeout) {
+      window.clearTimeout(autoHideHintTimeout);
+      autoHideHintTimeout = null;
+    }
+    
+    // Trigger horizontal scroll animation immediately
+    hintHorizontalScroll();
+  }
+  
+  function markUserInteraction() {
+    userHasInteracted = true;
   }
 
   // ─── Session persistence ──────────────────────────────────────────────────────
@@ -47,31 +89,34 @@
     const entryMode = sessionStorage.getItem('entry_mode');
     if (entryMode === 'new_simulation') {
       sessionStorage.removeItem('entry_mode');
-      return; // Start fresh, don't hydrate
-    }
-    
-    // Check if user has seen the tour
-    const hasSeenTour = localStorage.getItem('dailyvote_seen_tour');
-    if (!hasSeenTour) {
-      showTour = true;
     }
     
     // Restore any votes from a previous session in the same browser tab
+    // Only if not coming from a new simulation
     const saved = sessionStorage.getItem('dailyvote');
-    if (saved) {
+    if (!entryMode && saved) {
       vote.hydrate(saved);
     }
+    
+    // Show inline hint
+    showInlineHint = true;
+    
+    // Auto-hide hint after 6 seconds
+    autoHideHintTimeout = window.setTimeout(() => {
+      showInlineHint = false;
+    }, 6000);
+    
+    // Trigger horizontal scroll hint after 700ms
+    initialHintTimeout = window.setTimeout(() => {
+      hintHorizontalScroll();
+    }, 700);
+    
+    return () => {
+      // Cleanup timeouts on unmount
+      if (autoHideHintTimeout) window.clearTimeout(autoHideHintTimeout);
+      if (initialHintTimeout) window.clearTimeout(initialHintTimeout);
+    };
   });
-
-  function completeTour() {
-    showTour = false;
-    localStorage.setItem('dailyvote_seen_tour', 'true');
-  }
-
-  function skipTour() {
-    showTour = false;
-    localStorage.setItem('dailyvote_seen_tour', 'true');
-  }
 
   // Persist votes on every change
   $effect(() => {
@@ -83,30 +128,6 @@
 <svelte:head>
   <title>Simular voto — Cédula Electoral Perú 2026</title>
 </svelte:head>
-
-<!--
-  Layout: Ordinals + gap + Stage (with current column + right preview)
-  Left side: completely hidden, no peeking
-  Right side: blurred preview of next column visible
-  
-  Structure:
-    ┌───────────────────────────────────────────────┐
-    │ BallotHeader                                  │
-    ├───────────────────────────────────────────────┤
-    │ ┌────┬──┬───────────────────────────┬─────┐│
-    │ │ Ord│  │    STAGE (current +       │PREV ││
-    │ │48px│4px│     right preview)        │200px││
-    │ │    │  │                           │     ││
-    │ └────┴──┴───────────────────────────┴─────┘│
-    └───────────────────────────────────────────────┘
-  
-  Left side of current column is completely masked/hidden.
--->
-
-<!-- Onboarding Tour for first-time users -->
-{#if showTour}
-  <OnboardingTour onComplete={completeTour} onSkip={skipTour} />
-{/if}
 
 <div class="app-shell">
 
@@ -135,8 +156,35 @@
   <!-- Sticky progress header - always visible -->
   <BallotProgressHeader />
 
+  <!-- Inline Help Banner -->
+  {#if showInlineHint}
+    <div 
+      class="inline-hint-banner" 
+      in:fade={{ duration: 180, delay: 100 }}
+      out:fade={{ duration: 150 }}
+    >
+      <div class="hint-content">
+        <span class="hint-icon">👆</span>
+        <p class="hint-text">Haz clic para marcar. Vuelve a hacer clic para desmarcar. Desliza para recorrer la cédula.</p>
+        <button 
+          class="hint-close-btn" 
+          onclick={closeInlineHint}
+          aria-label="Cerrar ayuda"
+        >
+          ×
+        </button>
+      </div>
+    </div>
+  {/if}
+
   <!-- Solo la hoja de cédula navegable -->
-  <div class="ballot-sheet">
+  <div 
+    class="ballot-sheet" 
+    bind:this={ballotScroller}
+    onpointerdown={markUserInteraction}
+    onwheel={markUserInteraction}
+    ontouchstart={markUserInteraction}
+  >
     <BallotStage columns={BALLOT_COLUMNS} />
   </div>
 
@@ -157,17 +205,113 @@
     background: var(--paper-offwhite);
   }
 
+  /* Inline Help Banner */
+  .inline-hint-banner {
+    position: fixed;
+    top: 70px;
+    left: 0;
+    right: 0;
+    z-index: 999;
+    padding: 0 16px;
+    pointer-events: none;
+  }
+  
+  .hint-content {
+    max-width: 1100px;
+    margin: 12px auto 16px;
+    padding: 12px 16px;
+    background: #F5F7FB;
+    border: 1px solid #D9E2F2;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    pointer-events: auto;
+  }
+  
+  .hint-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  
+  .hint-text {
+    flex: 1;
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.4;
+    color: #1F2A44;
+    text-align: center;
+  }
+  
+  .hint-close-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: #5B657A;
+    font-size: 20px;
+    font-weight: 400;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.2s ease;
+  }
+  
+  .hint-close-btn:hover {
+    background: rgba(91, 101, 122, 0.1);
+  }
+
   /* Solo la hoja de cédula - ocupa todo el espacio, con margen para el header */
   .ballot-sheet {
     position: absolute;
     inset: 70px 0 0 0;
-    overflow: hidden;
+    overflow: auto;
   }
   
-  /* Mobile adjustment - menos espacio para el header en móvil */
+  /* Adjust for inline hint when visible */
+  :global(.inline-hint-banner + .ballot-sheet) {
+    top: 124px;
+  }
+  
+  /* Mobile adjustment */
   @media (max-width: 768px) {
+    .inline-hint-banner {
+      top: 90px;
+      padding: 0 12px;
+    }
+    
+    .hint-content {
+      margin: 10px auto 12px;
+      padding: 10px 12px;
+      flex-wrap: wrap;
+    }
+    
+    .hint-icon {
+      font-size: 18px;
+    }
+    
+    .hint-text {
+      font-size: 13px;
+      text-align: left;
+      flex: 1 1 auto;
+    }
+    
+    .hint-close-btn {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+    }
+    
     .ballot-sheet {
       inset: 90px 0 0 0;
+    }
+    
+    :global(.inline-hint-banner + .ballot-sheet) {
+      top: 146px;
     }
   }
   
