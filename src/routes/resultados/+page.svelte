@@ -77,11 +77,17 @@
     { label: '1000 personas', value: 1000 }
   ];
   
-  // Load saved projection from sessionStorage
+  // Load saved projection from sessionStorage and hydrate vote store
   onMount(() => {
     const savedMultiplier = sessionStorage.getItem('projection_multiplier');
     if (savedMultiplier) {
       projectionMultiplier = parseInt(savedMultiplier, 10);
+    }
+    
+    // Hydrate vote store from sessionStorage so projection card shows on reload
+    const savedVotes = sessionStorage.getItem('dailyvote');
+    if (savedVotes && vote.count === 0) {
+      vote.hydrate(savedVotes);
     }
   });
   
@@ -102,13 +108,20 @@
   })));
   
   // Calculate projected results
-  let projectedResults = $derived(() => {
+  let projectedResults = $derived.by(() => {
+    console.log('📊 Calculando proyección con multiplier:', projectionMultiplier);
+    
     if (projectionMultiplier === 1 || allResults.length === 0) {
+      console.log('↩️ Retornando resultados reales (multiplier = 1 o sin datos)');
       return allResults;
     }
     
     const extra = getHypotheticalExtra(projectionMultiplier);
-    const cloned = structuredClone(allResults);
+    console.log('➕ Votos extra a agregar:', extra, 'por cada selección del usuario');
+    console.log('👤 Votos del usuario:', userVotes);
+    
+    // Use JSON parse/stringify for deep clone (more compatible than structuredClone)
+    const cloned = JSON.parse(JSON.stringify(allResults));
     
     // Apply extra votes to user's selections
     for (const userVote of userVotes) {
@@ -116,6 +129,7 @@
       if (category) {
         const result = category.results.find(r => r.partyName === userVote.partyName);
         if (result) {
+          console.log(`✅ Agregando ${extra} votos a ${userVote.partyName} en ${category.category}`);
           result.votes += extra;
         }
         // Recalculate total votes for this category
@@ -134,11 +148,12 @@
       category.results.sort((a, b) => b.votes - a.votes);
     }
     
+    console.log('✨ Proyección calculada:', cloned[0]?.results?.slice(0, 2));
     return cloned;
   });
   
   // Display results (real or projected)
-  let displayResults = $derived(projectionMultiplier === 1 ? allResults : projectedResults());
+  let displayResults = $derived(projectionMultiplier === 1 ? allResults : projectedResults);
   
   // Prepare data for sharing (include projection info)
   let shareData = $derived<SharedResult[]>(
@@ -722,7 +737,10 @@
           <button 
             class="projection-option"
             class:active={projectionMultiplier === option.value}
-            onclick={() => projectionMultiplier = option.value}
+            onclick={() => {
+              console.log('🎯 Cambiando proyección a:', option.value);
+              projectionMultiplier = option.value;
+            }}
           >
             {option.label}
           </button>
