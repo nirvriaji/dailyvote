@@ -149,7 +149,28 @@
   });
   
   // Display results (real or projected)
-  let displayResults = $derived(projectionMultiplier === 1 ? allResults : projectedResults);
+  let displayResults = $state([...allResults]);
+  
+  // Track previous values to force updates
+  let previousMultiplier = $state(1);
+  
+  // Update display results when projection changes
+  $effect(() => {
+    const currentMultiplier = projectionMultiplier;
+    console.log('🎭 Efecto displayResults. Previo:', previousMultiplier, 'Actual:', currentMultiplier);
+    
+    if (currentMultiplier !== previousMultiplier) {
+      previousMultiplier = currentMultiplier;
+      
+      if (currentMultiplier === 1) {
+        displayResults = JSON.parse(JSON.stringify(allResults));
+        console.log('✅ displayResults actualizado con resultados reales');
+      } else {
+        displayResults = JSON.parse(JSON.stringify(projectedResults));
+        console.log('✅ displayResults actualizado con proyección. Votos:', displayResults[0]?.results?.[0]?.votes);
+      }
+    }
+  });
   
   // Prepare data for sharing (include projection info)
   let shareData = $derived<SharedResult[]>(
