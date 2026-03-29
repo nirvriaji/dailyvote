@@ -6,8 +6,9 @@
 
   interface Props {
     columns: BallotColumnData[];
+    scroller?: HTMLDivElement | null;
   }
-  let { columns }: Props = $props();
+  let { columns, scroller = $bindable() }: Props = $props();
 
   // ─── Layout Constants ─────────────────────────────────────────────────────────
   const BASE_COL_WIDTH = 320;
@@ -22,6 +23,7 @@
   Uniform border visible on all sides when scrolling to extremes.
 -->
 <div
+  bind:this={scroller}
   class="stage-viewport"
   aria-label="Cédula electoral — hoja única"
 >

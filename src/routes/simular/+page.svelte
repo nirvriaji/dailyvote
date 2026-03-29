@@ -41,7 +41,7 @@
     if (!ballotScroller) return;
 
     const x = (ballotScroller.scrollWidth - ballotScroller.clientWidth) / 2;
-    const y = (ballotScroller.scrollHeight - ballotScroller.clientHeight) / 2;
+    const y = (ballotScroller.scrollHeight - ballotScroller.clientHeight) / 2 + 200;
 
     ballotScroller.scrollTo({
       left: x,
@@ -189,11 +189,10 @@
   {#if showInlineHint}
     <div 
       class="inline-hint-banner"
-      in:fade={{ duration: 200, delay: 100 }}
-      out:fade={{ duration: 150 }}
+      transition:fade={{ duration: 150 }}
     >
-      <div class="hint-content" transition:fade={{ duration: 200, delay: 100 }} style="transform: translateY(-8px);">
-        <div class="hint-inner" style="transform: translateY(8px);">
+      <div class="hint-content">
+        <div class="hint-inner">
           <p class="hint-text">Explora la cédula deslizando en cualquier dirección. Haz clic para marcar o desmarcar.</p>
           <button 
             class="hint-close-btn" 
@@ -209,12 +208,12 @@
 
   <div 
     class="ballot-sheet" 
-    bind:this={ballotScroller}
     onpointerdown={markUserInteraction}
     onwheel={markUserInteraction}
     ontouchstart={markUserInteraction}
+    onscroll={markUserInteraction}
   >
-    <BallotStage columns={BALLOT_COLUMNS} />
+    <BallotStage columns={BALLOT_COLUMNS} bind:scroller={ballotScroller} />
   </div>
 
   <VoteOverlay />
@@ -234,33 +233,33 @@
 
   .inline-hint-banner {
     position: fixed;
-    top: 70px;
-    left: 0;
-    right: 0;
-    z-index: 999;
+    top: 78px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
     padding: 0 16px;
     pointer-events: none;
+    max-width: 800px;
+    width: calc(100% - 32px);
   }
   
   .hint-content {
-    max-width: 1380px;
-    width: calc(100% - 32px);
-    margin: 12px auto 16px;
-    padding: 16px 20px;
-    background: #F5F7FB;
-    border: 1px solid #D9E2F2;
-    border-radius: 18px;
-    box-shadow: 0 6px 18px rgba(20, 35, 90, 0.06);
+    margin: 0;
+    padding: 12px 20px;
+    background: rgba(245, 247, 251, 0.95);
+    border: 1px solid rgba(217, 226, 242, 0.8);
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(20, 35, 90, 0.15), 0 8px 32px rgba(20, 35, 90, 0.1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     pointer-events: auto;
     position: relative;
-    transition: transform 200ms ease-out;
   }
   
   .hint-inner {
     display: flex;
     align-items: center;
     position: relative;
-    transition: transform 200ms ease-out;
   }
   
   .hint-text {
@@ -271,13 +270,13 @@
     line-height: 1.5;
     color: #1F2A44;
     text-align: center;
-    padding-right: 40px;
+    padding-right: 36px;
   }
   
   .hint-close-btn {
     position: absolute;
     top: 50%;
-    right: 0;
+    right: -4px;
     transform: translateY(-50%);
     width: 28px;
     height: 28px;
@@ -303,39 +302,34 @@
     position: absolute;
     inset: 70px 0 0 0;
     overflow: auto;
-  }
-  
-  :global(.inline-hint-banner + .ballot-sheet) {
-    top: 124px;
+    z-index: 1;
   }
   
   @media (max-width: 768px) {
     .inline-hint-banner {
-      top: 90px;
-      padding: 0 10px;
+      top: 82px;
+      padding: 0 12px;
+      width: calc(100% - 24px);
     }
     
     .hint-content {
-      width: calc(100% - 20px);
-      padding: 14px 16px;
+      padding: 10px 16px;
     }
     
     .hint-text {
       font-size: 13px;
-      text-align: center;
-      padding-right: 36px;
+      padding-right: 32px;
     }
     
     .hint-close-btn {
-      right: 8px;
+      right: 0;
+      width: 24px;
+      height: 24px;
+      font-size: 18px;
     }
     
     .ballot-sheet {
-      inset: 90px 0 0 0;
-    }
-    
-    :global(.inline-hint-banner + .ballot-sheet) {
-      top: 146px;
+      inset: 70px 0 0 0;
     }
   }
   
