@@ -1,11 +1,15 @@
 <script lang="ts">
   import type { BallotRow } from '$lib/types';
   import { ui } from '$lib/stores/ui.svelte';
-  import { vote } from '$lib/stores/vote.svelte';
   import { nav } from '$lib/stores/navigation.svelte';
   import VoteMark from './VoteMark.svelte';
   import PreferenceVoteSlot from './PreferenceVoteSlot.svelte';
   import { preferencePickerConfig, getPreferenceConfigByColumnId, type ColumnKey } from '$lib/config/preferencePicker';
+  import { 
+    isRowSelected, 
+    toggleSymbolSelection,
+    getSelectedRow
+  } from '$lib/stores/preferencePicker.svelte';
 
   interface Props {
     row: BallotRow;
@@ -15,33 +19,24 @@
 
   let { row, columnId, section }: Props = $props();
 
-  let currentVote = $derived(vote.getVote(columnId));
-  let isThisRowVoted = $derived(currentVote?.rowId === row.id);
-  let columnHasOtherVote = $derived(vote.hasVoted(columnId) && !isThisRowVoted);
   let isActive = $derived(ui.activeRow?.id === row.id);
-
   let isEvenRow = $derived(row.rowIndex % 2 === 0);
 
   // Obtener configuración de voto preferencial
   let preferenceConfig = $derived(getPreferenceConfigByColumnId(columnId));
   let columnKey = $derived(preferenceConfig?.columnKey as ColumnKey | undefined);
+  
+  // Verificar si esta fila está seleccionada en esta columna
+  let isThisRowSelected = $derived(columnKey ? isRowSelected(columnKey, row.id) : false);
+  
+  // Verificar si hay otra fila seleccionada en esta columna
+  let selectedRowInColumn = $derived(columnKey ? getSelectedRow(columnKey) : null);
+  let hasOtherRowSelected = $derived(selectedRowInColumn !== null && selectedRowInColumn !== row.id);
 
-  // Toggle vote on image click
-  function toggleVote() {
-    if (isThisRowVoted) {
-      vote.remove(columnId);
-    } else {
-      vote.cast({
-        columnId,
-        rowId: row.id,
-        partyName: row.partyName,
-        partyNumber: row.partyNumber,
-        partyColor: row.partyColor,
-        zoneId: 'direct',
-        zoneType: 'symbol',
-        zoneLabel: 'Voto Directo'
-      });
-    }
+  // Toggle selección de símbolo
+  function handleSymbolClick() {
+    if (!columnKey) return;
+    toggleSymbolSelection(columnKey, row.id);
   }
 
   function handleMouseEnter() {
@@ -56,8 +51,8 @@
 {#if row.partyName}
 <div
   class="ballot-row section-{section}"
-  class:is-voted={isThisRowVoted}
-  class:is-faded={columnHasOtherVote}
+  class:is-voted={isThisRowSelected}
+  class:is-faded={hasOtherRowSelected}
   class:is-active={isActive}
   class:is-presidential={row.isPresidential}
   class:is-even={isEvenRow}
@@ -75,14 +70,14 @@
 
   <!-- Celda 2: Logo del partido (clickeable para votar) -->
   <div class="cell image-cell">
-    <div class="image-frame vote-target" onclick={toggleVote} role="button" tabindex="0" onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && toggleVote()}>
+    <div class="image-frame vote-target" onclick={handleSymbolClick} role="button" tabindex="0" onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && handleSymbolClick()}>
       {#if row.partySymbolUrl}
         <img src={row.partySymbolUrl} alt="Logo {row.partyAbbr}" />
       {:else}
         <span class="image-placeholder">{row.partyAbbr}</span>
       {/if}
       <!-- X mark when voted -->
-      {#if isThisRowVoted}
+      {#if isThisRowSelected}
         <div class="vote-x-overlay" aria-label="Votado">
           <VoteMark type="symbol" size={36} animate={false} color="#C8102E" />
         </div>
@@ -94,20 +89,20 @@
     <!-- Celda 3 (Presidencial): Foto del candidato (clickeable para votar) -->
     <div class="cell image-cell">
       {#if row.presidentialPhoto}
-        <div class="image-frame is-photo vote-target" onclick={toggleVote} role="button" tabindex="0" onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && toggleVote()}>
+        <div class="image-frame is-photo vote-target" onclick={handleSymbolClick} role="button" tabindex="0" onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && handleSymbolClick()}>
           <img src={row.presidentialPhoto} alt={row.candidates[0]?.name || 'Candidato'} />
           <!-- X mark when voted -->
-          {#if isThisRowVoted}
+          {#if isThisRowSelected}
             <div class="vote-x-overlay" aria-label="Votado">
               <VoteMark type="symbol" size={36} animate={false} color="#C8102E" />
             </div>
           {/if}
         </div>
       {:else if row.candidates.length > 0}
-        <div class="image-frame is-photo vote-target" style:background-color={row.candidates[0].avatarColor} onclick={toggleVote} role="button" tabindex="0" onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && toggleVote()}>
+        <div class="image-frame is-photo vote-target" style:background-color={row.candidates[0].avatarColor} onclick={handleSymbolClick} role="button" tabindex="0" onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && handleSymbolClick()}>
           <span class="photo-text">FOTO</span>
           <!-- X mark when voted -->
-          {#if isThisRowVoted}
+          {#if isThisRowSelected}
             <div class="vote-x-overlay" aria-label="Votado">
               <VoteMark type="symbol" size={36} animate={false} color="#C8102E" />
             </div>
@@ -150,7 +145,7 @@
   <div
     class="ballot-row is-spacer section-{section}"
     class:is-even={isEvenRow}
-    class:is-faded={columnHasOtherVote}
+    class:is-faded={hasOtherRowSelected}
     aria-label="Espacio reservado"
   >
     <div class="spacer-content"></div>

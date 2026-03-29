@@ -11,9 +11,6 @@ export type ActivePicker = {
   anchorEl: HTMLElement;
 } | null;
 
-// Estado global reactivo
-let activePicker = $state<ActivePicker>(null);
-
 // Estado de los valores seleccionados por fila
 export type RowPreferences = {
   senadoNacional?: [number | null, number | null];
@@ -22,7 +19,105 @@ export type RowPreferences = {
   parlamentoAndino?: [number | null, number | null];
 };
 
+// Fila seleccionada por cada columna (solo 1 por columna)
+export type ColumnSelectionState = {
+  senadoNacional: string | null;
+  senadoRegional: string | null;
+  diputados: string | null;
+  parlamentoAndino: string | null;
+};
+
+// Estado global reactivo
+let activePicker = $state<ActivePicker>(null);
+
+// Estado de selección de fila por columna
+let selectedRowByColumn = $state<ColumnSelectionState>({
+  senadoNacional: null,
+  senadoRegional: null,
+  diputados: null,
+  parlamentoAndino: null
+});
+
+// Estado de los valores de preferencia por fila
 let preferenceState = $state<Record<string, RowPreferences>>({});
+
+// Obtener fila seleccionada por columna
+export function getSelectedRow(columnKey: ColumnKey): string | null {
+  return selectedRowByColumn[columnKey];
+}
+
+// Verificar si una fila está seleccionada en una columna
+export function isRowSelected(columnKey: ColumnKey, rowId: string): boolean {
+  return selectedRowByColumn[columnKey] === rowId;
+}
+
+// Seleccionar fila (reemplaza cualquier selección previa en esa columna)
+export function selectRow(columnKey: ColumnKey, rowId: string) {
+  selectedRowByColumn = {
+    ...selectedRowByColumn,
+    [columnKey]: rowId
+  };
+}
+
+// Deseleccionar fila
+export function deselectRow(columnKey: ColumnKey) {
+  selectedRowByColumn = {
+    ...selectedRowByColumn,
+    [columnKey]: null
+  };
+}
+
+// Limpiar preferencias de una fila específica en una columna
+export function clearRowPreferences(rowId: string, columnKey: ColumnKey) {
+  const rowPrefs = preferenceState[rowId];
+  if (!rowPrefs) return;
+  
+  preferenceState = {
+    ...preferenceState,
+    [rowId]: {
+      ...rowPrefs,
+      [columnKey]: undefined
+    }
+  };
+  
+  // Persistir
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('dailyvote_preferences', JSON.stringify(preferenceState));
+  }
+}
+
+// Reemplazar fila seleccionada (limpia preferencias de la fila anterior)
+export function replaceSelectedRow(columnKey: ColumnKey, newRowId: string) {
+  const prevRowId = selectedRowByColumn[columnKey];
+  
+  // Si había una fila previa diferente, limpiar sus preferencias
+  if (prevRowId && prevRowId !== newRowId) {
+    clearRowPreferences(prevRowId, columnKey);
+  }
+  
+  // Seleccionar nueva fila
+  selectRow(columnKey, newRowId);
+}
+
+// Toggle selección de símbolo
+export function toggleSymbolSelection(columnKey: ColumnKey, rowId: string) {
+  const isSelected = selectedRowByColumn[columnKey] === rowId;
+  
+  if (isSelected) {
+    // Deseleccionar: limpiar preferencias y cerrar picker
+    clearRowPreferences(rowId, columnKey);
+    deselectRow(columnKey);
+    
+    // Cerrar picker si estaba abierto para esta fila
+    if (activePicker?.columnKey === columnKey && activePicker?.rowId === rowId) {
+      closePicker();
+    }
+  } else {
+    // Seleccionar nueva fila
+    replaceSelectedRow(columnKey, rowId);
+    closePicker();
+  }
+}
 
 // Abrir picker
 export function openPicker(params: {
@@ -112,17 +207,38 @@ export function clearPreferenceNumber(rowId: string, columnKey: ColumnKey, slotI
 // Cargar desde localStorage al iniciar
 export function loadPreferencesFromStorage() {
   if (typeof window !== 'undefined') {
-    const saved = localStorage.getItem('dailyvote_preferences');
-    if (saved) {
+    const savedPrefs = localStorage.getItem('dailyvote_preferences');
+    const savedRows = localStorage.getItem('dailyvote_selected_rows');
+    
+    if (savedPrefs) {
       try {
-        const parsed = JSON.parse(saved);
-        preferenceState = parsed;
+        preferenceState = JSON.parse(savedPrefs);
       } catch (e) {
         console.error('Error loading preferences:', e);
       }
     }
+    
+    if (savedRows) {
+      try {
+        selectedRowByColumn = JSON.parse(savedRows);
+      } catch (e) {
+        console.error('Error loading selected rows:', e);
+      }
+    }
   }
 }
+
+// Persistir selección de filas
+function persistSelectedRows() {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('dailyvote_selected_rows', JSON.stringify(selectedRowByColumn));
+  }
+}
+
+// Suscribirse a cambios en selectedRowByColumn para persistir
+$effect(() => {
+  persistSelectedRows();
+});
 
 // Manejo global de tecla Escape para cerrar picker
 if (typeof window !== 'undefined') {
