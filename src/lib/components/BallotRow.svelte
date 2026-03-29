@@ -8,7 +8,13 @@
   import { 
     isRowSelected, 
     toggleSymbolSelection,
-    getSelectedRow
+    getSelectedRow,
+    togglePresidentSymbol,
+    togglePresidentPhoto,
+    isPresidentSymbolSelected,
+    isPresidentPhotoSelected,
+    isPresidentRowActive,
+    hasOtherPresidentRowSelected
   } from '$lib/stores/preferencePicker.svelte';
 
   interface Props {
@@ -26,18 +32,38 @@
   let preferenceConfig = $derived(getPreferenceConfigByColumnId(columnId));
   let columnKey = $derived(preferenceConfig?.columnKey as ColumnKey | undefined);
   
-  // Verificar si esta fila está seleccionada en esta columna
-  let isThisRowSelected = $derived(columnKey ? isRowSelected(columnKey, row.id) : false);
-  
-  // Verificar si hay otra fila seleccionada en esta columna
+  // Verificar si hay otra fila seleccionada en esta columna (legislativa) o en presidentes
   let selectedRowInColumn = $derived(columnKey ? getSelectedRow(columnKey) : null);
-  let hasOtherRowSelected = $derived(selectedRowInColumn !== null && selectedRowInColumn !== row.id);
+  let hasOtherLegislativeRowSelected = $derived(selectedRowInColumn !== null && selectedRowInColumn !== row.id);
+  let hasOtherPresidentRow = $derived(row.isPresidential ? hasOtherPresidentRowSelected(row.id) : false);
+  let hasOtherRowSelected = $derived(hasOtherLegislativeRowSelected || hasOtherPresidentRow);
 
-  // Toggle selección de símbolo
+  // Toggle selección de símbolo (para columnas legislativas)
   function handleSymbolClick() {
     if (!columnKey) return;
     toggleSymbolSelection(columnKey, row.id);
   }
+
+  // Toggle selección de símbolo del presidente (independiente)
+  function handlePresidentSymbolClick() {
+    togglePresidentSymbol(row.id);
+  }
+
+  // Toggle selección de foto del presidente (independiente)
+  function handlePresidentPhotoClick() {
+    togglePresidentPhoto(row.id);
+  }
+
+  // Para presidente: verificar si símbolo o foto están marcados
+  let isPresidentSymbolMarked = $derived(isPresidentSymbolSelected(row.id));
+  let isPresidentPhotoMarked = $derived(isPresidentPhotoSelected(row.id));
+  let isPresidentRowSelected = $derived(isPresidentRowActive(row.id));
+
+  // Para columnas legislativas: fila seleccionada completa
+  let isLegislativeRowSelected = $derived(columnKey && columnKey !== 'presidente' ? isRowSelected(columnKey, row.id) : false);
+  
+  // Verificar si esta fila está seleccionada (para sombreado)
+  let isThisRowSelected = $derived(row.isPresidential ? isPresidentRowSelected : isLegislativeRowSelected);
 
   function handleMouseEnter() {
     nav.setHoveredRow(row.rowIndex, section);
@@ -70,40 +96,58 @@
 
   <!-- Celda 2: Logo del partido (clickeable para votar) -->
   <div class="cell image-cell">
-    <div class="image-frame vote-target" onclick={handleSymbolClick} role="button" tabindex="0" onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && handleSymbolClick()}>
-      {#if row.partySymbolUrl}
-        <img src={row.partySymbolUrl} alt="Logo {row.partyAbbr}" />
-      {:else}
-        <span class="image-placeholder">{row.partyAbbr}</span>
-      {/if}
-      <!-- X mark when voted -->
-      {#if isThisRowSelected}
-        <div class="vote-x-overlay" aria-label="Votado">
-          <VoteMark type="symbol" size={36} animate={false} color="#C8102E" />
-        </div>
-      {/if}
-    </div>
+    {#if row.isPresidential}
+      <!-- Para presidente: símbolo clickeable independientemente -->
+      <div class="image-frame vote-target" onclick={handlePresidentSymbolClick} role="button" tabindex="0" onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && handlePresidentSymbolClick()}>
+        {#if row.partySymbolUrl}
+          <img src={row.partySymbolUrl} alt="Logo {row.partyAbbr}" />
+        {:else}
+          <span class="image-placeholder">{row.partyAbbr}</span>
+        {/if}
+        <!-- X mark when symbol selected -->
+        {#if isPresidentSymbolMarked}
+          <div class="vote-x-overlay" aria-label="Símbolo seleccionado">
+            <VoteMark type="symbol" size={36} animate={false} color="#C8102E" />
+          </div>
+        {/if}
+      </div>
+    {:else}
+      <!-- Para columnas legislativas: símbolo selecciona la fila -->
+      <div class="image-frame vote-target" onclick={handleSymbolClick} role="button" tabindex="0" onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && handleSymbolClick()}>
+        {#if row.partySymbolUrl}
+          <img src={row.partySymbolUrl} alt="Logo {row.partyAbbr}" />
+        {:else}
+          <span class="image-placeholder">{row.partyAbbr}</span>
+        {/if}
+        <!-- X mark when row selected -->
+        {#if isLegislativeRowSelected}
+          <div class="vote-x-overlay" aria-label="Votado">
+            <VoteMark type="symbol" size={36} animate={false} color="#C8102E" />
+          </div>
+        {/if}
+      </div>
+    {/if}
   </div>
 
   {#if row.isPresidential}
-    <!-- Celda 3 (Presidencial): Foto del candidato (clickeable para votar) -->
+    <!-- Celda 3 (Presidencial): Foto del candidato clickeable independientemente -->
     <div class="cell image-cell">
       {#if row.presidentialPhoto}
-        <div class="image-frame is-photo vote-target" onclick={handleSymbolClick} role="button" tabindex="0" onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && handleSymbolClick()}>
+        <div class="image-frame is-photo vote-target" onclick={handlePresidentPhotoClick} role="button" tabindex="0" onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && handlePresidentPhotoClick()}>
           <img src={row.presidentialPhoto} alt={row.candidates[0]?.name || 'Candidato'} />
-          <!-- X mark when voted -->
-          {#if isThisRowSelected}
-            <div class="vote-x-overlay" aria-label="Votado">
+          <!-- X mark when photo selected -->
+          {#if isPresidentPhotoMarked}
+            <div class="vote-x-overlay" aria-label="Foto seleccionada">
               <VoteMark type="symbol" size={36} animate={false} color="#C8102E" />
             </div>
           {/if}
         </div>
       {:else if row.candidates.length > 0}
-        <div class="image-frame is-photo vote-target" style:background-color={row.candidates[0].avatarColor} onclick={handleSymbolClick} role="button" tabindex="0" onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && handleSymbolClick()}>
+        <div class="image-frame is-photo vote-target" style:background-color={row.candidates[0].avatarColor} onclick={handlePresidentPhotoClick} role="button" tabindex="0" onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && handlePresidentPhotoClick()}>
           <span class="photo-text">FOTO</span>
-          <!-- X mark when voted -->
-          {#if isThisRowSelected}
-            <div class="vote-x-overlay" aria-label="Votado">
+          <!-- X mark when photo selected -->
+          {#if isPresidentPhotoMarked}
+            <div class="vote-x-overlay" aria-label="Foto seleccionada">
               <VoteMark type="symbol" size={36} animate={false} color="#C8102E" />
             </div>
           {/if}

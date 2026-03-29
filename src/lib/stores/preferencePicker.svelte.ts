@@ -122,6 +122,195 @@ export function toggleSymbolSelection(columnKey: ColumnKey, rowId: string) {
   }
 }
 
+// Estado de selección independiente para presidente (símbolo y foto por separado)
+type PresidentSelection = {
+  symbolSelected: boolean;
+  photoSelected: boolean;
+};
+
+// Fila presidencial actualmente seleccionada (solo 1 a la vez, como en columnas legislativas)
+let presidentSelectedRowId = $state<string | null>(null);
+
+// Estado de selección presidencial por fila (almacena qué elementos están marcados)
+let presidentSelections = $state<Record<string, PresidentSelection>>({});
+
+// Obtener la fila presidencial seleccionada
+export function getPresidentSelectedRow(): string | null {
+  return presidentSelectedRowId;
+}
+
+// Verificar si una fila presidencial específica está seleccionada
+export function isPresidentRowSelected(rowId: string): boolean {
+  return presidentSelectedRowId === rowId;
+}
+
+// Verificar si hay alguna fila presidencial seleccionada (diferente a la dada)
+export function hasOtherPresidentRowSelected(rowId: string): boolean {
+  return presidentSelectedRowId !== null && presidentSelectedRowId !== rowId;
+}
+
+// Limpiar todas las selecciones de una fila presidencial específica
+function clearPresidentRow(rowId: string) {
+  if (presidentSelections[rowId]) {
+    presidentSelections = {
+      ...presidentSelections,
+      [rowId]: { symbolSelected: false, photoSelected: false }
+    };
+    persistPresidentSelections();
+  }
+}
+
+// Establecer nueva fila presidencial (limpia la anterior si existe)
+function setPresidentRow(rowId: string) {
+  // Si hay una fila previa diferente, limpiarla completamente
+  if (presidentSelectedRowId && presidentSelectedRowId !== rowId) {
+    clearPresidentRow(presidentSelectedRowId);
+  }
+  
+  // Establecer la nueva fila seleccionada
+  presidentSelectedRowId = rowId;
+  persistPresidentRow();
+}
+
+// Toggle selección de símbolo del presidente
+export function togglePresidentSymbol(rowId: string) {
+  const currentRow = presidentSelectedRowId;
+  const isSameRow = currentRow === rowId;
+  
+  // Si es una fila diferente, cambiar a esa fila y marcar el símbolo
+  if (!isSameRow) {
+    setPresidentRow(rowId);
+    // Inicializar o mantener estado de foto si existía
+    const existing = presidentSelections[rowId] || { symbolSelected: false, photoSelected: false };
+    presidentSelections = {
+      ...presidentSelections,
+      [rowId]: {
+        ...existing,
+        symbolSelected: true
+      }
+    };
+  } else {
+    // Misma fila: toggle del símbolo
+    const current = presidentSelections[rowId] || { symbolSelected: false, photoSelected: false };
+    const newSymbolSelected = !current.symbolSelected;
+    const newPhotoSelected = current.photoSelected;
+    
+    // Si ambos quedan desmarcados, deseleccionar la fila completamente
+    if (!newSymbolSelected && !newPhotoSelected) {
+      presidentSelectedRowId = null;
+    }
+    
+    presidentSelections = {
+      ...presidentSelections,
+      [rowId]: {
+        symbolSelected: newSymbolSelected,
+        photoSelected: newPhotoSelected
+      }
+    };
+  }
+  
+  persistPresidentSelections();
+  persistPresidentRow();
+}
+
+// Toggle selección de foto del presidente
+export function togglePresidentPhoto(rowId: string) {
+  const currentRow = presidentSelectedRowId;
+  const isSameRow = currentRow === rowId;
+  
+  // Si es una fila diferente, cambiar a esa fila y marcar la foto
+  if (!isSameRow) {
+    setPresidentRow(rowId);
+    // Inicializar o mantener estado de símbolo si existía
+    const existing = presidentSelections[rowId] || { symbolSelected: false, photoSelected: false };
+    presidentSelections = {
+      ...presidentSelections,
+      [rowId]: {
+        ...existing,
+        photoSelected: true
+      }
+    };
+  } else {
+    // Misma fila: toggle de la foto
+    const current = presidentSelections[rowId] || { symbolSelected: false, photoSelected: false };
+    const newSymbolSelected = current.symbolSelected;
+    const newPhotoSelected = !current.photoSelected;
+    
+    // Si ambos quedan desmarcados, deseleccionar la fila completamente
+    if (!newSymbolSelected && !newPhotoSelected) {
+      presidentSelectedRowId = null;
+    }
+    
+    presidentSelections = {
+      ...presidentSelections,
+      [rowId]: {
+        symbolSelected: newSymbolSelected,
+        photoSelected: newPhotoSelected
+      }
+    };
+  }
+  
+  persistPresidentSelections();
+  persistPresidentRow();
+}
+
+// Verificar si el símbolo del presidente está seleccionado
+export function isPresidentSymbolSelected(rowId: string): boolean {
+  return presidentSelectedRowId === rowId && (presidentSelections[rowId]?.symbolSelected || false);
+}
+
+// Verificar si la foto del presidente está seleccionada
+export function isPresidentPhotoSelected(rowId: string): boolean {
+  return presidentSelectedRowId === rowId && (presidentSelections[rowId]?.photoSelected || false);
+}
+
+// Verificar si la fila presidencial está activa (es la fila seleccionada y tiene algo marcado)
+export function isPresidentRowActive(rowId: string): boolean {
+  return presidentSelectedRowId === rowId && (
+    presidentSelections[rowId]?.symbolSelected || 
+    presidentSelections[rowId]?.photoSelected || 
+    false
+  );
+}
+
+// Persistir selección de fila presidencial
+function persistPresidentRow() {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('dailyvote_president_row', JSON.stringify(presidentSelectedRowId));
+  }
+}
+
+// Persistir selecciones presidenciales
+function persistPresidentSelections() {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('dailyvote_president_selections', JSON.stringify(presidentSelections));
+  }
+}
+
+// Cargar selecciones presidenciales desde localStorage
+function loadPresidentSelections() {
+  if (typeof window !== 'undefined') {
+    const savedSelections = localStorage.getItem('dailyvote_president_selections');
+    const savedRow = localStorage.getItem('dailyvote_president_row');
+    
+    if (savedSelections) {
+      try {
+        presidentSelections = JSON.parse(savedSelections);
+      } catch (e) {
+        console.error('Error loading president selections:', e);
+      }
+    }
+    
+    if (savedRow) {
+      try {
+        presidentSelectedRowId = JSON.parse(savedRow);
+      } catch (e) {
+        console.error('Error loading president row:', e);
+      }
+    }
+  }
+}
+
 // Abrir picker
 export function openPicker(params: {
   columnKey: ColumnKey;
@@ -228,6 +417,9 @@ export function loadPreferencesFromStorage() {
         console.error('Error loading selected rows:', e);
       }
     }
+    
+    // Cargar selecciones presidenciales
+    loadPresidentSelections();
   }
 }
 
