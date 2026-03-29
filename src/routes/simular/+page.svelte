@@ -19,6 +19,7 @@
   let showInlineHint = $state(true);
   let autoHideHintTimeout: ReturnType<typeof window.setTimeout> | null = null;
   let initialHintTimeout: ReturnType<typeof window.setTimeout> | null = null;
+  let hasVotedOnce = $state(false);
   
   // ─── Horizontal Scroll Hint ───────────────────────────────────────────────────
   let ballotScroller: HTMLDivElement | null = $state(null);
@@ -122,6 +123,19 @@
   $effect(() => {
     const _ = vote.votes; // reactive dependency
     sessionStorage.setItem('dailyvote', vote.serialize());
+    
+    // Hide hint when user casts their first vote
+    if (vote.count > 0 && !hasVotedOnce) {
+      hasVotedOnce = true;
+      if (showInlineHint) {
+        showInlineHint = false;
+        // Clear auto-hide timeout since we're hiding it now
+        if (autoHideHintTimeout) {
+          window.clearTimeout(autoHideHintTimeout);
+          autoHideHintTimeout = null;
+        }
+      }
+    }
   });
 </script>
 
@@ -164,8 +178,7 @@
       out:fade={{ duration: 150 }}
     >
       <div class="hint-content">
-        <span class="hint-icon">👆</span>
-        <p class="hint-text">Haz clic para marcar. Vuelve a hacer clic para desmarcar. Desliza para recorrer la cédula.</p>
+        <p class="hint-text">Haz clic para marcar o desmarcar. Desliza para recorrer la cédula.</p>
         <button 
           class="hint-close-btn" 
           onclick={closeInlineHint}
@@ -219,7 +232,7 @@
   .hint-content {
     max-width: 1100px;
     margin: 12px auto 16px;
-    padding: 12px 16px;
+    padding: 14px 18px;
     background: #F5F7FB;
     border: 1px solid #D9E2F2;
     border-radius: 14px;
@@ -227,19 +240,15 @@
     align-items: center;
     gap: 12px;
     pointer-events: auto;
-  }
-  
-  .hint-icon {
-    font-size: 20px;
-    flex-shrink: 0;
+    position: relative;
   }
   
   .hint-text {
     flex: 1;
     margin: 0;
     font-size: 14px;
-    font-weight: 600;
-    line-height: 1.4;
+    font-weight: 500;
+    line-height: 1.5;
     color: #1F2A44;
     text-align: center;
   }
@@ -258,11 +267,13 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    transition: background 0.2s ease;
+    transition: opacity 0.2s ease;
+    padding: 0;
+    line-height: 1;
   }
   
   .hint-close-btn:hover {
-    background: rgba(91, 101, 122, 0.1);
+    opacity: 0.7;
   }
 
   /* Solo la hoja de cédula - ocupa todo el espacio, con margen para el header */
@@ -286,24 +297,20 @@
     
     .hint-content {
       margin: 10px auto 12px;
-      padding: 10px 12px;
+      padding: 14px 18px;
       flex-wrap: wrap;
-    }
-    
-    .hint-icon {
-      font-size: 18px;
     }
     
     .hint-text {
       font-size: 13px;
-      text-align: left;
+      text-align: center;
       flex: 1 1 auto;
     }
     
     .hint-close-btn {
       position: absolute;
-      top: 6px;
-      right: 6px;
+      top: 8px;
+      right: 8px;
     }
     
     .ballot-sheet {
