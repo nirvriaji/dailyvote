@@ -102,10 +102,10 @@
     // Show inline hint
     showInlineHint = true;
     
-    // Auto-hide hint after 6 seconds
+    // Auto-hide hint after 20 seconds
     autoHideHintTimeout = window.setTimeout(() => {
       showInlineHint = false;
-    }, 6000);
+    }, 20000);
     
     // Trigger horizontal scroll hint after 700ms
     initialHintTimeout = window.setTimeout(() => {
