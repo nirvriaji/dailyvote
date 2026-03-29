@@ -65,6 +65,19 @@ export interface VoteSelection {
   zoneId: string;
   zoneType: VoteZoneType;
   zoneLabel: string;
+  // Números de voto preferencial (para columnas legislativas)
+  preferenceNumbers?: (number | null)[]; // Ej: [12, 18] o [32] o null
+}
+
+// ─── Vote Preference Configuration ───────────────────────────────────────────
+
+export interface PreferenceVoteConfig {
+  columnId: string;
+  slots: number; // 1 o 2 casillas
+  min: number;
+  max: number;
+  uniqueWithinColumn: boolean;
+  label: string;
 }
 
 // ─── Gesture ──────────────────────────────────────────────────────────────────

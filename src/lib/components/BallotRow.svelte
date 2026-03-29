@@ -4,6 +4,8 @@
   import { vote } from '$lib/stores/vote.svelte';
   import { nav } from '$lib/stores/navigation.svelte';
   import VoteMark from './VoteMark.svelte';
+  import PreferenceVoteSlot from './PreferenceVoteSlot.svelte';
+  import { preferencePickerConfig, getPreferenceConfigByColumnId, type ColumnKey } from '$lib/config/preferencePicker';
 
   interface Props {
     row: BallotRow;
@@ -20,13 +22,15 @@
 
   let isEvenRow = $derived(row.rowIndex % 2 === 0);
 
+  // Obtener configuración de voto preferencial
+  let preferenceConfig = $derived(getPreferenceConfigByColumnId(columnId));
+  let columnKey = $derived(preferenceConfig?.columnKey as ColumnKey | undefined);
+
   // Toggle vote on image click
   function toggleVote() {
     if (isThisRowVoted) {
-      // Remove vote if already voted
       vote.remove(columnId);
     } else {
-      // Cast vote for this row
       vote.cast({
         columnId,
         rowId: row.id,
@@ -112,17 +116,32 @@
       {/if}
     </div>
   {:else}
-    <!-- Para columnas legislativas: casillas vacías opcionales para ingresar números -->
-    <div class="cell vote-cell">
-      <div class="vote-box"></div>
-    </div>
-    {#if section !== 'senadores-regional'}
+    <!-- Para columnas legislativas: casillas de voto preferencial funcionales -->
+    {#if columnKey}
+      {#if preferenceConfig && preferenceConfig.slots >= 1}
+        <div class="cell vote-cell">
+          <PreferenceVoteSlot
+            {columnKey}
+            rowId={row.id}
+            slotIndex={0}
+          />
+        </div>
+      {/if}
+      
+      {#if preferenceConfig && preferenceConfig.slots >= 2}
+        <div class="cell vote-cell">
+          <PreferenceVoteSlot
+            {columnKey}
+            rowId={row.id}
+            slotIndex={1}
+          />
+        </div>
+      {/if}
+    {:else}
+      <!-- Fallback: casillas vacías si no hay config -->
       <div class="cell vote-cell">
         <div class="vote-box"></div>
       </div>
-    {:else}
-      <!-- Espacio vacío para Senadores Regional -->
-      <div class="cell vote-cell empty"></div>
     {/if}
   {/if}
 </div>

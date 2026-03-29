@@ -29,6 +29,44 @@ class VoteStore {
     return this.votes.get(columnId);
   }
 
+  // Actualizar números de voto preferencial para un voto existente
+  updatePreferenceNumbers(columnId: string, preferenceNumbers: (number | null)[]) {
+    const existingVote = this.votes.get(columnId);
+    if (existingVote) {
+      const updatedVote = {
+        ...existingVote,
+        preferenceNumbers
+      };
+      const next = new Map(this.votes);
+      next.set(columnId, updatedVote);
+      this.votes = next;
+      
+      // Guardar en localStorage para persistencia
+      this.persistToLocalStorage();
+    }
+  }
+
+  // Verificar si tiene números de preferencia
+  hasPreferenceNumbers(columnId: string): boolean {
+    const vote = this.votes.get(columnId);
+    return vote?.preferenceNumbers !== undefined && 
+           vote.preferenceNumbers.some(n => n !== null);
+  }
+
+  // Obtener números de preferencia
+  getPreferenceNumbers(columnId: string): (number | null)[] | undefined {
+    return this.votes.get(columnId)?.preferenceNumbers;
+  }
+
+  // Persistir a localStorage
+  private persistToLocalStorage() {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('dailyvote_preferences', JSON.stringify({
+        votes: Array.from(this.votes.entries())
+      }));
+    }
+  }
+
   async cast(selection: VoteSelection) {
     const next = new Map(this.votes);
     next.set(selection.columnId, selection);

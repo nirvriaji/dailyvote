@@ -1,6 +1,8 @@
 <script lang="ts">
   import type { BallotColumn as BallotColumnData } from '$lib/types';
   import BallotColumn from './BallotColumn.svelte';
+  import PickerOverlay from './PickerOverlay.svelte';
+  import { getActivePicker } from '$lib/stores/preferencePicker.svelte';
 
   interface Props {
     columns: BallotColumnData[];
@@ -10,6 +12,9 @@
   // ─── Layout Constants ─────────────────────────────────────────────────────────
   const BASE_COL_WIDTH = 320;
   const BORDER_SIZE = 24; // 24px uniform border on all sides
+  
+  // Obtener picker activo global
+  let activePicker = $derived(getActivePicker());
 </script>
 
 <!--
@@ -45,6 +50,16 @@
     <div class="spacer-bottom"></div>
   </div>
 </div>
+
+<!-- Single global PickerOverlay - rendered only when active -->
+{#if activePicker}
+  <PickerOverlay
+    anchorEl={activePicker.anchorEl}
+    columnKey={activePicker.columnKey}
+    rowId={activePicker.rowId}
+    slotIndex={activePicker.slotIndex}
+  />
+{/if}
 
 <style>
   /* ─── Stage viewport ─────────────────────────────────────────────────────────── */
