@@ -1,7 +1,7 @@
 // Estado global para manejar el picker de voto preferencial
 // Solo permite 1 picker abierto a la vez en toda la aplicación
 
-export type ColumnKey = 'senadoNacional' | 'senadoRegional' | 'diputados' | 'parlamentoAndino';
+export type ColumnKey = 'presidente' | 'senadoNacional' | 'senadoRegional' | 'diputados' | 'parlamentoAndino';
 
 // Estado del picker activo (solo 1 en toda la app)
 export type ActivePicker = {
@@ -13,6 +13,7 @@ export type ActivePicker = {
 
 // Estado de los valores seleccionados por fila
 export type RowPreferences = {
+  presidente?: never; // Presidente no tiene voto preferencial
   senadoNacional?: [number | null, number | null];
   senadoRegional?: [number | null];
   diputados?: [number | null, number | null];
@@ -21,6 +22,7 @@ export type RowPreferences = {
 
 // Fila seleccionada por cada columna (solo 1 por columna)
 export type ColumnSelectionState = {
+  presidente: string | null;
   senadoNacional: string | null;
   senadoRegional: string | null;
   diputados: string | null;
@@ -32,6 +34,7 @@ let activePicker = $state<ActivePicker>(null);
 
 // Estado de selección de fila por columna
 let selectedRowByColumn = $state<ColumnSelectionState>({
+  presidente: null,
   senadoNacional: null,
   senadoRegional: null,
   diputados: null,

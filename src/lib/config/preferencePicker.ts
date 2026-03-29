@@ -1,7 +1,7 @@
 // Configuración de rangos para picker de voto preferencial
 // Rangos exactos según especificación
 
-export type ColumnKey = 'senadoNacional' | 'senadoRegional' | 'diputados' | 'parlamentoAndino';
+export type ColumnKey = 'presidente' | 'senadoNacional' | 'senadoRegional' | 'diputados' | 'parlamentoAndino';
 
 export interface PreferencePickerConfig {
   columnKey: ColumnKey;
@@ -14,6 +14,15 @@ export interface PreferencePickerConfig {
 }
 
 export const preferencePickerConfig: Record<ColumnKey, PreferencePickerConfig> = {
+  presidente: {
+    columnKey: 'presidente',
+    columnId: 'col0',
+    slots: 0, // Presidente no tiene voto preferencial
+    min: 0,
+    max: 0,
+    columns: 0,
+    rows: 0
+  },
   senadoNacional: {
     columnKey: 'senadoNacional',
     columnId: 'col1',
