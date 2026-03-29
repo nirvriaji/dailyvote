@@ -107,20 +107,19 @@
     category: voteData.columnId
   })));
   
-  // Calculate projected results
-  let projectedResults = $derived.by(() => {
-    console.log('📊 Calculando proyección con multiplier:', projectionMultiplier);
+  // Calculate projected results - force update when multiplier changes
+  let projectedResults = $state([...allResults]);
+  
+  // Watch for changes and recalculate
+  $effect(() => {
+    console.log('🔄 Efecto de proyección ejecutándose. Multiplier:', projectionMultiplier);
     
     if (projectionMultiplier === 1 || allResults.length === 0) {
-      console.log('↩️ Retornando resultados reales (multiplier = 1 o sin datos)');
-      return allResults;
+      projectedResults = [...allResults];
+      return;
     }
     
     const extra = getHypotheticalExtra(projectionMultiplier);
-    console.log('➕ Votos extra a agregar:', extra, 'por cada selección del usuario');
-    console.log('👤 Votos del usuario:', userVotes);
-    
-    // Use JSON parse/stringify for deep clone (more compatible than structuredClone)
     const cloned = JSON.parse(JSON.stringify(allResults));
     
     // Apply extra votes to user's selections
@@ -129,27 +128,24 @@
       if (category) {
         const result = category.results.find(r => r.partyName === userVote.partyName);
         if (result) {
-          console.log(`✅ Agregando ${extra} votos a ${userVote.partyName} en ${category.category}`);
           result.votes += extra;
         }
-        // Recalculate total votes for this category
         category.totalVotes += extra;
       }
     }
     
-    // Recalculate percentages for all results
+    // Recalculate percentages
     for (const category of cloned) {
       for (const result of category.results) {
         result.percentage = category.totalVotes > 0 
           ? (result.votes / category.totalVotes) * 100 
           : 0;
       }
-      // Re-sort by votes (descending)
       category.results.sort((a, b) => b.votes - a.votes);
     }
     
-    console.log('✨ Proyección calculada:', cloned[0]?.results?.slice(0, 2));
-    return cloned;
+    console.log('✨ Asignando nuevos projectedResults:', cloned[0]?.results?.[0]?.votes);
+    projectedResults = cloned;
   });
   
   // Display results (real or projected)
