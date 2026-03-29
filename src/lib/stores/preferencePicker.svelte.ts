@@ -515,6 +515,24 @@ function updateSelectedRowByColumn(newState: ColumnSelectionState) {
   persistSelectedRows();
 }
 
+// Resetear todas las selecciones para nueva simulación
+export function resetAllSelections() {
+  selectedRowByColumn = {
+    presidente: null,
+    senadoNacional: null,
+    senadoRegional: null,
+    diputados: null,
+    parlamentoAndino: null
+  };
+  
+  presidentSelectedRowId = null;
+  presidentSelections = {};
+  
+  persistSelectedRows();
+  persistPresidentSelections();
+  persistPresidentRow();
+}
+
 // Manejo global de tecla Escape para cerrar picker
 if (typeof window !== 'undefined') {
   document.addEventListener('keydown', (event: KeyboardEvent) => {

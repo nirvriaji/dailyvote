@@ -113,6 +113,22 @@ class VoteStore {
     this.votes = new Map();
   }
 
+  // Limpiar todo y preparar para nueva simulación
+  resetForNewSimulation() {
+    this.votes = new Map();
+    this.clearLocalStorage();
+  }
+
+  private clearLocalStorage() {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('dailyvote_preferences');
+      localStorage.removeItem('dailyvote_selected_rows');
+      localStorage.removeItem('dailyvote_president_selections');
+      localStorage.removeItem('dailyvote_president_row');
+      // NO eliminar dailyvote_device_id ni dailyvote_seen_tour
+    }
+  }
+
   serialize(): string {
     return JSON.stringify({
       deviceId: this.deviceId,

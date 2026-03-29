@@ -3,6 +3,7 @@
   import { fade, fly, scale } from 'svelte/transition';
   import { goto } from '$app/navigation';
   import { vote } from '$lib/stores/vote.svelte';
+  import { resetAllSelections } from '$lib/stores/preferencePicker.svelte';
   import { BALLOT_COLUMNS } from '$lib/data/mock';
   import ParliamentHemicycle from '$lib/components/ParliamentHemicycle.svelte';
   import ShareResults from '$lib/components/ShareResults.svelte';
@@ -63,6 +64,7 @@
   let liveVoterCount = $state(0); // Contador en vivo
   let lastUpdateTime = $state<Date | null>(null);
   let unsubscribe: Unsubscribe | null = null;
+  let restarting = $state(false);
   
   // Prepare data for sharing
   let shareData = $derived<SharedResult[]>(
@@ -73,6 +75,21 @@
       percentage: r.results[0]?.percentage || 0
     }))
   );
+  
+  // Start new simulation
+  async function startNewSimulation() {
+    if (restarting) return;
+    restarting = true;
+    
+    sessionStorage.setItem('entry_mode', 'new_simulation');
+    
+    vote.resetForNewSimulation();
+    resetAllSelections();
+    
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    
+    goto('/simular');
+  }
   
   // Check if voting is closed (after 20:00)
   function checkVotingStatus() {
@@ -568,51 +585,34 @@
     <ShareResults results={shareData} onClose={() => showShareModal = false} />
   {/if}
 
-  <!-- Footer Actions -->
-  <footer class="results-footer" in:fly={{ y: 30, duration: 600, delay: 800 }}>
-    <div class="actions">
-      {#if isVotingClosed}
-        <button class="btn-primary btn-large" onclick={() => goto('/')}>
-          <span class="btn-icon">🌅</span>
-          Volver Mañana
-        </button>
+  <!-- New Simulation Card -->
+  <div class="simulation-card" in:fly={{ y: 30, duration: 600, delay: 800 }}>
+    <div class="card-icon">🔄</div>
+    <h2 class="card-title">¿Quieres probar otra combinación?</h2>
+    <p class="card-text">Empieza una nueva simulación desde cero y compara cómo cambian los resultados.</p>
+    
+    <button 
+      class="new-simulation-btn" 
+      class:loading={restarting}
+      disabled={restarting}
+      onclick={startNewSimulation}
+    >
+      {#if restarting}
+        Preparando nueva simulación...
       {:else}
-        <button class="btn-secondary btn-large" onclick={goBack}>
-          <span class="btn-icon">←</span>
-          Seguir Votando
-        </button>
+        🔄 Nueva simulación
       {/if}
-      
-      <button class="btn-share" onclick={() => showShareModal = true}>
-        <span class="btn-icon">📤</span>
-        Compartir
+    </button>
+    
+    <div class="secondary-actions">
+      <button class="btn-outline" onclick={() => showShareModal = true}>
+        Compartir resultados
       </button>
-      
-      <button class="btn-ghost" onclick={() => goto('/historial')}>
-        Ver Histórico
+      <button class="btn-outline" onclick={() => goto('/historial')}>
+        Ver histórico
       </button>
     </div>
-    
-    <div class="footer-stats">
-      {#if isLoading}
-        <p class="footer-note">⏳ Cargando resultados...</p>
-      {:else if totalVoters > 0}
-        <p class="footer-note">
-          🗳️ <strong>{totalVoters.toLocaleString()}</strong> votos registrados hoy
-          <span class="footer-separator">|</span>
-          <span class="footer-real">Resultados en tiempo real</span>
-        </p>
-      {:else}
-        <p class="footer-note">
-          🗳️ Sin votos registrados aún. ¡Sé el primero en votar!
-        </p>
-      {/if}
-    </div>
-    
-    <p class="footer-disclaimer">
-      Simulación educativa • Datos reales de los usuarios
-    </p>
-  </footer>
+  </div>
 </div>
 
 <style>
@@ -1362,6 +1362,89 @@
     margin: 10px 0 0 0;
   }
 
+  /* New Simulation Card */
+  .simulation-card {
+    max-width: 720px;
+    margin: 40px auto 56px;
+    background: white;
+    border-radius: 20px;
+    padding: 32px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    text-align: center;
+  }
+
+  .card-icon {
+    font-size: 2.5rem;
+    margin-bottom: 12px;
+  }
+
+  .card-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0 0 12px 0;
+    color: #1a1a2e;
+  }
+
+  .card-text {
+    font-size: 1rem;
+    color: #666;
+    margin: 0 0 24px 0;
+    line-height: 1.5;
+  }
+
+  .new-simulation-btn {
+    height: 56px;
+    padding: 0 28px;
+    min-width: 280px;
+    width: 100%;
+    max-width: 320px;
+    border-radius: 14px;
+    font-weight: 700;
+    font-size: 18px;
+    color: white;
+    background: linear-gradient(135deg, #2196F3, #1976D2);
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+    transition: all 0.3s ease;
+    margin-bottom: 20px;
+  }
+
+  .new-simulation-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
+  }
+
+  .new-simulation-btn:disabled {
+    opacity: 0.7;
+    cursor: wait;
+  }
+
+  .secondary-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .btn-outline {
+    height: 44px;
+    padding: 0 20px;
+    border-radius: 12px;
+    font-weight: 600;
+    background: transparent;
+    color: #666;
+    border: 2px solid #ddd;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .btn-outline:hover {
+    border-color: #2196F3;
+    color: #2196F3;
+    background: rgba(33, 150, 243, 0.05);
+  }
+
   /* Responsive */
   @media (max-width: 768px) {
     .results-page {
@@ -1407,6 +1490,29 @@
       flex-direction: column;
       text-align: center;
     }
+    
+    .simulation-card {
+      padding: 24px 20px;
+      margin: 30px auto 40px;
+    }
+    
+    .card-title {
+      font-size: 1.3rem;
+    }
+    
+    .card-text {
+      font-size: 0.95rem;
+    }
+    
+    .secondary-actions {
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .btn-outline {
+      width: 100%;
+      max-width: 280px;
+    }
   }
 
   @media (max-width: 480px) {
@@ -1417,6 +1523,10 @@
     .photo-frame {
       width: 100px;
       height: 100px;
+    }
+    
+    .new-simulation-btn {
+      min-width: unset;
     }
   }
 </style>

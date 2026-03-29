@@ -43,6 +43,13 @@
       return;
     }
     
+    // Check if this is a new simulation (don't restore previous votes)
+    const entryMode = sessionStorage.getItem('entry_mode');
+    if (entryMode === 'new_simulation') {
+      sessionStorage.removeItem('entry_mode');
+      return; // Start fresh, don't hydrate
+    }
+    
     // Check if user has seen the tour
     const hasSeenTour = localStorage.getItem('dailyvote_seen_tour');
     if (!hasSeenTour) {
@@ -51,7 +58,9 @@
     
     // Restore any votes from a previous session in the same browser tab
     const saved = sessionStorage.getItem('dailyvote');
-    if (saved) vote.hydrate(saved);
+    if (saved) {
+      vote.hydrate(saved);
+    }
   });
 
   function completeTour() {
