@@ -2,6 +2,8 @@
   import { onMount } from 'svelte';
   import { fade, fly } from 'svelte/transition';
   import { goto } from '$app/navigation';
+  import { getHistoricalStats } from '$lib/firebase/stats';
+  import { initializeFirebase, isFirebaseReady } from '$lib/firebase';
   
   interface Winner {
     category: string;
@@ -16,21 +18,103 @@
   interface DayResult {
     date: string;
     winners: Winner[];
+    totalVotes: number;
   }
   
   let history = $state<DayResult[]>([]);
   let selectedDay = $state<DayResult | null>(null);
+  let isLoading = $state(true);
   
-  onMount(() => {
-    // Load history from localStorage
-    const saved = localStorage.getItem('dailyvote_history');
-    if (saved) {
-      try {
-        history = JSON.parse(saved).reverse(); // Most recent first
-      } catch (e) {
-        console.error('Error loading history:', e);
-        history = [];
+  onMount(async () => {
+    // Initialize Firebase if not ready
+    if (!isFirebaseReady) {
+      initializeFirebase();
+    }
+    
+    // Load historical data from Firestore
+    try {
+      const historicalData = await getHistoricalStats(30); // Last 30 days
+      
+      if (historicalData && historicalData.length > 0) {
+        history = historicalData.map(day => ({
+          date: day.date,
+          totalVotes: day.totalVotes || 0,
+          winners: [
+            { 
+              category: 'Presidente', 
+              winner: { 
+                partyName: day.winners?.president?.partyName || 'Sin datos',
+                partyColor: day.winners?.president?.partyColor || '#999',
+                partySymbolUrl: day.winners?.president?.partySymbolUrl || '',
+                percentage: day.winners?.president?.percentage || 0
+              } 
+            },
+            { 
+              category: 'Senadores Nacional', 
+              winner: { 
+                partyName: day.winners?.senatorsNational?.partyName || 'Sin datos',
+                partyColor: day.winners?.senatorsNational?.partyColor || '#999',
+                partySymbolUrl: day.winners?.senatorsNational?.partySymbolUrl || '',
+                percentage: day.winners?.senatorsNational?.percentage || 0
+              } 
+            },
+            { 
+              category: 'Senadores Regional', 
+              winner: { 
+                partyName: day.winners?.senatorsRegional?.partyName || 'Sin datos',
+                partyColor: day.winners?.senatorsRegional?.partyColor || '#999',
+                partySymbolUrl: day.winners?.senatorsRegional?.partySymbolUrl || '',
+                percentage: day.winners?.senatorsRegional?.percentage || 0
+              } 
+            },
+            { 
+              category: 'Diputados', 
+              winner: { 
+                partyName: day.winners?.deputies?.partyName || 'Sin datos',
+                partyColor: day.winners?.deputies?.partyColor || '#999',
+                partySymbolUrl: day.winners?.deputies?.partySymbolUrl || '',
+                percentage: day.winners?.deputies?.percentage || 0
+              } 
+            },
+            { 
+              category: 'Parlamento Andino', 
+              winner: { 
+                partyName: day.winners?.andeanParliament?.partyName || 'Sin datos',
+                partyColor: day.winners?.andeanParliament?.partyColor || '#999',
+                partySymbolUrl: day.winners?.andeanParliament?.partySymbolUrl || '',
+                percentage: day.winners?.andeanParliament?.percentage || 0
+              } 
+            }
+          ].filter(w => w.winner.partyName !== 'Sin datos')
+        })).reverse(); // Most recent first
+      } else {
+        // Fallback to localStorage if no Firestore data
+        const saved = localStorage.getItem('dailyvote_history');
+        if (saved) {
+          try {
+            const localHistory = JSON.parse(saved);
+            history = localHistory.reverse();
+          } catch (e) {
+            console.error('Error loading history:', e);
+            history = [];
+          }
+        }
       }
+    } catch (e) {
+      console.error('Error loading from Firestore:', e);
+      // Fallback to localStorage
+      const saved = localStorage.getItem('dailyvote_history');
+      if (saved) {
+        try {
+          const localHistory = JSON.parse(saved);
+          history = localHistory.reverse();
+        } catch (e) {
+          console.error('Error loading history:', e);
+          history = [];
+        }
+      }
+    } finally {
+      isLoading = false;
     }
   });
   
@@ -56,6 +140,11 @@
     if (diffDays < 30) return `Hace ${Math.floor(diffDays / 7)} semanas`;
     return `Hace ${Math.floor(diffDays / 30)} meses`;
   }
+  
+  // Calculate total votes across all days
+  let totalHistoricalVotes = $derived(
+    history.reduce((sum, day) => sum + (day.totalVotes || 0), 0)
+  );
 </script>
 
 <svelte:head>
@@ -72,12 +161,19 @@
     <p class="subtitle">Registro de votaciones diarias</p>
   </header>
 
-  {#if history.length === 0}
+  {#if isLoading}
+    <!-- Loading state -->
+    <div class="empty-state" in:fade={{ duration: 300 }}>
+      <div class="loading-spinner">⏳</div>
+      <h2>Cargando historial...</h2>
+      <p>Obteniendo datos de Firebase</p>
+    </div>
+  {:else if history.length === 0}
     <!-- Empty state -->
     <div class="empty-state" in:fade={{ duration: 300 }}>
       <div class="empty-icon">🗳️</div>
       <h2>No hay historial aún</h2>
-      <p>Los resultados de cada día se guardarán automáticamente después de las 8:00 PM.</p>
+      <p>Los resultados de cada día se guardarán automáticamente en Firebase después de las 8:00 PM.</p>
       <button class="btn-primary" onclick={() => goto('/simular')}>
         Ir a Votar
       </button>
@@ -90,8 +186,12 @@
         <span class="stat-label">Días registrados</span>
       </div>
       <div class="stat-item">
-        <span class="stat-number">{history.length * 5}</span>
-        <span class="stat-label">Votaciones totales</span>
+        <span class="stat-number">{totalHistoricalVotes.toLocaleString()}</span>
+        <span class="stat-label">Votos totales históricos</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number">{history[0]?.winners?.length || 0}</span>
+        <span class="stat-label">Categorías</span>
       </div>
     </div>
 

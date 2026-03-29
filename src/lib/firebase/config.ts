@@ -1,14 +1,14 @@
-// Firebase Configuration Template
-// Reemplaza estos valores con tu configuración de Firebase Console
+// Firebase Configuration
+// Simulador de Votación Peruana - Exit Poll
 
 export const firebaseConfig = {
-  apiKey: "YOUR_API_KEY_HERE",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID",
-  measurementId: "YOUR_MEASUREMENT_ID"
+  apiKey: "AIzaSyDQcALdYlFLdo-bR34wIeAi_e-j1_TwiEg",
+  authDomain: "exitpollsimulator.firebaseapp.com",
+  projectId: "exitpollsimulator",
+  storageBucket: "exitpollsimulator.firebasestorage.app",
+  messagingSenderId: "306550697165",
+  appId: "1:306550697165:web:3764508062c8ec6f9c8d84",
+  measurementId: "G-GS8PBV6KHR"
 };
 
 // Colecciones de Firestore
@@ -56,5 +56,14 @@ export interface GlobalStats {
     senatorsRegional: Record<string, number>;
     deputies: Record<string, number>;
     andeanParliament: Record<string, number>;
+  };
+  metadata?: {
+    [category: string]: {
+      [partyId: string]: {
+        partyName: string;
+        partyColor: string;
+        partySymbolUrl: string;
+      };
+    };
   };
 }

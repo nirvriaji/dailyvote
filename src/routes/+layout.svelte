@@ -1,8 +1,14 @@
 <script lang="ts">
   import favicon from '$lib/assets/favicon.svg';
   import '../app.css';
+  import { initializeFirebase } from '$lib/firebase';
 
   let { children } = $props();
+  
+  // Inicializar Firebase automáticamente al cargar la app
+  if (typeof window !== 'undefined') {
+    initializeFirebase();
+  }
 </script>
 
 <svelte:head>

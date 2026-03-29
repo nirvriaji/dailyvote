@@ -1,11 +1,15 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { fade, fly, scale } from 'svelte/transition';
   import { goto } from '$app/navigation';
   import { vote } from '$lib/stores/vote.svelte';
   import { BALLOT_COLUMNS } from '$lib/data/mock';
   import ParliamentHemicycle from '$lib/components/ParliamentHemicycle.svelte';
   import ShareResults from '$lib/components/ShareResults.svelte';
+  import { getGlobalResultsWithPercentages, getGlobalStats, subscribeToGlobalStats } from '$lib/firebase/stats';
+  import { initializeFirebase, isFirebaseReady } from '$lib/firebase';
+  import type { GlobalStats } from '$lib/firebase/config';
+  import type { Unsubscribe } from 'firebase/firestore';
   
   // Get party data from BALLOT_COLUMNS
   const presidentialRows = BALLOT_COLUMNS[0].rows.filter(r => r.partyName);
@@ -54,6 +58,11 @@
   let activeCategory = $state<string | null>(null);
   let showConfetti = $state(false);
   let showShareModal = $state(false);
+  let isLoading = $state(true);
+  let totalVoters = $state(0);
+  let liveVoterCount = $state(0); // Contador en vivo
+  let lastUpdateTime = $state<Date | null>(null);
+  let unsubscribe: Unsubscribe | null = null;
   
   // Prepare data for sharing
   let shareData = $derived<SharedResult[]>(
@@ -77,113 +86,156 @@
     nextResetTime = midnight;
   }
   
-  // Generate simulated results using real party data
-  function generateSimulatedResults(): CategoryResults[] {
-    const categories = [
-      { id: 'presidente', name: 'Presidente', subtitle: 'y Vicepresidentes', totalSeats: 1 },
-      { id: 'senadores-nacional', name: 'Senadores', subtitle: 'Nacionales', totalSeats: 30 },
-      { id: 'senadores-regional', name: 'Senadores', subtitle: 'Regionales', totalSeats: 30 },
-      { id: 'diputados', name: 'Diputados', subtitle: '130 escaños', totalSeats: 130 },
-      { id: 'parlamento-andino', name: 'Parlamento', subtitle: 'Andino', totalSeats: 5 }
-    ];
+  // Load real results from Firestore
+  async function loadRealResults(): Promise<CategoryResults[]> {
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Initialize Firebase if not ready
+    if (!isFirebaseReady) {
+      initializeFirebase();
+    }
+    
+    // Get global stats from Firestore
+    const globalStats = await getGlobalStats(today);
+    const resultsWithPercentages = await getGlobalResultsWithPercentages(today);
     
     // Get user's votes from store
     const userVotes = Array.from(vote.votes.entries());
     
+    const categories = [
+      { id: 'president', name: 'Presidente', subtitle: 'y Vicepresidentes', totalSeats: 1, colId: 'col0' },
+      { id: 'senatorsNational', name: 'Senadores', subtitle: 'Nacionales', totalSeats: 30, colId: 'col1' },
+      { id: 'senatorsRegional', name: 'Senadores', subtitle: 'Regionales', totalSeats: 30, colId: 'col2' },
+      { id: 'deputies', name: 'Diputados', subtitle: '130 escaños', totalSeats: 130, colId: 'col3' },
+      { id: 'andeanParliament', name: 'Parlamento', subtitle: 'Andino', totalSeats: 5, colId: 'col4' }
+    ];
+    
+    // Set total voters from global stats
+    totalVoters = globalStats?.totalVotes || 0;
+    const totalVoteCount = totalVoters; // Total de votos para decidir qué mostrar
+    
     return categories.map(cat => {
       // Find user's vote for this category
-      const userVoteForCategory = userVotes.find(([colId]) => colId === cat.id);
+      const userVoteForCategory = userVotes.find(([colId]) => colId === cat.colId);
       const userPartyName = userVoteForCategory ? userVoteForCategory[1].partyName : null;
       
-      // Get parties for this category
+      // Get real results for this category from Firestore
+      const realResults = resultsWithPercentages?.[cat.id] || [];
+      
+      // Map real results to ElectionResult format
       let parties: ElectionResult[];
-      if (cat.id === 'presidente') {
-        parties = presidentialRows.slice(0, 8).map(row => ({
-          partyId: row.partyAbbr,
-          partyName: row.partyName,
-          partyColor: row.partyColor,
-          partySymbolUrl: row.partySymbolUrl || '',
-          photoUrl: row.presidentialPhoto || null,
-          votes: 0,
-          percentage: 0
-        }));
-      } else {
-        parties = legislativeRows.map(row => ({
-          partyId: row.partyAbbr,
-          partyName: row.partyName,
-          partyColor: row.partyColor,
-          partySymbolUrl: row.partySymbolUrl || '',
-          photoUrl: null,
-          votes: 0,
-          percentage: 0
-        }));
-      }
       
-      // Generate random percentages
-      let remaining = 100;
-      parties = parties.map((party, index) => {
-        let percentage;
-        if (index === parties.length - 1) {
-          percentage = remaining;
+      if (realResults.length === 0) {
+        // No votes at all in this category - return empty array
+        // The UI will show a message instead
+        parties = [];
+      } else if (totalVoteCount < 5) {
+        // Few votes total - ONLY show candidates/parties that received actual votes
+        const totalCatVotes = realResults.reduce((sum, r) => sum + r.count, 0);
+        
+        if (cat.id === 'president') {
+          // For president with few votes, show only voted candidates
+          parties = realResults.map(result => {
+            const partyRow = presidentialRows.find(r => r.partyName === result.partyId || r.partyAbbr === result.partyId);
+            const percentage = totalCatVotes > 0 ? (result.count / totalCatVotes) * 100 : 0;
+            return {
+              partyId: result.partyId,
+              partyName: partyRow?.partyName || result.partyId,
+              partyColor: partyRow?.partyColor || '#666',
+              partySymbolUrl: partyRow?.partySymbolUrl || '',
+              photoUrl: partyRow?.presidentialPhoto || null,
+              votes: result.count,
+              percentage: percentage,
+              seats: 0
+            };
+          });
+          // Sort by votes and show ALL that have votes (not just top 3)
+          parties.sort((a, b) => b.votes - a.votes);
         } else {
-          // Give user's party a boost
-          if (party.partyName === userPartyName) {
-            percentage = Math.random() * 10 + 22; // 22-32%
-          } else {
-            percentage = Math.random() * 10 + 5; // 5-15%
-          }
-          remaining -= percentage;
+          // For legislative categories with few votes
+          parties = realResults.map(result => {
+            const partyRow = legislativeRows.find(r => r.partyName === result.partyId || r.partyAbbr === result.partyId);
+            const percentage = totalCatVotes > 0 ? (result.count / totalCatVotes) * 100 : 0;
+            return {
+              partyId: result.partyId,
+              partyName: partyRow?.partyName || result.partyId,
+              partyColor: partyRow?.partyColor || '#666',
+              partySymbolUrl: partyRow?.partySymbolUrl || '',
+              photoUrl: null,
+              votes: result.count,
+              percentage: percentage,
+              seats: 0
+            };
+          });
+          parties.sort((a, b) => b.votes - a.votes);
         }
-        return { ...party, percentage: Math.max(0, percentage) };
-      });
-      
-      // Normalize to 100%
-      const total = parties.reduce((sum, r) => sum + r.percentage, 0);
-      parties = parties.map(r => {
-        const normalizedPercentage = (r.percentage / total) * 100;
-        return {
-          ...r,
-          percentage: normalizedPercentage,
-          votes: Math.floor(normalizedPercentage * 184.5),
-          seats: 0 // Will be calculated below
-        };
-      });
-      
-      // Sort by percentage
-      parties.sort((a, b) => b.percentage - a.percentage);
-      
-      // For presidential category, keep only top 3 candidates
-      if (cat.totalSeats === 1) {
-        parties = parties.slice(0, 3);
-      }
-      
-      // Assign seats - for small totals, use simple allocation
-      let remainingSeats = cat.totalSeats;
-      if (cat.totalSeats > 1) {
-        // Distribute seats starting from top party
-        parties = parties.map((p, i) => {
-          let seatCount = 0;
-          if (i < cat.totalSeats && remainingSeats > 0) {
-            // Simple allocation: at least 1 seat to top parties
-            seatCount = Math.max(1, Math.round((p.percentage / 100) * cat.totalSeats));
-            seatCount = Math.min(seatCount, remainingSeats); // Don't exceed remaining
-            remainingSeats -= seatCount;
+      } else {
+        // 5+ votes - show normal view with percentages
+        const totalCatVotes = realResults.reduce((sum, r) => sum + r.count, 0);
+        
+        if (cat.id === 'president') {
+          // Show top 3 candidates
+          parties = realResults.slice(0, 3).map(result => {
+            const partyRow = presidentialRows.find(r => r.partyName === result.partyId || r.partyAbbr === result.partyId);
+            return {
+              partyId: result.partyId,
+              partyName: partyRow?.partyName || result.partyId,
+              partyColor: partyRow?.partyColor || '#666',
+              partySymbolUrl: partyRow?.partySymbolUrl || '',
+              photoUrl: partyRow?.presidentialPhoto || null,
+              votes: result.count,
+              percentage: result.percentage,
+              seats: 0
+            };
+          });
+        } else {
+          // For legislative - show voted parties first, then empty ones
+          const resultsMap = new Map(realResults.map(r => [r.partyId, r]));
+          
+          // Start with all legislative rows
+          parties = legislativeRows.map(row => {
+            const result = resultsMap.get(row.partyName) || resultsMap.get(row.partyAbbr);
+            const voteCount = result?.count || 0;
+            const percentage = totalCatVotes > 0 ? (voteCount / totalCatVotes) * 100 : 0;
+            return {
+              partyId: row.partyAbbr,
+              partyName: row.partyName || '',
+              partyColor: row.partyColor,
+              partySymbolUrl: row.partySymbolUrl || '',
+              photoUrl: null,
+              votes: voteCount,
+              percentage: percentage,
+              seats: 0
+            };
+          });
+          
+          // Sort by votes
+          parties.sort((a, b) => b.votes - a.votes);
+          
+          // Only assign seats if there are enough votes
+          const minVotesForSeats = cat.totalSeats * 10;
+          if (cat.totalSeats > 1 && totalCatVotes >= minVotesForSeats) {
+            let remainingSeats = cat.totalSeats;
+            parties = parties.map((p, i) => {
+              let seatCount = 0;
+              if (p.votes > 0 && i < parties.length && remainingSeats > 0) {
+                seatCount = Math.max(1, Math.round((p.percentage / 100) * cat.totalSeats));
+                seatCount = Math.min(seatCount, remainingSeats);
+                remainingSeats -= seatCount;
+              }
+              return { ...p, seats: seatCount };
+            });
           }
-          return { ...p, seats: seatCount };
-        });
+          
+          // Show top 10
+          parties = parties.slice(0, 10);
+        }
       }
       
-      // For small seat counts, only keep parties that actually got seats
-      // BUT: Always keep at least 3 parties for presidential (even with 0 seats)
-      if (cat.totalSeats <= 10 && cat.totalSeats > 1) {
-        // Only filter for congressional categories (not presidential)
-        parties = parties.filter(p => (p.seats || 0) > 0);
-      }
-      
-      // Generate seat distribution - create individual seat objects
+      // Generate seat distribution
       let seatDistribution: Seat[] = [];
-      if (cat.totalSeats > 1) {
-        // Create individual seats based on party results
+      if (cat.totalSeats > 1 && realResults.length > 0 && totalVoteCount >= 5) {
+        // Only create seats when there are enough total votes
         parties.forEach(party => {
           const partySeats = party.seats || 0;
           for (let i = 0; i < partySeats; i++) {
@@ -209,9 +261,44 @@
   }
   
   // Initialize
-  onMount(() => {
+  onMount(async () => {
     checkVotingStatus();
-    allResults = generateSimulatedResults();
+    
+    // Initialize Firebase if not ready
+    if (!isFirebaseReady) {
+      initializeFirebase();
+    }
+    
+    // Load real results from Firestore
+    try {
+      allResults = await loadRealResults();
+    } catch (err) {
+      console.error('Error loading results:', err);
+    } finally {
+      isLoading = false;
+    }
+    
+    // Subscribe to live voter count updates
+    if (isFirebaseReady) {
+      const today = new Date().toISOString().split('T')[0];
+      unsubscribe = subscribeToGlobalStats(today, (stats: GlobalStats | null) => {
+        if (stats) {
+          liveVoterCount = stats.totalVotes || 0;
+          lastUpdateTime = new Date();
+          
+          // If results changed significantly, reload them
+          if (Math.abs(liveVoterCount - totalVoters) > 0) {
+            totalVoters = liveVoterCount;
+            // Refresh results to show new data
+            loadRealResults().then(newResults => {
+              allResults = newResults;
+            }).catch(err => {
+              console.error('Error refreshing results:', err);
+            });
+          }
+        }
+      });
+    }
     
     // Trigger confetti after a delay
     setTimeout(() => {
@@ -224,7 +311,20 @@
       checkVotingStatus();
     }, 1000);
     
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      // Unsubscribe from Firestore updates
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  });
+  
+  // Cleanup on component destroy
+  onDestroy(() => {
+    if (unsubscribe) {
+      unsubscribe();
+    }
   });
   
   // Format countdown
@@ -250,18 +350,11 @@
     goto('/simular');
   }
   
-  // Save daily winner
-  function saveDailyWinner() {
-    const today = new Date().toISOString().split('T')[0];
-    const winners = allResults.map(r => ({ category: r.category, winner: r.results[0] }));
-    const history = JSON.parse(localStorage.getItem('dailyvote_history') || '[]');
-    history.push({ date: today, winners });
-    if (history.length > 30) history.shift();
-    localStorage.setItem('dailyvote_history', JSON.stringify(history));
-  }
-  
   $effect(() => {
-    if (isVotingClosed) saveDailyWinner();
+    if (isVotingClosed) {
+      // Winners are already saved in real-time as votes come in
+      // No need for additional localStorage saving
+    }
   });
 </script>
 
@@ -290,25 +383,34 @@
         <p class="subtitle">Elecciones Generales Perú 2026</p>
       </div>
       
-      <div class="status-indicator" class:closed={isVotingClosed}>
-        <span class="status-dot"></span>
-        <span class="status-text">
-          {isVotingClosed ? 'Votación Cerrada' : 'Conteo en Vivo'}
-        </span>
-        {#if !isVotingClosed && nextResetTime}
-          <span class="countdown">Cierra en: {formatCountdown(nextResetTime)}</span>
-        {/if}
+      <!-- Live Stats Widget (Right Side) -->
+      <div class="live-stats-widget" in:fly={{ x: 30, duration: 600, delay: 300 }}>
+        <div class="widget-header">
+          <span class="live-pulse"></span>
+          <span class="live-label">{isVotingClosed ? 'VOTACIÓN CERRADA' : 'CONTEO EN VIVO'}</span>
+          {#if !isVotingClosed && nextResetTime}
+            <span class="widget-timer">{formatCountdown(nextResetTime)}</span>
+          {/if}
+        </div>
+        
+        <div class="widget-body">
+          <div class="widget-icon">🗳️</div>
+          <div class="widget-data">
+            <span class="widget-number">{liveVoterCount.toLocaleString()}</span>
+            <span class="widget-unit">votos</span>
+          </div>
+        </div>
       </div>
     </div>
   </header>
 
   <!-- Presidential Results - Featured -->
-  {#if allResults[0]?.results?.length > 0}
-    <section class="featured-section presidential" in:fly={{ y: 30, duration: 600, delay: 200 }}>
-      <div class="section-header">
-        <h2>Presidente y Vicepresidentes</h2>
-      </div>
-      
+  <section class="featured-section presidential" in:fly={{ y: 30, duration: 600, delay: 200 }}>
+    <div class="section-header">
+      <h2>Presidente y Vicepresidentes</h2>
+    </div>
+    
+    {#if allResults[0]?.results?.length > 0}
       <div class="candidates-showcase">
         {#each allResults[0].results.slice(0, 3) as candidate, i}
           <div 
@@ -361,8 +463,15 @@
           </div>
         </div>
       {/if}
-    </section>
-  {/if}
+    {:else}
+      <!-- No results yet -->
+      <div class="empty-category" in:fly={{ y: 20, duration: 400 }}>
+        <div class="empty-icon">🗳️</div>
+        <p>Aún no hay resultados para esta categoría</p>
+        <span class="empty-hint">Los resultados aparecerán cuando lleguen los primeros votos</span>
+      </div>
+    {/if}
+  </section>
 
   <!-- Congressional Categories with Hemicycle -->
   {#each allResults.slice(1) as category, index}
@@ -373,26 +482,40 @@
       <div class="section-header">
         <div>
           <h2>{category.category}</h2>
-          {#if category.categoryId === 'senadores-nacional'}
+          {#if category.categoryId === 'senatorsNational'}
             <p class="district-label">Distrito Nacional</p>
-          {:else if category.categoryId === 'senadores-regional'}
-            <p class="district-label">Lima Metropolitana</p>
-          {:else if category.categoryId === 'diputados'}
+          {:else if category.categoryId === 'senatorsRegional'}
+            <p class="district-label">Distrito Regional (Lima)</p>
+          {:else if category.categoryId === 'deputies'}
             <p class="district-label">Distrito Electoral Lima</p>
-          {:else}
+          {:else if category.categoryId === 'andeanParliament'}
             <p class="district-label">Comunidad Andina</p>
           {/if}
         </div>
-        <span class="seat-count">{category.totalSeats} escaños</span>
+        <div class="header-stats">
+          <span class="seat-count">{category.totalSeats} escaños</span>
+          <span class="vote-count">{category.totalVotes.toLocaleString()} votos</span>
+        </div>
       </div>
 
-      <!-- Hemicycle Visualization -->
-      <div class="hemicycle-wrapper">
-        <ParliamentHemicycle 
-          seats={category.seatDistribution}
-          totalSeats={category.totalSeats}
-        />
-      </div>
+      <!-- Hemicycle Visualization - Solo mostrar si hay contenido -->
+      {#if category.seatDistribution.length > 0 || category.totalVotes > 0}
+        <div class="hemicycle-wrapper">
+          {#if category.seatDistribution.length > 0}
+            <ParliamentHemicycle 
+              seats={category.seatDistribution}
+              totalSeats={category.totalSeats}
+            />
+          {:else}
+            <!-- Hay votos pero no suficientes para escaños -->
+            <div class="no-seats-message">
+              <div class="no-seats-icon">📊</div>
+              <p>Se necesitan más votos para calcular escaños</p>
+              <span class="no-seats-hint">Mínimo: {category.totalSeats * 10} votos</span>
+            </div>
+          {/if}
+        </div>
+      {/if}
 
       <!-- Top Results List -->
       <div class="results-list">
@@ -428,6 +551,15 @@
           </div>
         {/each}
       </div>
+      
+      <!-- Empty state for categories with no votes -->
+      {#if category.results.length === 0}
+        <div class="empty-category" in:fly={{ y: 20, duration: 400 }}>
+          <div class="empty-icon">📊</div>
+          <p>Aún no hay resultados para esta categoría</p>
+          <span class="empty-hint">Los resultados aparecerán cuando lleguen los primeros votos</span>
+        </div>
+      {/if}
     </section>
   {/each}
 
@@ -461,8 +593,24 @@
       </button>
     </div>
     
-    <p class="footer-note">
-      Simulación educativa • Datos generados automáticamente • No representan resultados reales
+    <div class="footer-stats">
+      {#if isLoading}
+        <p class="footer-note">⏳ Cargando resultados...</p>
+      {:else if totalVoters > 0}
+        <p class="footer-note">
+          🗳️ <strong>{totalVoters.toLocaleString()}</strong> votos registrados hoy
+          <span class="footer-separator">|</span>
+          <span class="footer-real">Resultados en tiempo real</span>
+        </p>
+      {:else}
+        <p class="footer-note">
+          🗳️ Sin votos registrados aún. ¡Sé el primero en votar!
+        </p>
+      {/if}
+    </div>
+    
+    <p class="footer-disclaimer">
+      Simulación educativa • Datos reales de los usuarios
     </p>
   </footer>
 </div>
@@ -548,43 +696,193 @@
     margin: 5px 0 0 0;
   }
 
-  .status-indicator {
+  /* Live Stats Widget */
+  .live-stats-widget {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
+    border-radius: 20px;
+    padding: 20px 25px;
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 
+      0 10px 40px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .widget-header {
     display: flex;
     align-items: center;
     gap: 10px;
-    background: rgba(255, 255, 255, 0.1);
-    padding: 12px 20px;
-    border-radius: 50px;
-    backdrop-filter: blur(10px);
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
   }
 
-  .status-dot {
-    width: 12px;
-    height: 12px;
+  .live-pulse {
+    width: 10px;
+    height: 10px;
     background: #00ff88;
     border-radius: 50%;
-    animation: pulse 2s infinite;
+    animation: widget-pulse 2s infinite;
+    box-shadow: 0 0 10px #00ff88;
   }
 
-  .status-indicator.closed .status-dot {
-    background: #ff4757;
-    animation: none;
+  @keyframes widget-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 10px #00ff88; }
+    50% { opacity: 0.7; transform: scale(1.2); box-shadow: 0 0 20px #00ff88; }
   }
 
-  @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.5; transform: scale(1.2); }
+  .live-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.9);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
   }
 
-  .status-text {
-    font-weight: 600;
+  .live-stats-widget {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
+    border-radius: 20px;
+    padding: 20px 25px;
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 
+      0 10px 40px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
   }
 
-  .countdown {
+  .widget-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  }
+
+  .live-pulse {
+    width: 10px;
+    height: 10px;
+    background: #00ff88;
+    border-radius: 50%;
+    animation: widget-pulse 2s infinite;
+    box-shadow: 0 0 10px #00ff88;
+  }
+
+  @keyframes widget-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 10px #00ff88; }
+    50% { opacity: 0.7; transform: scale(1.2); box-shadow: 0 0 20px #00ff88; }
+  }
+
+  .widget-timer {
+    margin-left: auto;
     font-family: 'Courier New', monospace;
-    font-size: 0.9rem;
-    opacity: 0.9;
-    margin-left: 10px;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.7);
+    background: rgba(0, 0, 0, 0.2);
+    padding: 4px 8px;
+    border-radius: 6px;
+  }
+
+  .widget-body {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+
+  .widget-icon {
+    font-size: 2.2rem;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  }
+
+  .widget-data {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: 1.1;
+  }
+
+  .widget-number {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 0 30px rgba(255, 255, 255, 0.4);
+    letter-spacing: -1px;
+  }
+
+  .widget-unit {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+    text-transform: lowercase;
+    margin-top: 2px;
+  }
+
+  .widget-body {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+
+  .widget-icon {
+    font-size: 2.2rem;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  }
+
+  .widget-data {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: 1.1;
+  }
+
+  .widget-number {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 0 30px rgba(255, 255, 255, 0.4);
+    letter-spacing: -1px;
+  }
+
+  .widget-unit {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+    text-transform: lowercase;
+    margin-top: 2px;
+  }
+
+  /* Empty Category Message */
+  .empty-category {
+    text-align: center;
+    padding: 60px 20px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 16px;
+    border: 2px dashed #ddd;
+  }
+
+  .empty-icon {
+    font-size: 3.5rem;
+    margin-bottom: 15px;
+    opacity: 0.7;
+  }
+
+  .empty-category p {
+    font-size: 1.2rem;
+    color: #666;
+    margin: 0 0 10px 0;
+    font-weight: 500;
+  }
+
+  .empty-hint {
+    font-size: 0.95rem;
+    color: #999;
+    font-style: italic;
   }
 
   /* Sections */
@@ -622,6 +920,13 @@
     margin: 5px 0 0 0;
   }
 
+  .header-stats {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 5px;
+  }
+
   .seat-count {
     background: #f0f0f0;
     padding: 8px 16px;
@@ -629,6 +934,17 @@
     font-weight: 600;
     color: #666;
     font-size: 0.9rem;
+  }
+
+  .vote-count {
+    background: linear-gradient(135deg, #C8102E, #a00d25);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 800;
+    font-size: 0.9rem;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 2px 8px rgba(200, 16, 46, 0.3);
   }
 
   /* Presidential Cards */
@@ -804,6 +1120,31 @@
     padding: 20px;
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
     border-radius: 16px;
+  }
+
+  .no-seats-message {
+    text-align: center;
+    padding: 40px 20px;
+    color: #666;
+  }
+
+  .no-seats-icon {
+    font-size: 3rem;
+    margin-bottom: 15px;
+  }
+
+  .no-seats-message p {
+    font-size: 1.1rem;
+    margin: 0 0 10px 0;
+    font-weight: 500;
+  }
+
+  .no-seats-hint {
+    font-size: 0.9rem;
+    color: #999;
+    background: #f0f0f0;
+    padding: 5px 12px;
+    border-radius: 15px;
   }
 
   /* Results List */
@@ -994,10 +1335,31 @@
     box-shadow: 0 6px 20px rgba(29, 161, 242, 0.3);
   }
 
+  .footer-stats {
+    margin: 15px 0;
+  }
+
   .footer-note {
-    color: #999;
-    font-size: 0.85rem;
+    color: #666;
+    font-size: 0.95rem;
     margin: 0;
+    font-weight: 500;
+  }
+
+  .footer-separator {
+    margin: 0 10px;
+    color: #ccc;
+  }
+
+  .footer-real {
+    color: #28a745;
+    font-weight: 600;
+  }
+
+  .footer-disclaimer {
+    color: #999;
+    font-size: 0.8rem;
+    margin: 10px 0 0 0;
   }
 
   /* Responsive */

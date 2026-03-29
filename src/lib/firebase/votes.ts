@@ -3,36 +3,68 @@ import {
   setDoc, 
   getDoc, 
   updateDoc,
-  serverTimestamp,
-  Timestamp,
-  type Firestore
+  serverTimestamp
 } from 'firebase/firestore';
 import { getDb, isFirebaseReady } from './index';
-import { getCurrentUser } from './auth';
+import { getAnonymousDeviceId, hasDeviceVotedToday, markDeviceAsVoted } from './device';
+import { addVoteToGlobalStats } from './stats';
 import { COLLECTIONS, type UserVote, type UserDayVotes, type VoteEntry } from './config';
+import { BALLOT_COLUMNS } from '$lib/data/mock';
 
 /**
- * Guardar voto de un usuario en Firestore
+ * Buscar información del partido en los datos mock
+ */
+function findPartyInfo(category: string, partyName: string) {
+  // Map category to column index
+  const categoryMap: Record<string, number> = {
+    'president': 0,
+    'senatorsNational': 1,
+    'senatorsRegional': 2,
+    'deputies': 3,
+    'andeanParliament': 4
+  };
+  
+  const colIndex = categoryMap[category];
+  if (colIndex === undefined) return null;
+  
+  const column = BALLOT_COLUMNS[colIndex];
+  if (!column) return null;
+  
+  // Search in all rows
+  for (const row of column.rows) {
+    if (row.partyName === partyName || row.partyAbbr === partyName) {
+      return {
+        partyColor: row.partyColor,
+        partySymbolUrl: row.partySymbolUrl
+      };
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * Guardar voto anónimo de un dispositivo en Firestore
+ * No requiere login - usa device fingerprinting
  */
 export async function saveVote(
   date: string,
   category: string,
   voteData: { partyId: string; partyName: string }
 ): Promise<boolean> {
-  if (!isFirebaseReady) {
-    console.warn('Firebase no disponible, voto guardado solo localmente');
-    return false;
-  }
+  // Siempre guardar en localStorage primero (fallback)
+  markDeviceAsVoted(date);
   
-  const user = getCurrentUser();
-  if (!user) {
-    console.warn('Usuario no autenticado');
-    return false;
+  // Si Firebase no está listo, solo localStorage
+  if (!isFirebaseReady) {
+    console.log('💾 Voto guardado localmente (Firebase no activo)');
+    return true;
   }
   
   try {
     const db = getDb();
-    const voteRef = doc(db, COLLECTIONS.VOTES, user.uid);
+    const deviceId = getAnonymousDeviceId();
+    const voteRef = doc(db, COLLECTIONS.VOTES, deviceId);
     
     // Obtener voto existente
     const existingDoc = await getDoc(voteRef);
@@ -60,17 +92,17 @@ export async function saveVote(
         lastVoteAt: serverTimestamp()
       });
     } else {
-      // Crear nuevo documento de voto
+      // Crear nuevo documento de voto anónimo
       const newDayVotes: UserDayVotes = {
         [category]: voteEntry,
         completedAt: null
       };
       
       const newVote: Partial<UserVote> = {
-        userId: user.uid,
-        email: user.email,
-        displayName: user.displayName,
-        photoURL: user.photoURL,
+        userId: deviceId, // ID anónimo del dispositivo
+        email: null, // Anónimo
+        displayName: null, // Anónimo
+        photoURL: null, // Anónimo
         votes: {
           [date]: newDayVotes
         },
@@ -81,10 +113,71 @@ export async function saveVote(
       await setDoc(voteRef, newVote);
     }
     
-    console.log(`✅ Voto guardado: ${category} -> ${voteData.partyName}`);
+    // Actualizar estadísticas globales con datos del partido
+    const partyInfo = findPartyInfo(category, voteData.partyName);
+    await addVoteToGlobalStats(
+      date,
+      category,
+      voteData.partyName, // Use party name as ID for consistency
+      voteData.partyName,
+      partyInfo?.partyColor,
+      partyInfo?.partySymbolUrl
+    );
+    
+    console.log(`✅ Voto guardado en Firebase: ${category} -> ${voteData.partyName}`);
     return true;
   } catch (error: any) {
-    console.error('❌ Error guardando voto:', error.message);
+    console.error('❌ Error guardando voto en Firebase:', error.message);
+    // Aún así retornar true porque se guardó en localStorage
+    return true;
+  }
+}
+
+/**
+ * Verificar si este dispositivo ya votó hoy
+ * Comprueba localStorage primero (rápido), luego Firebase
+ */
+export async function hasVotedToday(date: string = getTodayDate()): Promise<boolean> {
+  // Check rápido en localStorage
+  if (hasDeviceVotedToday(date)) {
+    return true;
+  }
+  
+  // Si Firebase está listo, verificar también ahí
+  if (!isFirebaseReady) {
+    return false;
+  }
+  
+  try {
+    const db = getDb();
+    const deviceId = getAnonymousDeviceId();
+    const voteRef = doc(db, COLLECTIONS.VOTES, deviceId);
+    const docSnap = await getDoc(voteRef);
+    
+    if (docSnap.exists()) {
+      const data = docSnap.data() as UserVote;
+      const todayVotes = data.votes?.[date];
+      
+      // Verificar si tiene al menos un voto hoy
+      const hasVote = !!(
+        todayVotes?.president ||
+        todayVotes?.senatorsNational ||
+        todayVotes?.senatorsRegional ||
+        todayVotes?.deputies ||
+        todayVotes?.andeanParliament
+      );
+      
+      // Si tiene voto en Firebase pero no en localStorage, sincronizar
+      if (hasVote) {
+        markDeviceAsVoted(date);
+      }
+      
+      return hasVote;
+    }
+    
+    return false;
+  } catch (error: any) {
+    console.error('❌ Error verificando voto:', error.message);
     return false;
   }
 }
@@ -92,22 +185,20 @@ export async function saveVote(
 /**
  * Marcar votación del día como completada (5 votos)
  */
-export async function markVoteCompleted(date: string): Promise<boolean> {
-  if (!isFirebaseReady) return false;
-  
-  const user = getCurrentUser();
-  if (!user) return false;
+export async function markVoteCompleted(date: string = getTodayDate()): Promise<boolean> {
+  if (!isFirebaseReady) return true; // Ya se marcó en localStorage
   
   try {
     const db = getDb();
-    const voteRef = doc(db, COLLECTIONS.VOTES, user.uid);
+    const deviceId = getAnonymousDeviceId();
+    const voteRef = doc(db, COLLECTIONS.VOTES, deviceId);
     
     await updateDoc(voteRef, {
       [`votes.${date}.completedAt`]: Date.now(),
       lastVoteAt: serverTimestamp()
     });
     
-    console.log('✅ Votación completada guardada en Firebase');
+    console.log('✅ Votación completada registrada');
     return true;
   } catch (error: any) {
     console.error('❌ Error marcando completado:', error.message);
@@ -116,23 +207,18 @@ export async function markVoteCompleted(date: string): Promise<boolean> {
 }
 
 /**
- * Cargar votos del usuario desde Firestore
+ * Cargar votos del dispositivo desde Firestore
  */
-export async function loadUserVotes(): Promise<UserVote | null> {
+export async function loadDeviceVotes(): Promise<UserVote | null> {
   if (!isFirebaseReady) {
-    console.warn('Firebase no disponible');
-    return null;
-  }
-  
-  const user = getCurrentUser();
-  if (!user) {
-    console.warn('Usuario no autenticado');
+    console.log('Firebase no disponible, usando solo localStorage');
     return null;
   }
   
   try {
     const db = getDb();
-    const voteRef = doc(db, COLLECTIONS.VOTES, user.uid);
+    const deviceId = getAnonymousDeviceId();
+    const voteRef = doc(db, COLLECTIONS.VOTES, deviceId);
     const docSnap = await getDoc(voteRef);
     
     if (docSnap.exists()) {
@@ -147,34 +233,21 @@ export async function loadUserVotes(): Promise<UserVote | null> {
 }
 
 /**
- * Verificar si usuario ya votó hoy
+ * Obtener fecha de hoy en formato YYYY-MM-DD
  */
-export async function hasVotedToday(date: string): Promise<boolean> {
-  const votes = await loadUserVotes();
-  if (!votes) return false;
-  
-  const todayVotes = votes.votes?.[date];
-  if (!todayVotes) return false;
-  
-  // Verificar si tiene al menos un voto
-  return !!(
-    todayVotes.president ||
-    todayVotes.senatorsNational ||
-    todayVotes.senatorsRegional ||
-    todayVotes.deputies ||
-    todayVotes.andeanParliament
-  );
+function getTodayDate(): string {
+  return new Date().toISOString().split('T')[0];
 }
 
 /**
- * Sincronizar votos locales con Firebase
- * Útil para migrar datos de localStorage a Firebase
+ * Sincronizar votos locales con Firebase al iniciar
+ * Útil para migrar datos de localStorage a Firebase cuando se activa
  */
 export async function syncLocalVotes(
   date: string,
   localVotes: Record<string, any>
 ): Promise<boolean> {
-  if (!isFirebaseReady || !getCurrentUser()) return false;
+  if (!isFirebaseReady) return false;
   
   try {
     // Guardar cada categoría
