@@ -58,14 +58,24 @@ let preferenceState = $state<Record<string, RowPreferences>>({});
 
 // Funciones derivadas para progreso de votación
 export function isColumnValid(columnKey: ColumnKey): boolean {
+  if (columnKey === 'presidente') {
+    return presidentSelectedRowId !== null;
+  }
   return selectedRowByColumn[columnKey] !== null;
 }
 
 export function getValidColumnCount(): number {
   let count = 0;
+  // Contar columnas legislativas
   (Object.keys(selectedRowByColumn) as ColumnKey[]).forEach(key => {
-    if (selectedRowByColumn[key] !== null) count++;
+    if (key !== 'presidente' && selectedRowByColumn[key] !== null) {
+      count++;
+    }
   });
+  // Contar presidente separadamente
+  if (presidentSelectedRowId !== null) {
+    count++;
+  }
   return count;
 }
 
