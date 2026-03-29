@@ -404,7 +404,7 @@
       <div class="live-stats-widget" in:fly={{ x: 30, duration: 600, delay: 300 }}>
         <div class="widget-header">
           <span class="live-pulse"></span>
-          <span class="live-label">{isVotingClosed ? 'VOTACIÓN CERRADA' : 'CONTEO EN VIVO'}</span>
+          <span class="live-label">{isVotingClosed ? 'VOTACIÓN CERRADA' : 'ACTIVIDAD EN VIVO'}</span>
           {#if !isVotingClosed && nextResetTime}
             <span class="widget-timer">{formatCountdown(nextResetTime)}</span>
           {/if}
@@ -414,7 +414,7 @@
           <div class="widget-icon">🗳️</div>
           <div class="widget-data">
             <span class="widget-number">{liveVoterCount.toLocaleString()}</span>
-            <span class="widget-unit">votos</span>
+            <span class="widget-unit">simulaciones hoy</span>
           </div>
         </div>
       </div>
