@@ -6,16 +6,14 @@ service cloud.firestore {
       allow read, write: if true;
     }
     
-    // Estadísticas globales (solo lectura pública)
+    // Estadísticas globales (lectura/escritura pública para simulador)
     match /globalStats/{date} {
-      allow read: if true;
-      allow write: if false;
+      allow read, write: if true;
     }
     
-    // Resultados diarios agregados
+    // Resultados diarios agregados (lectura/escritura pública para simulador)
     match /dailyResults/{date} {
-      allow read: if true;
-      allow write: if false;
+      allow read, write: if true;
     }
   }
 }
