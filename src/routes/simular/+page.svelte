@@ -21,7 +21,7 @@
   let initialHintTimeout: ReturnType<typeof window.setTimeout> | null = null;
   let hintDismissedThisVisit = $state(false);
   
-  // ─── Horizontal Scroll Hint ───────────────────────────────────────────────────
+  // ─── Ballot Scroller ────────────────────────────────────────────────────────
   let ballotScroller: HTMLDivElement | null = $state(null);
   let userHasInteracted = $state(false);
   
@@ -37,24 +37,53 @@
     }
   }
   
-  function hintHorizontalScroll() {
+  function centerBallot() {
+    if (!ballotScroller) return;
+
+    const x = (ballotScroller.scrollWidth - ballotScroller.clientWidth) / 2;
+    const y = (ballotScroller.scrollHeight - ballotScroller.clientHeight) / 2;
+
+    ballotScroller.scrollTo({
+      left: x,
+      top: y,
+      behavior: 'auto'
+    });
+  }
+  
+  function hintPan2D() {
     if (!ballotScroller) return;
     if (userHasInteracted) return;
-    
+
+    const startX = ballotScroller.scrollLeft;
+    const startY = ballotScroller.scrollTop;
+
+    // derecha
     ballotScroller.scrollTo({
-      left: 96,
+      left: startX + 80,
       behavior: 'smooth'
     });
-    
-    window.setTimeout(() => {
-      if (!ballotScroller) return;
-      if (userHasInteracted) return;
-      
+
+    setTimeout(() => {
       ballotScroller.scrollTo({
-        left: 0,
+        left: startX,
         behavior: 'smooth'
       });
-    }, 500);
+    }, 400);
+
+    // abajo
+    setTimeout(() => {
+      ballotScroller.scrollTo({
+        top: startY + 60,
+        behavior: 'smooth'
+      });
+    }, 800);
+
+    setTimeout(() => {
+      ballotScroller.scrollTo({
+        top: startY,
+        behavior: 'smooth'
+      });
+    }, 1200);
   }
   
   function dismissInlineHint() {
@@ -68,7 +97,7 @@
       autoHideHintTimeout = null;
     }
     
-    hintHorizontalScroll();
+    hintPan2D();
   }
   
   function markUserInteraction() {
@@ -93,6 +122,9 @@
       vote.hydrate(saved);
     }
     
+    // Center ballot immediately
+    centerBallot();
+    
     showInlineHint = true;
     
     autoHideHintTimeout = window.setTimeout(() => {
@@ -101,7 +133,7 @@
     }, 6000);
     
     initialHintTimeout = window.setTimeout(() => {
-      hintHorizontalScroll();
+      hintPan2D();
     }, 700);
     
     return () => {
@@ -162,7 +194,7 @@
     >
       <div class="hint-content" transition:fade={{ duration: 200, delay: 100 }} style="transform: translateY(-8px);">
         <div class="hint-inner" style="transform: translateY(8px);">
-          <p class="hint-text">Haz clic para marcar o desmarcar. Desliza para recorrer la cédula.</p>
+          <p class="hint-text">Explora la cédula deslizando en cualquier dirección. Haz clic para marcar o desmarcar.</p>
           <button 
             class="hint-close-btn" 
             onclick={dismissInlineHint}
