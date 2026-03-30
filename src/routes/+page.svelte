@@ -2,12 +2,41 @@
   import { onMount } from 'svelte';
   import { fly, fade } from 'svelte/transition';
   import { goto } from '$app/navigation';
+  import { ELECTION_DAY_TARGET } from '$lib/firebase';
   
   // Animation state
   let isLoaded = $state(false);
+  let countdownText = $state('');
+  let countdownInterval: ReturnType<typeof setInterval> | null = null;
+  
+  function updateCountdown() {
+    const now = new Date();
+    const diff = ELECTION_DAY_TARGET.getTime() - now.getTime();
+    
+    if (diff <= 0) {
+      countdownText = 'La jornada de votación ya comenzó';
+      return;
+    }
+    
+    const totalSeconds = Math.floor(diff / 1000);
+    const days = Math.floor(totalSeconds / 86400);
+    const hours = Math.floor((totalSeconds % 86400) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    
+    countdownText = `Faltan: ${days}d ${hours}h ${minutes}m ${seconds}s para votar`;
+  }
   
   onMount(() => {
     isLoaded = true;
+    updateCountdown();
+    countdownInterval = setInterval(updateCountdown, 1000);
+    
+    return () => {
+      if (countdownInterval) {
+        clearInterval(countdownInterval);
+      }
+    };
   });
   
   function goToSimulation() {
@@ -30,48 +59,53 @@
     </div>
     
     <div class="landing-inner" in:fly={{ y: 30, duration: 600 }}>
-      <!-- Header badge -->
-      <div class="badge-wrapper" in:fade={{ duration: 400, delay: 200 }}>
-        <span class="badge">🇵🇪 Elecciones Generales 2026</span>
+      <!-- Pill superior -->
+      <div class="pill-wrapper" in:fade={{ duration: 400, delay: 200 }}>
+        <span class="top-pill">PE · ELECCIONES GENERALES 2026</span>
       </div>
 
-      <!-- Main headline -->
+      <!-- Headline principal -->
       <h1 class="headline" in:fly={{ y: 20, duration: 500, delay: 300 }}>
-        Aprende a votar
-        <span class="headline-accent">sin miedo al error</span>
+        <span class="headline-line1">SIMULA TU VOTO</span>
+        <span class="headline-line2">ANTES DEL 12 DE ABRIL</span>
       </h1>
 
-      <!-- Subheadline -->
+      <!-- Cuenta regresiva -->
+      <div class="countdown-wrapper" in:fade={{ duration: 400, delay: 400 }}>
+        <span class="countdown-text">{countdownText}</span>
+      </div>
+
+      <!-- Descripción principal -->
       <p class="subline" in:fade={{ duration: 400, delay: 500 }}>
-        Simula tu voto en la cédula electoral real de Perú. 
-        Practica con los 5 tipos de candidaturas y vota con confianza el 12 de abril.
+        Explora la cédula electoral real, prueba distintas elecciones y descubre cómo cambiarían los resultados.
       </p>
 
       <!-- Primary CTA -->
       <div class="cta-wrapper" in:fly={{ y: 20, duration: 400, delay: 600 }}>
         <button class="cta-btn" onclick={goToSimulation}>
           <span class="cta-icon">🗳️</span>
-          <span class="cta-text">Comenzar simulación</span>
+          <span class="cta-text">Simular mi voto</span>
         </button>
-        <span class="cta-note">Gratis · Sin registro · 2 minutos</span>
+        <span class="cta-note">Cédula interactiva · Sin registro · 2 minutos</span>
+        <span class="interaction-hint">Desliza la cédula y marca tus opciones como en la elección real.</span>
       </div>
 
       <!-- Feature cards -->
       <div class="features-grid" in:fly={{ y: 20, duration: 400, delay: 800 }}>
         <div class="feature-card">
           <div class="feature-icon">📋</div>
-          <h3>Cédula real</h3>
-          <p>Navega las 5 columnas tal como aparecen en la cédula electoral oficial del 2026</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">🎯</div>
-          <h3>Voto guiado</h3>
-          <p>Aprende las formas correctas de marcar: símbolo del partido, número, o foto</p>
+          <h3>CÉDULA REAL</h3>
+          <p>Explora la cédula amplia e interactiva tal como se presenta en la elección.</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">📊</div>
-          <h3>Resultados</h3>
-          <p>Ve cómo quedaría el Congreso y quién pasaría a segunda vuelta presidencial</p>
+          <h3>RESULTADOS EN VIVO</h3>
+          <p>Mira cómo se mueven los resultados acumulados y prueba escenarios de proyección.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🎯</div>
+          <h3>VOTO GUIADO</h3>
+          <p>Aprende a marcar correctamente y entiende cómo navegar cada sección de la cédula.</p>
         </div>
       </div>
 
@@ -79,22 +113,26 @@
       <div class="trust-section" in:fade={{ duration: 400, delay: 1000 }}>
         <div class="trust-item">
           <span class="trust-check">✓</span>
-          <span>Basado en datos de RPP Noticias</span>
-        </div>
-        <div class="trust-item">
-          <span class="trust-check">✓</span>
           <span>36 partidos políticos reales</span>
         </div>
         <div class="trust-item">
           <span class="trust-check">✓</span>
-          <span>100% gratuito y educativo</span>
+          <span>Resultados acumulados en tiempo real</span>
+        </div>
+        <div class="trust-item">
+          <span class="trust-check">✓</span>
+          <span>100% educativo e interactivo</span>
         </div>
       </div>
 
+      <!-- Impact hint -->
+      <div class="impact-hint" in:fade={{ duration: 400, delay: 1100 }}>
+        Explora qué pasaría si más personas votaran igual que tú.
+      </div>
+
       <!-- Disclaimer -->
-      <p class="disclaimer" in:fade={{ duration: 400, delay: 1100 }}>
-        <strong>Nota:</strong> Este es un simulador educativo. Los resultados son generados automáticamente 
-        y no representan preferencias políticas reales.
+      <p class="disclaimer" in:fade={{ duration: 400, delay: 1200 }}>
+        <strong>Nota:</strong> Este es un simulador educativo. Los resultados son generados por simulaciones acumuladas y no representan resultados oficiales.
       </p>
     </div>
   </main>
@@ -175,49 +213,75 @@
     z-index: 1;
   }
 
-  /* Badge - IMPROVED */
-  .badge-wrapper {
-    margin-bottom: 32px;
+  /* Top Pill */
+  .pill-wrapper {
+    margin-bottom: 24px;
   }
 
-  .badge {
+  .top-pill {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 10px 20px;
-    background: rgba(200, 16, 46, 0.2);
-    border: 2px solid #C8102E;
+    padding: 8px 16px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid #C8102E;
     border-radius: 50px;
-    font-size: 14px;
-    font-weight: 700;
-    letter-spacing: 0.02em;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
     text-transform: uppercase;
     color: white;
   }
 
-  /* Headline - IMPROVED */
+  /* Headline - NEW */
   .headline {
-    font-size: clamp(40px, 6vw, 64px);
-    font-weight: 900;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .headline-line1 {
+    font-size: clamp(36px, 5vw, 56px);
+    font-weight: 800;
     color: white;
     line-height: 1.1;
     letter-spacing: -0.02em;
+    text-transform: uppercase;
+  }
+
+  .headline-line2 {
+    font-size: clamp(36px, 5vw, 56px);
+    font-weight: 800;
+    color: #ff6b6b;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
+  }
+
+  /* Countdown - NEW */
+  .countdown-wrapper {
     margin-bottom: 24px;
   }
 
-  .headline-accent {
-    display: block;
-    color: #ff6b6b;
-    font-size: 0.85em;
-    margin-top: 8px;
+  .countdown-text {
+    display: inline-block;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    font-family: monospace;
+    letter-spacing: 0.5px;
   }
 
   /* Subline - IMPROVED */
   .subline {
-    font-size: clamp(18px, 3vw, 22px);
+    font-size: clamp(16px, 2.5vw, 20px);
     color: rgba(255, 255, 255, 0.85);
     line-height: 1.6;
-    margin-bottom: 40px;
+    margin-bottom: 32px;
     max-width: 600px;
   }
 
@@ -244,12 +308,12 @@
     font-weight: 800;
     transition: all 0.3s ease;
     cursor: pointer;
-    box-shadow: 0 10px 30px rgba(200, 16, 46, 0.4);
+    box-shadow: 0 8px 25px rgba(200, 16, 46, 0.25);
   }
 
   .cta-btn:hover {
     transform: translateY(-3px);
-    box-shadow: 0 15px 40px rgba(200, 16, 46, 0.5);
+    box-shadow: 0 12px 35px rgba(200, 16, 46, 0.35);
   }
 
   .cta-btn:active {
@@ -264,6 +328,15 @@
     font-size: 14px;
     color: rgba(255, 255, 255, 0.6);
     font-weight: 500;
+  }
+
+  .interaction-hint {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.5);
+    font-style: italic;
+    max-width: 400px;
+    text-align: center;
+    line-height: 1.4;
   }
 
   /* Features Grid - NEW */
@@ -298,9 +371,11 @@
 
   .feature-card h3 {
     color: white;
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 700;
     margin: 0 0 8px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
 
   .feature-card p {
@@ -316,7 +391,7 @@
     flex-wrap: wrap;
     justify-content: center;
     gap: 20px 40px;
-    margin-bottom: 40px;
+    margin-bottom: 20px;
   }
 
   .trust-item {
@@ -338,6 +413,15 @@
     font-size: 12px;
     color: white;
     font-weight: bold;
+  }
+
+  /* Impact hint - NEW */
+  .impact-hint {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.6);
+    text-align: center;
+    margin-bottom: 30px;
+    font-style: italic;
   }
 
   /* Disclaimer - IMPROVED */

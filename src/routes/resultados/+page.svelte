@@ -670,42 +670,66 @@
 {/if}
 
 <div class="results-page">
-  <!-- Animated Header -->
+  <!-- Modern Dashboard Header -->
   <header class="hero-header" in:fly={{ y: -30, duration: 800 }}>
+    <!-- Noise overlay -->
+    <div class="noise-overlay"></div>
+    
     <div class="header-content">
+      <!-- Left Block -->
       <div class="title-wrapper">
-        <h1 class="main-title">
+        <div class="title-row">
           <span class="title-icon">🗳️</span>
-          Resultados Electorales
-        </h1>
+          <h1 class="main-title">RESULTADOS ELECTORALES</h1>
+        </div>
         <p class="subtitle">Elecciones Generales Perú 2026</p>
       </div>
       
-      <!-- Live Stats Widget (Right Side) -->
+      <!-- Right Card (Activity) -->
       <div class="live-stats-widget" in:fly={{ x: 30, duration: 600, delay: 300 }}>
+        <!-- Header -->
         <div class="widget-header">
           <span class="live-pulse"></span>
           <span class="live-label">ACTIVIDAD EN VIVO</span>
         </div>
         
-        <!-- Countdown to election day -->
-        <div class="election-countdown">
-          {#if electionCountdown.isExpired}
-            <span class="countdown-expired">La jornada de votación ya comenzó</span>
-          {:else}
-            <span class="countdown-label">Faltan:</span>
-            <span class="countdown-value">{formatCountdown(electionCountdown)}</span>
-          {/if}
+        <!-- Countdown -->
+        <div class="countdown-section">
+          <span class="countdown-label">Tiempo restante</span>
+          <div class="countdown-blocks">
+            {#if electionCountdown.isExpired}
+              <span class="countdown-expired">La jornada de votación ya comenzó</span>
+            {:else}
+              <div class="time-block">
+                <span class="time-number">{electionCountdown.days}</span>
+                <span class="time-unit">días</span>
+              </div>
+              <div class="time-block">
+                <span class="time-number">{electionCountdown.hours.toString().padStart(2, '0')}</span>
+                <span class="time-unit">horas</span>
+              </div>
+              <div class="time-block">
+                <span class="time-number">{electionCountdown.minutes.toString().padStart(2, '0')}</span>
+                <span class="time-unit">min</span>
+              </div>
+              <div class="time-block">
+                <span class="time-number">{electionCountdown.seconds.toString().padStart(2, '0')}</span>
+                <span class="time-unit">seg</span>
+              </div>
+            {/if}
+          </div>
         </div>
         
+        <!-- Simulations Count -->
         <div class="widget-body">
           <div class="widget-icon">🗳️</div>
           <div class="widget-data">
             <span class="widget-number">{liveVoterCount.toLocaleString()}</span>
-            <span class="widget-unit">simulaciones acumuladas</span>
+            <span class="widget-unit">Simulaciones</span>
           </div>
         </div>
         
+        <!-- Footer -->
         <p class="countdown-subtitle">Cuenta regresiva para votar el domingo 12 de abril desde las 7:00 a. m.</p>
       </div>
     </div>
@@ -1000,145 +1024,176 @@
     padding-bottom: 100px;
   }
 
-  /* Hero Header */
+  /* Hero Header - Modern Dashboard Design */
   .hero-header {
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    background: linear-gradient(135deg, #0B1220 0%, #111A2E 40%, #0A0F1C 100%);
     color: white;
-    padding: 40px 30px;
-    border-radius: 20px;
+    padding: 32px 48px;
+    border-radius: 24px;
     margin-bottom: 30px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    height: 280px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Noise overlay */
+  .noise-overlay {
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    opacity: 0.03;
+    mix-blend-mode: overlay;
+    pointer-events: none;
   }
 
   .header-content {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 20px;
+    height: 100%;
+    position: relative;
+    z-index: 1;
   }
 
-  .main-title {
-    font-size: 2.5rem;
-    margin: 0;
+  /* Left Block */
+  .title-wrapper {
+    max-width: 60%;
+  }
+
+  .title-row {
     display: flex;
     align-items: center;
-    gap: 15px;
-    font-weight: 800;
+    gap: 16px;
   }
 
   .title-icon {
-    font-size: 3rem;
+    font-size: 40px;
+    filter: grayscale(100%) brightness(1.2);
+  }
+
+  .main-title {
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: #F9FAFB;
+    margin: 0;
+    line-height: 1.2;
   }
 
   .subtitle {
-    font-size: 1.1rem;
-    opacity: 0.8;
-    margin: 5px 0 0 0;
+    font-size: 16px;
+    font-weight: 400;
+    color: #9CA3AF;
+    margin: 8px 0 0 0;
   }
 
-  /* Live Stats Widget */
+  /* Live Stats Widget - Glassmorphism Card */
   .live-stats-widget {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 20px;
-    padding: 20px 25px;
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    box-shadow: 
-      0 10px 40px rgba(0, 0, 0, 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    min-width: 200px;
+    padding: 24px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    width: 360px;
+    flex-shrink: 0;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 16px;
+    transition: all 0.25s ease;
+  }
+
+  .live-stats-widget:hover {
+    transform: translateY(-2px);
   }
 
   .widget-header {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    gap: 8px;
   }
 
   .live-pulse {
-    width: 10px;
-    height: 10px;
-    background: #00ff88;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
-    animation: widget-pulse 2s infinite;
-    box-shadow: 0 0 10px #00ff88;
+    background: #22C55E;
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.8);
+    animation: pulse 2s infinite;
   }
 
-  @keyframes widget-pulse {
-    0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 10px #00ff88; }
-    50% { opacity: 0.7; transform: scale(1.2); box-shadow: 0 0 20px #00ff88; }
+  @keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.4); opacity: 0.6; }
+    100% { transform: scale(1); opacity: 1; }
   }
 
   .live-label {
-    font-size: 0.7rem;
-    font-weight: 700;
-    color: rgba(255, 255, 255, 0.9);
-    letter-spacing: 1.5px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: #9CA3AF;
     text-transform: uppercase;
   }
 
-  .live-stats-widget {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
-    border-radius: 20px;
-    padding: 20px 25px;
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    box-shadow: 
-      0 10px 40px rgba(0, 0, 0, 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    min-width: 200px;
+  /* Countdown Section */
+  .countdown-section {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 4px;
   }
 
-  .widget-header {
+  .countdown-label {
+    font-size: 12px;
+    color: #6B7280;
+  }
+
+  .countdown-blocks {
     display: flex;
+    gap: 12px;
     align-items: center;
-    gap: 10px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
   }
 
-  .live-pulse {
-    width: 10px;
-    height: 10px;
-    background: #00ff88;
-    border-radius: 50%;
-    animation: widget-pulse 2s infinite;
-    box-shadow: 0 0 10px #00ff88;
+  .time-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 40px;
   }
 
-  @keyframes widget-pulse {
-    0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 10px #00ff88; }
-    50% { opacity: 0.7; transform: scale(1.2); box-shadow: 0 0 20px #00ff88; }
+  .time-number {
+    font-size: 28px;
+    font-weight: 700;
+    font-family: monospace;
+    color: #F9FAFB;
+    line-height: 1;
   }
 
-  .widget-timer {
-    margin-left: auto;
-    font-family: 'Courier New', monospace;
-    font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.7);
-    background: rgba(0, 0, 0, 0.2);
-    padding: 4px 8px;
-    border-radius: 6px;
+  .time-unit {
+    font-size: 10px;
+    color: #6B7280;
+    text-transform: lowercase;
+    margin-top: 2px;
   }
 
+  .countdown-expired {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ff6b6b;
+    text-align: center;
+  }
+
+  /* Widget Body - Simulations Count */
   .widget-body {
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 12px;
   }
 
   .widget-icon {
-    font-size: 2.2rem;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    font-size: 28px;
+    filter: grayscale(100%) brightness(1.2);
   }
 
   .widget-data {
@@ -1149,59 +1204,49 @@
   }
 
   .widget-number {
-    font-size: 2.5rem;
-    font-weight: 800;
-    color: #fff;
-    text-shadow: 0 0 30px rgba(255, 255, 255, 0.4);
-    letter-spacing: -1px;
+    font-size: 28px;
+    font-weight: 700;
+    color: #F9FAFB;
+    letter-spacing: -0.5px;
   }
 
   .widget-unit {
-    font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.7);
-    font-weight: 500;
-    text-transform: lowercase;
-    margin-top: 2px;
+    font-size: 12px;
+    color: #9CA3AF;
   }
 
-  /* Election Countdown Styles */
-  .election-countdown {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    padding: 8px 0;
-  }
-
-  .countdown-label {
-    font-size: 0.7rem;
-    color: rgba(255, 255, 255, 0.8);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-
-  .countdown-value {
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: #fff;
-    font-family: 'Courier New', monospace;
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-    letter-spacing: 1px;
-  }
-
-  .countdown-expired {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: #ff6b6b;
-    text-align: center;
-  }
-
+  /* Footer */
   .countdown-subtitle {
-    font-size: 0.7rem;
-    color: rgba(255, 255, 255, 0.6);
+    font-size: 11px;
+    color: #6B7280;
+    line-height: 1.4;
+    margin: 0;
+  }
+
+  /* Final Results Banner */
+  .final-results-banner {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%);
+    border: 1px solid #ffc107;
+    border-radius: 12px;
+    padding: 20px 30px;
+    margin: 20px 0 0 0;
     text-align: center;
-    margin-top: 4px;
-    font-style: italic;
+    position: relative;
+    z-index: 1;
+  }
+
+  .final-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #856404;
+    margin: 0 0 8px 0;
+  }
+
+  .final-subtitle {
+    font-size: 0.95rem;
+    color: #856404;
+    margin: 0;
+    opacity: 0.9;
   }
 
   .widget-body {
@@ -1973,22 +2018,79 @@
   }
 
   /* Responsive */
+  @media (max-width: 900px) {
+    .hero-header {
+      height: auto;
+      min-height: 280px;
+      padding: 24px 32px;
+    }
+    
+    .header-content {
+      flex-direction: column;
+      gap: 24px;
+      align-items: stretch;
+    }
+    
+    .title-wrapper {
+      max-width: 100%;
+      text-align: center;
+    }
+    
+    .title-row {
+      justify-content: center;
+    }
+    
+    .main-title {
+      font-size: 28px;
+    }
+    
+    .live-stats-widget {
+      width: 100%;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+  }
+
   @media (max-width: 768px) {
     .results-page {
       padding: 15px;
     }
 
     .hero-header {
-      padding: 30px 20px;
+      padding: 24px 20px;
+      border-radius: 16px;
     }
 
     .main-title {
-      font-size: 1.8rem;
+      font-size: 24px;
+    }
+    
+    .title-icon {
+      font-size: 32px;
+    }
+
+    .subtitle {
+      font-size: 14px;
     }
 
     .header-content {
       flex-direction: column;
       text-align: center;
+      gap: 20px;
+    }
+    
+    .live-stats-widget {
+      width: 100%;
+      padding: 20px;
+      gap: 12px;
+    }
+    
+    .countdown-blocks {
+      gap: 8px;
+    }
+    
+    .time-number {
+      font-size: 24px;
     }
 
     .candidates-showcase {
@@ -2043,6 +2145,26 @@
   }
 
   @media (max-width: 480px) {
+    .hero-header {
+      padding: 20px 16px;
+    }
+    
+    .main-title {
+      font-size: 20px;
+    }
+    
+    .title-icon {
+      font-size: 28px;
+    }
+    
+    .time-number {
+      font-size: 20px;
+    }
+    
+    .time-unit {
+      font-size: 9px;
+    }
+    
     .candidates-showcase {
       grid-template-columns: 1fr;
     }
