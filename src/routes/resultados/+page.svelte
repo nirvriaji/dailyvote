@@ -71,6 +71,7 @@
   
   // ─── Proyección de simulación ────────────────────────────────────────────────
   let projectionMultiplier = $state(1);
+  let projectionMode = $state<'same' | 'random' | 'proportional'>('same');
   
   // Options for projection
   const projectionOptions = [
@@ -81,11 +82,36 @@
     { label: '10,000 personas', value: 10000 }
   ];
   
+  const projectionModes = [
+    { 
+      id: 'same' as const, 
+      label: 'Igual que tú', 
+      icon: '👥',
+      description: 'Todos votan exactamente como tú'
+    },
+    { 
+      id: 'random' as const, 
+      label: 'Distribución aleatoria', 
+      icon: '🎲',
+      description: 'Votos distribuidos al azar entre partidos'
+    },
+    { 
+      id: 'proportional' as const, 
+      label: 'Proporcional a resultados', 
+      icon: '📊',
+      description: 'Votos distribuidos según tendencias actuales'
+    }
+  ];
+  
   // Load saved projection from sessionStorage and hydrate vote store
   onMount(() => {
     const savedMultiplier = sessionStorage.getItem('projection_multiplier');
+    const savedMode = sessionStorage.getItem('projection_mode');
     if (savedMultiplier) {
       projectionMultiplier = parseInt(savedMultiplier, 10);
+    }
+    if (savedMode) {
+      projectionMode = savedMode as 'same' | 'random' | 'proportional';
     }
     
     // Hydrate vote store from sessionStorage so projection card shows on reload
@@ -98,6 +124,7 @@
   // Save projection to sessionStorage when changed
   $effect(() => {
     sessionStorage.setItem('projection_multiplier', projectionMultiplier.toString());
+    sessionStorage.setItem('projection_mode', projectionMode);
   });
   
   function getHypotheticalExtra(multiplier: number) {
@@ -111,9 +138,9 @@
     category: voteData.columnId
   })));
   
-  // Calculate projected results inline
-  function getProjectedResults() {
-    console.log('🔧 getProjectedResults llamado. Multiplier:', projectionMultiplier);
+  // Calculate projected results with different distribution modes
+  function getProjectedResults(mode: 'same' | 'random' | 'proportional' = projectionMode) {
+    console.log('🔧 getProjectedResults llamado. Multiplier:', projectionMultiplier, 'Mode:', mode);
     
     if (projectionMultiplier === 1) {
       console.log('↩️ Multiplier=1, retornando allResults sin cambios');
@@ -148,10 +175,13 @@
     
     console.log('📊 Categorías disponibles:', cloned.map(c => ({ categoryId: c.categoryId, category: c.category })));
     
-    // Apply extra votes to user's selections
+    // Get all available parties for random distribution
+    const allParties = [...presidentialRows, ...legislativeRows].filter(r => r.partyName);
+    
+    // Apply extra votes based on mode
     for (const userVote of userVotes) {
       const targetCategoryId = colIdToCategoryId[userVote.colId];
-      console.log('🔍 Buscando categoría:', { colId: userVote.colId, targetCategoryId });
+      console.log('🔍 Procesando categoría:', { colId: userVote.colId, targetCategoryId, mode });
       
       let category = cloned.find(c => c.categoryId === targetCategoryId);
       
@@ -174,54 +204,195 @@
       if (category) {
         console.log('✅ Categoría encontrada/creada:', category.category);
         
-        // Find or create result for user's party
-        let result = category.results.find(r => r.partyName === userVote.partyName);
-        
-        if (!result) {
-          console.log('🆕 Creando resultado para:', userVote.partyName);
-          // Get party data from rows
-          const isPresident = targetCategoryId === 'president';
-          const partyRow = isPresident
-            ? presidentialRows.find(r => r.partyName === userVote.partyName)
-            : legislativeRows.find(r => r.partyName === userVote.partyName);
+        // MODE 1: Same as user - add all extra votes to user's party
+        if (mode === 'same') {
+          let result = category.results.find(r => r.partyName === userVote.partyName);
           
-          if (partyRow) {
-            result = {
-              partyId: partyRow.partyAbbr || userVote.partyName,
-              partyName: partyRow.partyName,
-              partyColor: partyRow.partyColor,
-              partySymbolUrl: partyRow.partySymbolUrl || '',
-              photoUrl: isPresident ? partyRow.presidentialPhoto : null,
-              votes: 1, // User's vote
-              percentage: 0,
-              seats: 0
-            };
-            category.results.push(result);
+          if (!result) {
+            console.log('🆕 Creando resultado para:', userVote.partyName);
+            const isPresident = targetCategoryId === 'president';
+            const partyRow = isPresident
+              ? presidentialRows.find(r => r.partyName === userVote.partyName)
+              : legislativeRows.find(r => r.partyName === userVote.partyName);
+            
+            if (partyRow) {
+              result = {
+                partyId: partyRow.partyAbbr || userVote.partyName,
+                partyName: partyRow.partyName,
+                partyColor: partyRow.partyColor,
+                partySymbolUrl: partyRow.partySymbolUrl || '',
+                photoUrl: isPresident ? partyRow.presidentialPhoto : null,
+                votes: 1,
+                percentage: 0,
+                seats: 0
+              };
+              category.results.push(result);
+            }
+          }
+          
+          if (result) {
+            console.log(`🎯 Modo SAME: Agregando ${extra} votos a ${userVote.partyName}`);
+            result.votes += extra;
           }
         }
         
-        if (result) {
-          console.log(`🎯 Agregando ${extra} votos a ${userVote.partyName} (tenía ${result.votes})`);
-          result.votes += extra;
-          console.log(`✨ Ahora tiene ${result.votes} votos`);
-        } else {
-          console.log('❌ No se pudo crear resultado para:', userVote.partyName);
+        // MODE 2: Random distribution
+        else if (mode === 'random') {
+          console.log(`🎲 Modo RANDOM: Distribuyendo ${extra} votos al azar`);
+          
+          // Get available parties for this category
+          const isPresident = targetCategoryId === 'president';
+          const availableParties = isPresident 
+            ? presidentialRows.filter(r => r.partyName)
+            : legislativeRows.filter(r => r.partyName);
+          
+          // Ensure user's party exists
+          let userPartyResult = category.results.find(r => r.partyName === userVote.partyName);
+          if (!userPartyResult) {
+            const partyRow = availableParties.find(r => r.partyName === userVote.partyName);
+            if (partyRow) {
+              userPartyResult = {
+                partyId: partyRow.partyAbbr || userVote.partyName,
+                partyName: partyRow.partyName,
+                partyColor: partyRow.partyColor,
+                partySymbolUrl: partyRow.partySymbolUrl || '',
+                photoUrl: isPresident ? partyRow.presidentialPhoto : null,
+                votes: 1,
+                percentage: 0,
+                seats: 0
+              };
+              category.results.push(userPartyResult);
+            }
+          }
+          
+          // Distribute extra votes randomly
+          // Give more weight to user's party (30% chance) vs others
+          for (let i = 0; i < extra; i++) {
+            const random = Math.random();
+            let targetParty;
+            
+            if (random < 0.3) {
+              // 30% chance: user's party
+              targetParty = userVote.partyName;
+            } else {
+              // 70% chance: random party from available
+              const randomIndex = Math.floor(Math.random() * availableParties.length);
+              targetParty = availableParties[randomIndex].partyName;
+            }
+            
+            let targetResult = category.results.find(r => r.partyName === targetParty);
+            if (!targetResult) {
+              const partyRow = availableParties.find(r => r.partyName === targetParty);
+              if (partyRow) {
+                targetResult = {
+                  partyId: partyRow.partyAbbr || targetParty,
+                  partyName: partyRow.partyName,
+                  partyColor: partyRow.partyColor,
+                  partySymbolUrl: partyRow.partySymbolUrl || '',
+                  photoUrl: isPresident ? partyRow.presidentialPhoto : null,
+                  votes: 0,
+                  percentage: 0,
+                  seats: 0
+                };
+                category.results.push(targetResult);
+              }
+            }
+            
+            if (targetResult) {
+              targetResult.votes += 1;
+            }
+          }
         }
         
-        // Recalculate totalVotes from all results to avoid double counting
+        // MODE 3: Proportional to current results
+        else if (mode === 'proportional') {
+          console.log(`📊 Modo PROPORTIONAL: Distribuyendo ${extra} votos según tendencias`);
+          
+          // Get current distribution from real results
+          const currentResults = allResults.find(r => r.categoryId === targetCategoryId);
+          
+          if (currentResults && currentResults.results.length > 0) {
+            // Calculate weights based on current percentages
+            const totalCurrentVotes = currentResults.results.reduce((sum, r) => sum + r.votes, 0);
+            const weights = currentResults.results.map(r => ({
+              partyName: r.partyName,
+              weight: totalCurrentVotes > 0 ? r.votes / totalCurrentVotes : 1 / currentResults.results.length
+            }));
+            
+            // Ensure user's party exists
+            let userPartyResult = category.results.find(r => r.partyName === userVote.partyName);
+            if (!userPartyResult) {
+              const isPresident = targetCategoryId === 'president';
+              const partyRow = isPresident
+                ? presidentialRows.find(r => r.partyName === userVote.partyName)
+                : legislativeRows.find(r => r.partyName === userVote.partyName);
+              
+              if (partyRow) {
+                userPartyResult = {
+                  partyId: partyRow.partyAbbr || userVote.partyName,
+                  partyName: partyRow.partyName,
+                  partyColor: partyRow.partyColor,
+                  partySymbolUrl: partyRow.partySymbolUrl || '',
+                  photoUrl: isPresident ? partyRow.presidentialPhoto : null,
+                  votes: 1,
+                  percentage: 0,
+                  seats: 0
+                };
+                category.results.push(userPartyResult);
+              }
+            }
+            
+            // Distribute extra votes proportionally
+            for (let i = 0; i < extra; i++) {
+              const random = Math.random();
+              let cumulativeWeight = 0;
+              let selectedParty = weights[0]?.partyName || userVote.partyName;
+              
+              for (const w of weights) {
+                cumulativeWeight += w.weight;
+                if (random <= cumulativeWeight) {
+                  selectedParty = w.partyName;
+                  break;
+                }
+              }
+              
+              let targetResult = category.results.find(r => r.partyName === selectedParty);
+              if (!targetResult) {
+                const sourceResult = currentResults.results.find(r => r.partyName === selectedParty);
+                if (sourceResult) {
+                  targetResult = {
+                    partyId: sourceResult.partyId,
+                    partyName: sourceResult.partyName,
+                    partyColor: sourceResult.partyColor,
+                    partySymbolUrl: sourceResult.partySymbolUrl || '',
+                    photoUrl: sourceResult.photoUrl,
+                    votes: 0,
+                    percentage: 0,
+                    seats: 0
+                  };
+                  category.results.push(targetResult);
+                }
+              }
+              
+              if (targetResult) {
+                targetResult.votes += 1;
+              }
+            }
+          } else {
+            // Fallback to random if no current results
+            console.log('⚠️ No hay resultados actuales, usando distribución aleatoria');
+            mode = 'random';
+          }
+        }
+        
+        // Recalculate totalVotes
         category.totalVotes = category.results.reduce((sum, r) => sum + r.votes, 0);
-        
-        category.totalVotes += extra + (result ? 1 : 0); // Add user's vote too if new
-        if (category.totalVotes > extra + 1) {
-          // Already counted the +1 above, so just add extra
-          category.totalVotes = category.results.reduce((sum, r) => sum + r.votes, 0);
-        }
       } else {
         console.log('❌ Categoría no encontrada para:', targetCategoryId);
       }
     }
     
-    // Recalculate percentages
+    // Recalculate percentages and seats for all categories
     for (const category of cloned) {
       for (const result of category.results) {
         result.percentage = category.totalVotes > 0 
@@ -235,10 +406,8 @@
         const minVotesForSeats = category.totalSeats * 10;
         
         if (category.totalVotes >= minVotesForSeats) {
-          // Calculate seats based on percentage
           let remainingSeats = category.totalSeats;
           
-          // Assign seats proportionally
           for (let i = 0; i < category.results.length && remainingSeats > 0; i++) {
             const result = category.results[i];
             if (result.votes > 0) {
@@ -274,9 +443,10 @@
   // Display results - use derived with explicit dependencies
   let displayResults = $derived.by(() => {
     const multiplier = projectionMultiplier;
+    const mode = projectionMode;
     const results = allResults;
     const resultsLength = results.length;
-    const userVotesList = userVotes; // Dependencia explícita
+    const userVotesList = userVotes;
     const hasUserVotes = userVotesList.length > 0;
     
     console.log('🔄 Calculando displayResults. Multiplier:', multiplier, 'Results length:', resultsLength, 'User votes:', hasUserVotes);
@@ -284,8 +454,8 @@
     // If projection is active and user has votes, always calculate projection
     // even if allResults is empty
     if (multiplier > 1 && hasUserVotes) {
-      console.log('🔧 Proyección activa con votos de usuario, calculando...');
-      const projected = getProjectedResults();
+      console.log('🔧 Proyección activa con votos de usuario, calculando modo:', projectionMode);
+      const projected = getProjectedResults(projectionMode);
       console.log('✅ Retornando proyección:', projected.length, 'categorías');
       return projected;
     }
@@ -300,8 +470,8 @@
       return results;
     }
     
-    console.log('🔧 Llamando getProjectedResults...');
-    const projected = getProjectedResults();
+    console.log('🔧 Llamando getProjectedResults modo:', projectionMode);
+    const projected = getProjectedResults(projectionMode);
     console.log('✅ Retornando proyección:', projected.length, 'categorías');
     console.log('📊 Primer candidato:', projected[0]?.results?.[0]?.partyName, '-', projected[0]?.results?.[0]?.votes, 'votos');
     return projected;
@@ -643,6 +813,73 @@
     return results.length > 0 && results[0].percentage > 50;
   }
   
+  // ─── SIMPLIFIED GOVERNANCE ANALYSIS (3-TIER) ─────────────────────────────────
+  
+  interface SimpleGovernance {
+    level: 'high' | 'balanced' | 'fragmented';
+    label: string;
+    color: string;
+    description: string;
+    microCopy: string;
+  }
+  
+  function analyzeSeatConcentration(seatDistribution: any[], totalSeats: number): SimpleGovernance {
+    if (seatDistribution.length === 0) {
+      return {
+        level: 'fragmented',
+        label: '🔴 Fragmentado',
+        color: '#DC3545',
+        description: 'Aún no hay suficientes datos para evaluar la concentración de escaños.',
+        microCopy: 'El hemiciclo está muy fragmentado.\n\nCuando hay muchas fuerzas pequeñas, lograr consensos puede ser más complejo.'
+      };
+    }
+    
+    // Count seats by party
+    const partyCounts = new Map<string, number>();
+    for (const seat of seatDistribution) {
+      const count = partyCounts.get(seat.partyName) || 0;
+      partyCounts.set(seat.partyName, count + 1);
+    }
+    
+    // Sort by seat count
+    const sorted = Array.from(partyCounts.entries()).sort((a, b) => b[1] - a[1]);
+    const [dominantParty, dominantSeats] = sorted[0] || ['', 0];
+    
+    // Calculate concentration percentage
+    const concentration = (dominantSeats / totalSeats) * 100;
+    const uniqueParties = sorted.length;
+    
+    // Determine classification
+    if (concentration >= 40 && uniqueParties <= 3) {
+      // High coordination: dominant party has significant majority, few parties total
+      return {
+        level: 'high',
+        label: '🟢 Alta coordinación',
+        color: '#28A745',
+        description: `La distribución muestra una mayor concentración de escaños.`,
+        microCopy: 'La distribución muestra una mayor concentración de escaños.\n\nEsto puede facilitar la coordinación entre el Ejecutivo y el Congreso.'
+      };
+    } else if (concentration >= 25 && uniqueParties <= 5) {
+      // Balanced: moderate concentration
+      return {
+        level: 'balanced',
+        label: '🟡 Equilibrado',
+        color: '#FFC107',
+        description: 'Los escaños están distribuidos entre varias fuerzas.',
+        microCopy: 'Los escaños están distribuidos entre varias fuerzas.\n\nEsto puede generar mayor debate y necesidad de acuerdos.'
+      };
+    } else {
+      // Fragmented: low concentration or many parties
+      return {
+        level: 'fragmented',
+        label: '🔴 Fragmentado',
+        color: '#DC3545',
+        description: 'El hemiciclo está muy fragmentado.',
+        microCopy: 'El hemiciclo está muy fragmentado.\n\nCuando hay muchas fuerzas pequeñas, lograr consensos puede ser más complejo.'
+      };
+    }
+  }
+  
   // Go back to voting
   function goBack() {
     goto('/simular');
@@ -857,10 +1094,14 @@
       {#if category.seatDistribution.length > 0 || category.totalVotes > 0}
         <div class="hemicycle-wrapper">
           {#if category.seatDistribution.length > 0}
-            <ParliamentHemicycle 
-              seats={category.seatDistribution}
-              totalSeats={category.totalSeats}
-            />
+            {@const dominantParty = category.results[0]?.partyName || ''}
+            {#key `${category.categoryId}-${category.seatDistribution.length}`}
+              <ParliamentHemicycle 
+                seats={category.seatDistribution}
+                totalSeats={category.totalSeats}
+                highlightParty={dominantParty}
+              />
+            {/key}
           {:else}
             <!-- Hay votos pero no suficientes para escaños -->
             <div class="no-seats-message">
@@ -869,6 +1110,39 @@
               <span class="no-seats-hint">Mínimo: {category.totalSeats * 10} votos</span>
             </div>
           {/if}
+        </div>
+        
+        <!-- Governance Interpretation - Below Hemicycle -->
+        {@const governance = analyzeSeatConcentration(category.seatDistribution, category.totalSeats)}
+        <div class="interpretation-section" style="border-left-color: {governance.color};">
+          <h3 class="interpretation-title">🧠 ¿Qué significa este resultado?</h3>
+          
+          <p class="interpretation-intro">
+            Esta distribución no solo muestra quién tiene más votos, sino cómo se vería el equilibrio de poder entre el Ejecutivo y el Congreso.
+          </p>
+          
+          <div class="hemicycle-reading">
+            <h4>👁️ Lectura del hemiciclo</h4>
+            <p>Observa cómo se distribuyen los escaños en el hemiciclo.</p>
+            <ul>
+              <li>Cuando un grupo concentra más escaños, puede tener mayor capacidad de impulsar decisiones.</li>
+              <li>Cuando están muy repartidos, se necesitan más acuerdos entre distintas fuerzas.</li>
+            </ul>
+          </div>
+          
+          <div class="classification-block" style="background: {governance.color}10;">
+            <div class="classification-badge" style="background: {governance.color}; color: white;">
+              {governance.label}
+            </div>
+            <p class="classification-description">{governance.description}</p>
+            <div class="micro-copy">{@html governance.microCopy.replace(/\n/g, '<br>')}</div>
+          </div>
+          
+          <div class="educational-final">
+            <div class="edu-icon">📌</div>
+            <p>No solo importa quién gana, sino <strong>cómo se distribuye el poder</strong>.</p>
+            <p>El resultado del Congreso influye en cómo se gobierna y en qué tan fácil es implementar cambios.</p>
+          </div>
         </div>
       {/if}
 
@@ -956,23 +1230,49 @@
   {#if userVotes.length > 0}
     <div class="projection-card" in:fly={{ y: 30, duration: 600, delay: 900 }}>
       <h2 class="projection-title">Proyección de tu simulación</h2>
-      <p class="projection-description">Simula cómo cambiarían los resultados si más personas votaran igual que tú.</p>
+      <p class="projection-description">Simula cómo cambiarían los resultados si más personas votaran de diferentes maneras.</p>
       
-      <div class="projection-label">Escenario de proyección</div>
+      <!-- Mode Selector -->
+      <div class="projection-section">
+        <div class="projection-label">Modo de distribución</div>
+        <div class="mode-selector">
+          {#each projectionModes as mode}
+            <button 
+              class="mode-option"
+              class:active={projectionMode === mode.id}
+              onclick={() => {
+                console.log('🎮 Cambiando modo a:', mode.id);
+                projectionMode = mode.id;
+              }}
+              title={mode.description}
+            >
+              <span class="mode-icon">{mode.icon}</span>
+              <span class="mode-name">{mode.label}</span>
+            </button>
+          {/each}
+        </div>
+        <p class="mode-description">
+          {projectionModes.find(m => m.id === projectionMode)?.description}
+        </p>
+      </div>
       
-      <div class="projection-selector">
-        {#each projectionOptions as option}
-          <button 
-            class="projection-option"
-            class:active={projectionMultiplier === option.value}
-            onclick={() => {
-              console.log('🎯 Cambiando proyección a:', option.value);
-              projectionMultiplier = option.value;
-            }}
-          >
-            {option.label}
-          </button>
-        {/each}
+      <!-- Scale Selector -->
+      <div class="projection-section">
+        <div class="projection-label">Cantidad de personas</div>
+        <div class="projection-selector">
+          {#each projectionOptions as option}
+            <button 
+              class="projection-option"
+              class:active={projectionMultiplier === option.value}
+              onclick={() => {
+                console.log('🎯 Cambiando proyección a:', option.value);
+                projectionMultiplier = option.value;
+              }}
+            >
+              {option.label}
+            </button>
+          {/each}
+        </div>
       </div>
       
       <p class="projection-note">Esto es una proyección y no modifica los resultados reales del día.</p>
@@ -1943,6 +2243,62 @@
     font-style: italic;
   }
 
+  /* Mode Selector */
+  .projection-section {
+    margin-bottom: 20px;
+  }
+
+  .mode-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .mode-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    background: #F5F7FB;
+    color: #1F2A44;
+    border: 2px solid transparent;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .mode-option.active {
+    background: #E3F2FD;
+    border-color: #2196F3;
+    color: #1565C0;
+  }
+
+  .mode-option:hover:not(.active) {
+    background: #E8EDF5;
+    border-color: #D9E2F2;
+  }
+
+  .mode-icon {
+    font-size: 1.4rem;
+    flex-shrink: 0;
+  }
+
+  .mode-name {
+    flex: 1;
+  }
+
+  .mode-description {
+    font-size: 13px;
+    color: #666;
+    margin: 8px 0 0 0;
+    font-style: italic;
+    padding-left: 4px;
+  }
+
   /* Projection Banner */
   .projection-banner {
     background: #EAF3FF;
@@ -2014,6 +2370,159 @@
 
     .final-subtitle {
       font-size: 0.85rem;
+    }
+  }
+
+  /* Governance Interpretation Section */
+  .interpretation-section {
+    background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
+    border-radius: 16px;
+    padding: 25px;
+    margin: 25px 0;
+    border-left: 5px solid;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  }
+
+  .interpretation-title {
+    font-size: 1.35rem;
+    margin: 0 0 15px 0;
+    color: #1a1a2e;
+    font-weight: 700;
+  }
+
+  .interpretation-intro {
+    font-size: 1.05rem;
+    color: #444;
+    line-height: 1.6;
+    margin: 0 0 20px 0;
+  }
+
+  .hemicycle-reading {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+
+  .hemicycle-reading h4 {
+    font-size: 1.1rem;
+    margin: 0 0 12px 0;
+    color: #1a1a2e;
+  }
+
+  .hemicycle-reading p {
+    font-size: 0.95rem;
+    color: #555;
+    margin: 0 0 12px 0;
+    line-height: 1.5;
+  }
+
+  .hemicycle-reading ul {
+    margin: 0;
+    padding-left: 20px;
+  }
+
+  .hemicycle-reading li {
+    font-size: 0.9rem;
+    color: #555;
+    margin-bottom: 8px;
+    line-height: 1.5;
+  }
+
+  .hemicycle-reading li:last-child {
+    margin-bottom: 0;
+  }
+
+  .classification-block {
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+
+  .classification-badge {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+
+  .classification-description {
+    font-size: 1.05rem;
+    color: #333;
+    margin: 0 0 15px 0;
+    font-weight: 500;
+  }
+
+  .micro-copy {
+    font-size: 0.95rem;
+    color: #555;
+    line-height: 1.7;
+    white-space: pre-line;
+  }
+
+  .educational-final {
+    background: linear-gradient(135deg, #e8f4fd 0%, #d4ebfa 100%);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .edu-icon {
+    font-size: 1.5rem;
+  }
+
+  .educational-final p {
+    margin: 0;
+    font-size: 0.95rem;
+    color: #444;
+    line-height: 1.6;
+  }
+
+  .educational-final p strong {
+    color: #1a1a2e;
+  }
+
+  @media (max-width: 768px) {
+    .interpretation-section {
+      padding: 20px;
+      margin: 20px 0;
+    }
+
+    .interpretation-title {
+      font-size: 1.2rem;
+    }
+
+    .interpretation-intro {
+      font-size: 0.95rem;
+    }
+
+    .hemicycle-reading {
+      padding: 15px;
+    }
+
+    .classification-block {
+      padding: 15px;
+    }
+
+    .classification-description {
+      font-size: 0.95rem;
+    }
+
+    .micro-copy {
+      font-size: 0.9rem;
+    }
+
+    .educational-final {
+      padding: 15px;
+    }
+
+    .educational-final p {
+      font-size: 0.9rem;
     }
   }
 
@@ -2213,6 +2722,280 @@
     
     .time-unit {
       display: none;
+    }
+  }
+
+  /* Governance Analysis Section */
+  .governance-section {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  }
+
+  .governance-header {
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 20px;
+    margin-bottom: 25px;
+  }
+
+  .governance-subtitle {
+    color: #666;
+    font-size: 0.95rem;
+    margin: 5px 0 0 0;
+  }
+
+  .difficulty-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-weight: 600;
+  }
+
+  .difficulty-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    opacity: 0.8;
+  }
+
+  .difficulty-value {
+    font-size: 1.1rem;
+  }
+
+  .scenario-card {
+    background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
+    border-radius: 16px;
+    padding: 25px;
+    border-left: 5px solid;
+    margin-bottom: 25px;
+  }
+
+  .scenario-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+
+  .scenario-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    flex-shrink: 0;
+  }
+
+  .scenario-titles {
+    flex: 1;
+  }
+
+  .scenario-title {
+    font-size: 1.4rem;
+    margin: 0 0 5px 0;
+    color: #1a1a2e;
+  }
+
+  .scenario-subtitle {
+    font-size: 0.95rem;
+    color: #666;
+    margin: 0;
+  }
+
+  .scenario-description {
+    font-size: 1.05rem;
+    color: #444;
+    line-height: 1.6;
+    margin: 0 0 20px 0;
+    padding: 15px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+
+  .implications-section {
+    margin-bottom: 20px;
+  }
+
+  .implications-section h4 {
+    font-size: 1.1rem;
+    margin: 0 0 15px 0;
+    color: #1a1a2e;
+  }
+
+  .implications-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .implications-list li {
+    padding: 12px 15px;
+    background: white;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    color: #444;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    position: relative;
+    padding-left: 35px;
+  }
+
+  .implications-list li::before {
+    content: '•';
+    position: absolute;
+    left: 15px;
+    color: #C8102E;
+    font-weight: bold;
+    font-size: 1.2rem;
+  }
+
+  .educational-tip {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    gap: 15px;
+    align-items: flex-start;
+  }
+
+  .tip-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
+
+  .tip-content {
+    flex: 1;
+  }
+
+  .tip-content strong {
+    display: block;
+    margin-bottom: 8px;
+    color: #1565c0;
+    font-size: 0.95rem;
+  }
+
+  .tip-content p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #444;
+    line-height: 1.5;
+  }
+
+  .scenarios-grid {
+    background: #f8f9fa;
+    border-radius: 16px;
+    padding: 25px;
+  }
+
+  .scenarios-title {
+    margin: 0 0 20px 0;
+    font-size: 1.1rem;
+    color: #1a1a2e;
+  }
+
+  .scenario-comparison {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+  }
+
+  .scenario-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border: 2px solid transparent;
+    transition: all 0.2s ease;
+  }
+
+  .scenario-item.active {
+    border-color: #C8102E;
+    box-shadow: 0 4px 12px rgba(200, 16, 46, 0.15);
+  }
+
+  .item-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+
+  .item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .item-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #1a1a2e;
+  }
+
+  .item-difficulty {
+    font-size: 0.75rem;
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+  }
+
+  .item-difficulty.easy {
+    background: #d4edda;
+    color: #155724;
+  }
+
+  .item-difficulty.moderate {
+    background: #fff3cd;
+    color: #856404;
+  }
+
+  .item-difficulty.difficult {
+    background: #f8d7da;
+    color: #721c24;
+  }
+
+  @media (max-width: 768px) {
+    .governance-section {
+      padding: 20px;
+    }
+
+    .scenario-header {
+      flex-direction: column;
+      text-align: center;
+    }
+
+    .scenario-icon {
+      width: 50px;
+      height: 50px;
+      font-size: 1.5rem;
+    }
+
+    .scenario-title {
+      font-size: 1.2rem;
+    }
+
+    .scenario-comparison {
+      grid-template-columns: 1fr;
+    }
+
+    .educational-tip {
+      flex-direction: column;
+      text-align: center;
     }
   }
 </style>

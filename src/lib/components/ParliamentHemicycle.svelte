@@ -8,9 +8,15 @@
   interface Props {
     seats: Seat[];
     totalSeats: number;
+    highlightParty?: string;
   }
 
-  let { seats, totalSeats }: Props = $props();
+  let { seats, totalSeats, highlightParty = '' }: Props = $props();
+
+  // Debug logging
+  $effect(() => {
+    console.log('🎪 ParliamentHemicycle - seats count:', seats.length, 'totalSeats:', totalSeats);
+  });
 
   // Standard hemicycle layout - each row gets progressively more seats
   function calculateSeatPositions(): Array<{ x: number; y: number; seat: Seat }> {
@@ -85,7 +91,17 @@
     }
   }
 
-  let displayPositions = $derived(calculateSeatPositions());
+  let displayPositions = $derived.by(() => {
+    const positions = calculateSeatPositions();
+    console.log('📍 Calculated positions:', positions.length, 'seats');
+    if (positions.length > 0) {
+      console.log('🎨 Sample seat colors:', positions.slice(0, 3).map(p => ({ 
+        party: p.seat.partyName, 
+        color: p.seat.partyColor 
+      })));
+    }
+    return positions;
+  });
   
   // Track hovered seat
   let hoveredSeat: { seat: Seat; index: number } | null = $state(null);
@@ -97,9 +113,12 @@
 <div class="hemicycle-container">
   <!-- Info bar at top -->
   {#if hoveredSeat}
-    <div class="seat-info-bar">
+    <div class="seat-info-bar" class:dominant={highlightParty && hoveredSeat.seat.partyName === highlightParty}>
       <img src={hoveredSeat.seat.partySymbolUrl} alt="" class="info-symbol" />
       <span class="info-name">{hoveredSeat.seat.partyName}</span>
+      {#if highlightParty && hoveredSeat.seat.partyName === highlightParty}
+        <span class="dominant-badge">Mayor fuerza</span>
+      {/if}
     </div>
   {:else}
     <div class="seat-info-bar hint">
@@ -143,12 +162,12 @@
           cx="0"
           cy="0"
           r={totalSeats <= 10 ? 6 : totalSeats <= 30 ? 3.5 : 2.8}
-          fill={pos.seat.partyColor}
+          fill={pos.seat.partyColor || '#999'}
           stroke="white"
-          stroke-width="0.4"
+          stroke-width="0.6"
           class="seat-circle"
           class:highlighted={hoveredSeat?.index === i}
-          style="animation-delay: {i * 8}ms"
+          class:dominant={highlightParty && pos.seat.partyName === highlightParty}
         />
         
         <!-- Party symbol for larger seats -->
@@ -227,6 +246,27 @@
     opacity: 0.95;
   }
 
+  .seat-info-bar.dominant {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    border-color: rgba(255,255,255,0.3);
+    animation: pulse-badge 2s infinite;
+  }
+
+  .dominant-badge {
+    background: rgba(255,255,255,0.25);
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  @keyframes pulse-badge {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(40, 167, 69, 0); }
+  }
+
   .hemicycle-svg {
     width: 100%;
     height: 100%;
@@ -238,15 +278,31 @@
   }
 
   .seat-circle {
-    animation: popIn 0.4s ease-out forwards;
-    opacity: 0;
-    transition: filter 0.15s ease, stroke-width 0.15s ease;
+    opacity: 1;
+    transition: fill-opacity 0.2s ease;
+  }
+  
+  .seat-circle:hover {
+    fill-opacity: 0.7;
   }
 
   /* Simple highlight on hover */
   .seat-circle.highlighted {
     filter: brightness(1.4) drop-shadow(0 0 3px rgba(255,255,255,0.9));
     stroke-width: 1;
+  }
+
+  /* Dominant party highlight */
+  .seat-circle.dominant {
+    stroke: #28a745;
+    stroke-width: 0.8;
+    filter: drop-shadow(0 0 2px rgba(40, 167, 69, 0.5));
+    animation: glow-dominant 2s ease-in-out infinite;
+  }
+
+  @keyframes glow-dominant {
+    0%, 100% { filter: drop-shadow(0 0 2px rgba(40, 167, 69, 0.5)); }
+    50% { filter: drop-shadow(0 0 4px rgba(40, 167, 69, 0.8)); }
   }
 
   @keyframes popIn {
