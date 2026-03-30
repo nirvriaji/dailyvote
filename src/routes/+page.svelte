@@ -6,7 +6,7 @@
   
   // Animation state
   let isLoaded = $state(false);
-  let countdownText = $state('');
+  let countdownData = $state({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   let countdownInterval: ReturnType<typeof setInterval> | null = null;
   
   function updateCountdown() {
@@ -14,17 +14,17 @@
     const diff = ELECTION_DAY_TARGET.getTime() - now.getTime();
     
     if (diff <= 0) {
-      countdownText = 'La jornada de votación ya comenzó';
+      countdownData = { days: 0, hours: 0, minutes: 0, seconds: 0 };
       return;
     }
     
     const totalSeconds = Math.floor(diff / 1000);
-    const days = Math.floor(totalSeconds / 86400);
-    const hours = Math.floor((totalSeconds % 86400) / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-    
-    countdownText = `Faltan: ${days}d ${hours}h ${minutes}m ${seconds}s para votar`;
+    countdownData = {
+      days: Math.floor(totalSeconds / 86400),
+      hours: Math.floor((totalSeconds % 86400) / 3600),
+      minutes: Math.floor((totalSeconds % 3600) / 60),
+      seconds: totalSeconds % 60
+    };
   }
   
   onMount(() => {
@@ -51,31 +51,61 @@
 
 {#if isLoaded}
   <main class="landing">
-    <!-- Background pattern -->
-    <div class="bg-pattern" aria-hidden="true">
-      <div class="circle circle-1"></div>
-      <div class="circle circle-2"></div>
-      <div class="circle circle-3"></div>
+    <!-- Video Background -->
+    <div class="video-container">
+      <video 
+        class="video-bg" 
+        autoplay 
+        muted 
+        loop 
+        playsinline
+        poster="/images/demo-poster.jpg"
+      >
+        <source src="/videos/demo.mp4" type="video/mp4" />
+      </video>
+      <div class="video-overlay"></div>
     </div>
     
+    <!-- Content -->
     <div class="landing-inner" in:fly={{ y: 30, duration: 600 }}>
-      <!-- Pill superior -->
+      <!-- Top Pill -->
       <div class="pill-wrapper" in:fade={{ duration: 400, delay: 200 }}>
         <span class="top-pill">PE · ELECCIONES GENERALES 2026</span>
       </div>
 
-      <!-- Headline principal -->
+      <!-- Headline -->
       <h1 class="headline" in:fly={{ y: 20, duration: 500, delay: 300 }}>
         <span class="headline-line1">SIMULA TU VOTO</span>
         <span class="headline-line2">ANTES DEL 12 DE ABRIL</span>
       </h1>
 
-      <!-- Cuenta regresiva -->
+      <!-- Countdown -->
       <div class="countdown-wrapper" in:fade={{ duration: 400, delay: 400 }}>
-        <span class="countdown-text">{countdownText}</span>
+        <div class="countdown-box">
+          <div class="countdown-item">
+            <span class="countdown-number">{countdownData.days}</span>
+            <span class="countdown-label">días</span>
+          </div>
+          <span class="countdown-separator">:</span>
+          <div class="countdown-item">
+            <span class="countdown-number">{countdownData.hours.toString().padStart(2, '0')}</span>
+            <span class="countdown-label">horas</span>
+          </div>
+          <span class="countdown-separator">:</span>
+          <div class="countdown-item">
+            <span class="countdown-number">{countdownData.minutes.toString().padStart(2, '0')}</span>
+            <span class="countdown-label">min</span>
+          </div>
+          <span class="countdown-separator">:</span>
+          <div class="countdown-item">
+            <span class="countdown-number">{countdownData.seconds.toString().padStart(2, '0')}</span>
+            <span class="countdown-label">seg</span>
+          </div>
+        </div>
+        <span class="countdown-caption">Para votar</span>
       </div>
 
-      <!-- Descripción principal -->
+      <!-- Description -->
       <p class="subline" in:fade={{ duration: 400, delay: 500 }}>
         Explora la cédula electoral real, prueba distintas elecciones y descubre cómo cambiarían los resultados.
       </p>
@@ -86,54 +116,37 @@
           <span class="cta-icon">🗳️</span>
           <span class="cta-text">Simular mi voto</span>
         </button>
-        <span class="cta-note">Cédula interactiva · Sin registro · 2 minutos</span>
-        <span class="interaction-hint">Desliza la cédula y marca tus opciones como en la elección real.</span>
+        <span class="cta-note">Gratis · Sin registro · 100% educativo</span>
       </div>
 
-      <!-- Feature cards -->
-      <div class="features-grid" in:fly={{ y: 20, duration: 400, delay: 800 }}>
-        <div class="feature-card">
-          <div class="feature-icon">📋</div>
-          <h3>CÉDULA REAL</h3>
-          <p>Explora la cédula amplia e interactiva tal como se presenta en la elección.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">📊</div>
-          <h3>RESULTADOS EN VIVO</h3>
-          <p>Mira cómo se mueven los resultados acumulados y prueba escenarios de proyección.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">🎯</div>
-          <h3>VOTO GUIADO</h3>
-          <p>Aprende a marcar correctamente y entiende cómo navegar cada sección de la cédula.</p>
-        </div>
-      </div>
-
-      <!-- Trust indicators -->
-      <div class="trust-section" in:fade={{ duration: 400, delay: 1000 }}>
-        <div class="trust-item">
-          <span class="trust-check">✓</span>
-          <span>36 partidos políticos reales</span>
-        </div>
-        <div class="trust-item">
-          <span class="trust-check">✓</span>
-          <span>Resultados acumulados en tiempo real</span>
-        </div>
-        <div class="trust-item">
-          <span class="trust-check">✓</span>
-          <span>100% educativo e interactivo</span>
-        </div>
-      </div>
-
-      <!-- Impact hint -->
-      <div class="impact-hint" in:fade={{ duration: 400, delay: 1100 }}>
-        Explora qué pasaría si más personas votaran igual que tú.
+      <!-- Trust Bar -->
+      <div class="trust-bar" in:fade={{ duration: 400, delay: 800 }}>
+        <span class="trust-item">
+          <span class="trust-icon">✓</span>
+          36 partidos reales
+        </span>
+        <span class="trust-dot">·</span>
+        <span class="trust-item">
+          <span class="trust-icon">✓</span>
+          Resultados en vivo
+        </span>
+        <span class="trust-dot">·</span>
+        <span class="trust-item">
+          <span class="trust-icon">✓</span>
+          100% educativo
+        </span>
       </div>
 
       <!-- Disclaimer -->
-      <p class="disclaimer" in:fade={{ duration: 400, delay: 1200 }}>
+      <p class="disclaimer" in:fade={{ duration: 400, delay: 1000 }}>
         <strong>Nota:</strong> Este es un simulador educativo. Los resultados son generados por simulaciones acumuladas y no representan resultados oficiales.
       </p>
+
+      <!-- Scroll Indicator -->
+      <div class="scroll-indicator" in:fade={{ duration: 400, delay: 1200 }}>
+        <span class="scroll-text">Ver demo</span>
+        <span class="scroll-arrow">↓</span>
+      </div>
     </div>
   </main>
 {/if}
@@ -141,76 +154,48 @@
 <style>
   .landing {
     min-height: 100dvh;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 60px 24px 40px;
     overflow: hidden;
-    position: relative;
   }
 
-  /* Background animated circles */
-  .bg-pattern {
+  /* Video Background */
+  .video-container {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+  }
+
+  .video-bg {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+  }
+
+  .video-overlay {
     position: absolute;
     inset: 0;
-    overflow: hidden;
-    pointer-events: none;
+    background: rgba(15, 23, 42, 0.75);
+    z-index: 1;
   }
 
-  .circle {
-    position: absolute;
-    border-radius: 50%;
-    opacity: 0.1;
-  }
-
-  .circle-1 {
-    width: 600px;
-    height: 600px;
-    background: #C8102E;
-    top: -200px;
-    right: -200px;
-    animation: float 20s infinite ease-in-out;
-  }
-
-  .circle-2 {
-    width: 400px;
-    height: 400px;
-    background: #ffffff;
-    bottom: -100px;
-    left: -100px;
-    animation: float 25s infinite ease-in-out reverse;
-  }
-
-  .circle-3 {
-    width: 300px;
-    height: 300px;
-    background: #C8102E;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    animation: pulse 15s infinite ease-in-out;
-  }
-
-  @keyframes float {
-    0%, 100% { transform: translate(0, 0); }
-    50% { transform: translate(30px, -30px); }
-  }
-
-  @keyframes pulse {
-    0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.05; }
-    50% { transform: translate(-50%, -50%) scale(1.1); opacity: 0.1; }
-  }
-
+  /* Content */
   .landing-inner {
+    position: relative;
+    z-index: 2;
     max-width: 800px;
     width: 100%;
     text-align: center;
     display: flex;
     flex-direction: column;
     align-items: center;
-    position: relative;
-    z-index: 1;
+    padding: 40px 24px;
+    min-height: 100dvh;
+    justify-content: center;
   }
 
   /* Top Pill */
@@ -222,7 +207,7 @@
     display: inline-flex;
     align-items: center;
     padding: 8px 16px;
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(0, 0, 0, 0.4);
     border: 1px solid #C8102E;
     border-radius: 50px;
     font-size: 12px;
@@ -230,308 +215,322 @@
     letter-spacing: 1px;
     text-transform: uppercase;
     color: white;
+    backdrop-filter: blur(8px);
   }
 
-  /* Headline - NEW */
+  /* Headline */
   .headline {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    margin-bottom: 16px;
+    gap: 4px;
+    margin-bottom: 24px;
   }
 
   .headline-line1 {
-    font-size: clamp(36px, 5vw, 56px);
-    font-weight: 800;
+    font-size: clamp(40px, 8vw, 64px);
+    font-weight: 900;
     color: white;
-    line-height: 1.1;
-    letter-spacing: -0.02em;
+    line-height: 1;
+    letter-spacing: -0.03em;
     text-transform: uppercase;
   }
 
   .headline-line2 {
-    font-size: clamp(36px, 5vw, 56px);
-    font-weight: 800;
+    font-size: clamp(40px, 8vw, 64px);
+    font-weight: 900;
     color: #ff6b6b;
-    line-height: 1.1;
-    letter-spacing: -0.02em;
+    line-height: 1;
+    letter-spacing: -0.03em;
     text-transform: uppercase;
   }
 
-  /* Countdown - NEW */
+  /* Countdown - Apple Style */
   .countdown-wrapper {
     margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
   }
 
-  .countdown-text {
-    display: inline-block;
-    padding: 8px 16px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 50px;
-    font-size: 14px;
+  .countdown-box {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 12px 20px;
+    border-radius: 12px;
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .countdown-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 50px;
+  }
+
+  .countdown-number {
+    font-size: clamp(28px, 5vw, 40px);
+    font-weight: 700;
+    color: white;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .countdown-label {
+    font-size: 10px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.9);
-    font-family: monospace;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
     letter-spacing: 0.5px;
+    margin-top: 2px;
   }
 
-  /* Subline - IMPROVED */
+  .countdown-separator {
+    font-size: clamp(24px, 4vw, 32px);
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.4);
+    margin-top: -12px;
+  }
+
+  .countdown-caption {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 500;
+  }
+
+  /* Subline */
   .subline {
     font-size: clamp(16px, 2.5vw, 20px);
     color: rgba(255, 255, 255, 0.85);
     line-height: 1.6;
     margin-bottom: 32px;
-    max-width: 600px;
+    max-width: 550px;
   }
 
-  /* CTA - IMPROVED */
+  /* CTA */
   .cta-wrapper {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 12px;
-    margin-bottom: 50px;
+    margin-bottom: 32px;
   }
 
   .cta-btn {
     display: inline-flex;
     align-items: center;
     gap: 12px;
-    padding: 20px 40px;
+    padding: 20px 44px;
     background: linear-gradient(135deg, #C8102E 0%, #a00d25 100%);
     color: white;
     text-decoration: none;
     border: none;
-    border-radius: 16px;
-    font-size: 20px;
-    font-weight: 800;
+    border-radius: 50px;
+    font-size: 18px;
+    font-weight: 700;
     transition: all 0.3s ease;
     cursor: pointer;
-    box-shadow: 0 8px 25px rgba(200, 16, 46, 0.25);
-  }
-
-  .cta-btn:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 12px 35px rgba(200, 16, 46, 0.35);
-  }
-
-  .cta-btn:active {
-    transform: translateY(-1px);
-  }
-
-  .cta-icon {
-    font-size: 28px;
-  }
-
-  .cta-note {
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.6);
-    font-weight: 500;
-  }
-
-  .interaction-hint {
-    font-size: 13px;
-    color: rgba(255, 255, 255, 0.5);
-    font-style: italic;
-    max-width: 400px;
-    text-align: center;
-    line-height: 1.4;
-  }
-
-  /* Features Grid - NEW */
-  .features-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-    width: 100%;
-    max-width: 700px;
-    margin-bottom: 40px;
-  }
-
-  .feature-card {
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 16px;
-    padding: 24px;
-    text-align: center;
-    transition: all 0.3s ease;
-  }
-
-  .feature-card:hover {
-    background: rgba(255, 255, 255, 0.12);
-    transform: translateY(-5px);
-    border-color: rgba(255, 255, 255, 0.3);
-  }
-
-  .feature-icon {
-    font-size: 40px;
-    margin-bottom: 12px;
-  }
-
-  .feature-card h3 {
-    color: white;
-    font-size: 16px;
-    font-weight: 700;
-    margin: 0 0 8px 0;
+    box-shadow: 0 8px 30px rgba(200, 16, 46, 0.4);
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
 
-  .feature-card p {
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 14px;
-    line-height: 1.5;
-    margin: 0;
+  .cta-btn:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 12px 40px rgba(200, 16, 46, 0.5);
   }
 
-  /* Trust section - NEW */
-  .trust-section {
+  .cta-btn:active {
+    transform: translateY(-1px) scale(0.98);
+  }
+
+  .cta-icon {
+    font-size: 26px;
+  }
+
+  .cta-note {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+    letter-spacing: 0.3px;
+  }
+
+  /* Trust Bar - Minimal */
+  .trust-bar {
     display: flex;
-    flex-wrap: wrap;
+    align-items: center;
     justify-content: center;
-    gap: 20px 40px;
-    margin-bottom: 20px;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 32px;
+    padding: 12px 24px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 50px;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
 
   .trust-item {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     color: rgba(255, 255, 255, 0.8);
-    font-size: 15px;
+    font-size: 14px;
+    font-weight: 500;
   }
 
-  .trust-check {
-    width: 22px;
-    height: 22px;
-    background: #28a745;
+  .trust-icon {
+    width: 18px;
+    height: 18px;
+    background: #22c55e;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
+    font-size: 10px;
     color: white;
     font-weight: bold;
   }
 
-  /* Impact hint - NEW */
-  .impact-hint {
+  .trust-dot {
+    color: rgba(255, 255, 255, 0.3);
     font-size: 14px;
-    color: rgba(255, 255, 255, 0.6);
-    text-align: center;
-    margin-bottom: 30px;
-    font-style: italic;
   }
 
-  /* Disclaimer - IMPROVED */
+  /* Disclaimer */
   .disclaimer {
-    font-size: 13px;
+    font-size: 12px;
     color: rgba(255, 255, 255, 0.5);
     line-height: 1.5;
-    max-width: 500px;
-    background: rgba(0, 0, 0, 0.2);
-    padding: 12px 20px;
-    border-radius: 8px;
+    max-width: 450px;
+    text-align: center;
   }
 
   .disclaimer strong {
-    color: rgba(255, 255, 255, 0.8);
+    color: rgba(255, 255, 255, 0.7);
   }
 
-  /* Mobile responsive */
+  /* Scroll Indicator */
+  .scroll-indicator {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    color: rgba(255, 255, 255, 0.5);
+    animation: bounce 2s infinite;
+  }
+
+  .scroll-text {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+  }
+
+  .scroll-arrow {
+    font-size: 20px;
+    line-height: 1;
+  }
+
+  @keyframes bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
+    40% { transform: translateX(-50%) translateY(-10px); }
+    60% { transform: translateX(-50%) translateY(-5px); }
+  }
+
+  /* Mobile Responsive */
   @media (max-width: 640px) {
-    .landing {
-      padding: 30px 16px;
+    .landing-inner {
+      padding: 24px 16px;
     }
-    
+
     .pill-wrapper {
       margin-bottom: 16px;
     }
-    
+
     .top-pill {
-      font-size: 11px;
+      font-size: 10px;
       padding: 6px 12px;
     }
 
+    .headline {
+      margin-bottom: 16px;
+    }
+
+    .headline-line1,
+    .headline-line2 {
+      font-size: 32px;
+    }
+
+    .countdown-box {
+      padding: 10px 16px;
+    }
+
+    .countdown-number {
+      font-size: 24px;
+    }
+
+    .countdown-label {
+      font-size: 9px;
+    }
+
+    .subline {
+      font-size: 15px;
+      margin-bottom: 24px;
+    }
+
+    .cta-btn {
+      padding: 16px 32px;
+      font-size: 16px;
+    }
+
+    .trust-bar {
+      flex-direction: column;
+      gap: 8px;
+      padding: 12px 20px;
+      border-radius: 12px;
+    }
+
+    .trust-dot {
+      display: none;
+    }
+
+    .trust-item {
+      font-size: 13px;
+    }
+
+    .disclaimer {
+      font-size: 11px;
+      max-width: 100%;
+      padding: 0 16px;
+    }
+
+    .scroll-indicator {
+      bottom: 20px;
+    }
+  }
+
+  @media (max-width: 380px) {
     .headline-line1,
     .headline-line2 {
       font-size: 28px;
     }
-    
-    .countdown-wrapper {
-      margin-bottom: 16px;
+
+    .countdown-number {
+      font-size: 20px;
     }
 
-    .features-grid {
-      grid-template-columns: 1fr;
-      gap: 16px;
-    }
-    
-    .feature-card {
-      padding: 20px;
-    }
-
-    .trust-section {
-      flex-direction: column;
-      gap: 10px;
-    }
-    
-    .trust-item {
-      font-size: 13px;
-    }
-    
-    .impact-hint {
-      font-size: 12px;
-      margin-bottom: 20px;
-    }
-    
-    .disclaimer {
-      font-size: 12px;
-      padding: 10px 16px;
-    }
-
-    .cta-btn {
-      padding: 16px 28px;
-      font-size: 17px;
-      width: auto;
-      max-width: 300px;
-    }
-    
-    .cta-note,
-    .interaction-hint {
-      font-size: 12px;
-    }
-  }
-  
-  @media (max-width: 480px) {
-    .landing {
-      padding: 24px 12px;
-    }
-    
-    .headline-line1,
-    .headline-line2 {
-      font-size: 24px;
-    }
-    
-    .subline {
-      font-size: 15px;
-    }
-    
-    .countdown-text {
-      font-size: 13px;
-      padding: 6px 12px;
-    }
-  }
-  
-  @media (max-width: 380px) {
-    .headline-line1,
-    .headline-line2 {
-      font-size: 22px;
-    }
-    
-    .countdown-text {
-      font-size: 12px;
+    .countdown-item {
+      min-width: 40px;
     }
   }
 </style>
