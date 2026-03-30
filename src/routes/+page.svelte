@@ -55,27 +55,12 @@
   <main class="landing">
     <!-- Content -->
     <div class="landing-inner" in:fly={{ y: 30, duration: 600 }}>
-      <!-- Top Row: Badge + Help -->
-      <div class="top-row" in:fade={{ duration: 400, delay: 200 }}>
-        <!-- Top Pill -->
-        <div class="pill-wrapper">
-          <span class="top-pill">PE · ELECCIONES GENERALES 2026</span>
-        </div>
-        
-        <!-- Help Button -->
-        <button 
-          class="help-button"
-          onclick={() => showHelpPanel = true}
-          aria-label="Ayuda y contacto"
-        >
-          <svg class="help-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
-          </svg>
-          <span class="help-text">Ayuda y contacto</span>
-        </button>
+      <!-- Top Pill -->
+      <div class="pill-wrapper" in:fade={{ duration: 400, delay: 200 }}>
+        <span class="top-pill">PE · ELECCIONES GENERALES 2026</span>
       </div>
 
-      <!-- Help Panel -->
+      <!-- Help Panel (used by footer) -->
       <HelpPanel isOpen={showHelpPanel} onClose={() => showHelpPanel = false} />
 
       <!-- Headline -->
@@ -199,6 +184,23 @@
         </span>
       </div>
 
+      <!-- Footer -->
+      <footer class="footer-section" in:fade={{ duration: 400, delay: 1900 }}>
+        <div class="footer-links">
+          <button 
+            class="footer-link"
+            onclick={() => showHelpPanel = true}
+          >
+            <svg class="footer-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+            </svg>
+            <span>¿Dudas o sugerencias?</span>
+          </button>
+          <span class="footer-separator">·</span>
+          <span class="footer-credit">Hecho con ♥ por <a href="https://x.com/nirvriaji" target="_blank" rel="noopener noreferrer">@nirvriaji</a></span>
+        </div>
+      </footer>
+
       <!-- Disclaimer -->
       <p class="disclaimer" in:fade={{ duration: 400, delay: 2000 }}>
         <strong>Nota:</strong> Este es un simulador educativo. Los resultados son generados por simulaciones acumuladas y no representan resultados oficiales.
@@ -248,78 +250,70 @@
     backdrop-filter: blur(8px);
   }
 
-  /* Top Row - Badge + Help */
-  .top-row {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-    width: 100%;
-    margin-bottom: 8px;
+  /* Footer Section */
+  .footer-section {
+    margin-top: 8px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
   }
 
-  /* Help Button */
-  .help-button {
-    height: 40px;
-    padding: 0 14px;
+  .footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .footer-link {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    color: rgba(255, 255, 255, 0.92);
-    backdrop-filter: blur(8px);
-    font-size: 14px;
-    font-weight: 600;
+    gap: 6px;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 13px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    transition: color 0.2s ease;
+    padding: 4px;
   }
 
-  .help-button:hover {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.22);
-    transform: translateY(-1px);
+  .footer-link:hover {
+    color: rgba(255, 255, 255, 0.95);
   }
 
-  .help-icon {
+  .footer-icon {
     flex-shrink: 0;
   }
 
-  /* Desktop: Horizontal layout */
-  @media (min-width: 769px) {
-    .top-row {
-      flex-direction: row;
-      justify-content: space-between;
-      align-items: flex-start;
-    }
+  .footer-separator {
+    color: rgba(255, 255, 255, 0.3);
   }
 
-  /* Mobile: Compact version */
-  @media (max-width: 768px) {
-    .help-button {
-      height: 36px;
-      padding: 0 12px;
-      font-size: 13px;
-    }
-
-    .help-text {
-      display: none; /* Show only icon + "Ayuda" on mobile */
-    }
-
-    .help-text::before {
-      content: 'Ayuda';
-      display: inline;
-    }
+  .footer-credit a {
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    transition: color 0.2s ease;
   }
 
+  .footer-credit a:hover {
+    color: rgba(255, 255, 255, 0.95);
+    text-decoration: underline;
+  }
+
+  /* Mobile: Footer adjustments */
   @media (max-width: 480px) {
-    .help-button {
-      padding: 0 10px;
+    .footer-links {
+      flex-direction: column;
+      gap: 8px;
     }
 
-    .help-text {
-      font-size: 12px;
+    .footer-separator {
+      display: none;
     }
   }
 
