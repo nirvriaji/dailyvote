@@ -34,10 +34,10 @@
 
     const x = (ballotScroller.scrollWidth - ballotScroller.clientWidth) / 2;
     
-    // Desktop: center vertically with offset
+    // Desktop: center vertically but 40px higher (closer to top)
     // Mobile: stay at top to keep headers visible (don't scroll down)
     const isMobile = window.innerWidth <= 768;
-    const y = isMobile ? 0 : (ballotScroller.scrollHeight - ballotScroller.clientHeight) / 2 + 200;
+    const y = isMobile ? 0 : (ballotScroller.scrollHeight - ballotScroller.clientHeight) / 2 - 40;
 
     ballotScroller.scrollTo({
       left: x,
