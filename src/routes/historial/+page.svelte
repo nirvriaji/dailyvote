@@ -526,17 +526,88 @@
 
   /* Responsive */
   @media (max-width: 768px) {
+    .history-page {
+      padding: 15px;
+    }
+    
+    .page-header h1 {
+      font-size: 1.5rem;
+    }
+    
     .stats-bar {
       flex-direction: column;
       text-align: center;
+      gap: 15px;
     }
-
+    
     .day-header {
       flex-wrap: wrap;
+      gap: 10px;
+      padding: 15px;
+    }
+    
+    .day-date {
+      font-size: 0.9rem;
+    }
+    
+    .day-ago {
+      font-size: 0.8rem;
+    }
+    
+    .day-snapshot {
+      font-size: 0.7rem;
     }
 
     .winners-grid {
       grid-template-columns: 1fr;
+    }
+    
+    .day-details {
+      padding: 0 15px 20px;
+    }
+    
+    .day-details h3 {
+      font-size: 1rem;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .history-page {
+      padding: 12px;
+    }
+    
+    .page-header h1 {
+      font-size: 1.3rem;
+    }
+    
+    .btn-back {
+      font-size: 0.8rem;
+    }
+    
+    .day-header {
+      padding: 12px;
+    }
+    
+    .winner-thumb {
+      width: 30px;
+      height: 30px;
+    }
+    
+    .winner-detail-card {
+      padding: 12px;
+    }
+    
+    .winner-symbol {
+      width: 35px;
+      height: 35px;
+    }
+    
+    .winner-name {
+      font-size: 0.9rem;
+    }
+    
+    .winner-percentage {
+      font-size: 0.8rem;
     }
   }
 </style>

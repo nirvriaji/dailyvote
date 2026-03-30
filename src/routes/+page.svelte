@@ -442,25 +442,96 @@
   /* Mobile responsive */
   @media (max-width: 640px) {
     .landing {
-      padding: 40px 20px;
+      padding: 30px 16px;
+    }
+    
+    .pill-wrapper {
+      margin-bottom: 16px;
+    }
+    
+    .top-pill {
+      font-size: 11px;
+      padding: 6px 12px;
     }
 
-    .headline {
-      font-size: 36px;
+    .headline-line1,
+    .headline-line2 {
+      font-size: 28px;
+    }
+    
+    .countdown-wrapper {
+      margin-bottom: 16px;
     }
 
     .features-grid {
       grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    
+    .feature-card {
+      padding: 20px;
     }
 
     .trust-section {
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
+    }
+    
+    .trust-item {
+      font-size: 13px;
+    }
+    
+    .impact-hint {
+      font-size: 12px;
+      margin-bottom: 20px;
+    }
+    
+    .disclaimer {
+      font-size: 12px;
+      padding: 10px 16px;
     }
 
     .cta-btn {
-      padding: 18px 32px;
-      font-size: 18px;
+      padding: 16px 28px;
+      font-size: 17px;
+      width: 100%;
+      max-width: 300px;
+    }
+    
+    .cta-note,
+    .interaction-hint {
+      font-size: 12px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .landing {
+      padding: 24px 12px;
+    }
+    
+    .headline-line1,
+    .headline-line2 {
+      font-size: 24px;
+    }
+    
+    .subline {
+      font-size: 15px;
+    }
+    
+    .countdown-text {
+      font-size: 13px;
+      padding: 6px 12px;
+    }
+  }
+  
+  @media (max-width: 380px) {
+    .headline-line1,
+    .headline-line2 {
+      font-size: 22px;
+    }
+    
+    .countdown-text {
+      font-size: 12px;
     }
   }
 </style>

@@ -293,7 +293,7 @@
   
   @media (max-width: 768px) {
     .inline-hint-banner {
-      top: 82px;
+      top: 110px;
       padding: 0 12px;
       width: calc(100% - 24px);
     }
@@ -315,7 +315,7 @@
     }
     
     .ballot-sheet {
-      inset: 70px 0 0 0;
+      inset: 110px 0 0 0;
     }
   }
   

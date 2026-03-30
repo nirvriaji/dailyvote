@@ -2147,6 +2147,8 @@
   @media (max-width: 480px) {
     .hero-header {
       padding: 20px 16px;
+      height: auto;
+      min-height: auto;
     }
     
     .main-title {
@@ -2157,12 +2159,37 @@
       font-size: 28px;
     }
     
+    .title-wrapper {
+      max-width: 100%;
+    }
+    
+    .live-stats-widget {
+      width: 100%;
+      max-width: 100%;
+      padding: 16px;
+      gap: 10px;
+    }
+    
+    .countdown-blocks {
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    
+    .time-block {
+      min-width: 35px;
+    }
+    
     .time-number {
       font-size: 20px;
     }
     
     .time-unit {
-      font-size: 9px;
+      font-size: 8px;
+    }
+    
+    .countdown-subtitle {
+      font-size: 10px;
     }
     
     .candidates-showcase {
@@ -2176,6 +2203,16 @@
     
     .new-simulation-btn {
       min-width: unset;
+    }
+  }
+
+  @media (max-width: 380px) {
+    .time-number {
+      font-size: 18px;
+    }
+    
+    .time-unit {
+      display: none;
     }
   }
 </style>
