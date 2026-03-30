@@ -44,6 +44,7 @@
 <div
   class="col-outer"
   style:width="{width}px"
+  data-demo="col-{column.section}"
 >
   <!-- NIVEL 1: ENCABEZADO DE TÍTULO -->
   <header class="col-header">
@@ -66,7 +67,10 @@
       </div>
       
       <!-- Bloque de voto preferencial -->
-      <div class="instruction-block preferential-block">
+      <div 
+        class="instruction-block preferential-block"
+        data-demo="voto-preferencial-{column.section}"
+      >
         <p class="preferential-title">VOTO PREFERENCIAL</p>
         <p class="preferential-text">
           Escriba 1 o 2 números<br>de sus candidatos
@@ -86,8 +90,8 @@
 
   <!-- Contenido - todas las filas visibles -->
   <div class="col-content">
-    {#each column.rows as row (row.id)}
-      <BallotRow {row} columnId={column.id} section={column.section} />
+    {#each column.rows as row, rowIndex (row.id)}
+      <BallotRow {row} columnId={column.id} section={column.section} {rowIndex} />
     {/each}
   </div>
 </div>

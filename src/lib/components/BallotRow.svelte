@@ -24,9 +24,10 @@
     row: BallotRow;
     columnId: string;
     section: string;
+    rowIndex?: number;
   }
 
-  let { row, columnId, section }: Props = $props();
+  let { row, columnId, section, rowIndex = row.rowIndex }: Props = $props();
 
   let isActive = $derived(ui.activeRow?.id === row.id);
   let isEvenRow = $derived(row.rowIndex % 2 === 0);
@@ -144,6 +145,7 @@
   aria-label="Partido {row.partyName}, número {row.partyNumber}"
   onmouseenter={handleMouseEnter}
   onmouseleave={handleMouseLeave}
+  data-demo="row-{section}-{rowIndex}"
 >
   <!-- Celda 1: Nombre del partido -->
   <div class="cell name-cell">
@@ -154,7 +156,14 @@
   <div class="cell image-cell">
     {#if row.isPresidential}
       <!-- Para presidente: símbolo clickeable independientemente -->
-      <div class="image-frame vote-target" onclick={handlePresidentSymbolClick} role="button" tabindex="0" onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && handlePresidentSymbolClick()}>
+      <div 
+        class="image-frame vote-target" 
+        data-demo="simbolo-{section}-{rowIndex}"
+        onclick={handlePresidentSymbolClick} 
+        role="button" 
+        tabindex="0" 
+        onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && handlePresidentSymbolClick()}
+      >
         {#if row.partySymbolUrl}
           <img src={row.partySymbolUrl} alt="Logo {row.partyAbbr}" />
         {:else}
@@ -169,7 +178,14 @@
       </div>
     {:else}
       <!-- Para columnas legislativas: símbolo selecciona la fila -->
-      <div class="image-frame vote-target" onclick={handleSymbolClick} role="button" tabindex="0" onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && handleSymbolClick()}>
+      <div 
+        class="image-frame vote-target" 
+        data-demo="simbolo-{section}-{rowIndex}"
+        onclick={handleSymbolClick} 
+        role="button" 
+        tabindex="0" 
+        onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && handleSymbolClick()}
+      >
         {#if row.partySymbolUrl}
           <img src={row.partySymbolUrl} alt="Logo {row.partyAbbr}" />
         {:else}
@@ -189,7 +205,14 @@
     <!-- Celda 3 (Presidencial): Foto del candidato clickeable independientemente -->
     <div class="cell image-cell">
       {#if row.presidentialPhoto}
-        <div class="image-frame is-photo vote-target" onclick={handlePresidentPhotoClick} role="button" tabindex="0" onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && handlePresidentPhotoClick()}>
+        <div 
+          class="image-frame is-photo vote-target" 
+          data-demo="foto-{section}-{rowIndex}"
+          onclick={handlePresidentPhotoClick} 
+          role="button" 
+          tabindex="0" 
+          onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && handlePresidentPhotoClick()}
+        >
           <img src={row.presidentialPhoto} alt={row.candidates[0]?.name || 'Candidato'} />
           <!-- X mark when photo selected -->
           {#if isPresidentPhotoMarked}
@@ -199,7 +222,15 @@
           {/if}
         </div>
       {:else if row.candidates.length > 0}
-        <div class="image-frame is-photo vote-target" style:background-color={row.candidates[0].avatarColor} onclick={handlePresidentPhotoClick} role="button" tabindex="0" onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && handlePresidentPhotoClick()}>
+        <div 
+          class="image-frame is-photo vote-target" 
+          data-demo="foto-{section}-{rowIndex}"
+          style:background-color={row.candidates[0].avatarColor} 
+          onclick={handlePresidentPhotoClick} 
+          role="button" 
+          tabindex="0" 
+          onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && handlePresidentPhotoClick()}
+        >
           <span class="photo-text">FOTO</span>
           <!-- X mark when photo selected -->
           {#if isPresidentPhotoMarked}
@@ -214,7 +245,7 @@
     <!-- Para columnas legislativas: casillas de voto preferencial funcionales -->
     {#if columnKey}
       {#if preferenceConfig && preferenceConfig.slots >= 1}
-        <div class="cell vote-cell">
+        <div class="cell vote-cell" data-demo="preferencial-{section}-{rowIndex}-0">
           <PreferenceVoteSlot
             {columnKey}
             rowId={row.id}
@@ -224,7 +255,7 @@
       {/if}
       
       {#if preferenceConfig && preferenceConfig.slots >= 2}
-        <div class="cell vote-cell">
+        <div class="cell vote-cell" data-demo="preferencial-{section}-{rowIndex}-1">
           <PreferenceVoteSlot
             {columnKey}
             rowId={row.id}

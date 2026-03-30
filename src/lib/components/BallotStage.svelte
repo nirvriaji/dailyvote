@@ -25,6 +25,7 @@
 <div
   bind:this={scroller}
   class="stage-viewport"
+  data-demo="scroll-container"
   aria-label="Cédula electoral — hoja única"
 >
   <div class="scroll-container">
