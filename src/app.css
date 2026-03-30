@@ -129,9 +129,9 @@ button {
 
 /* ─── Reusable Image Frame — Unified container for all ballot images ───────────── */
 .image-frame {
-  /* Container sizing */
-  width: 44px;
-  height: 44px;
+  /* Container sizing - matches preference vote slots */
+  width: 48px;
+  height: 48px;
   
   /* Border — consistent with ballot grid */
   border: 1.5px solid var(--grid-border);

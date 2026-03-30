@@ -394,8 +394,8 @@
   }
 
   .vote-box {
-    width: 56px;
-    height: 56px;
+    width: 48px;
+    height: 48px;
     border: 2px solid #000000;
     border-radius: 0;
     background-color: #ffffff;
