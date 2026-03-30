@@ -102,7 +102,7 @@ class VoteStore {
         return true; // Permitir navegación a resultados
       }
       
-      // Si está abierto, proceder con envío normal a Firebase
+      // Si está abierto, proceder con envío FIRE-AND-FORGET a Firebase
       const categoryMap: Record<string, string> = {
         'col0': 'president',
         'col1': 'senatorsNational',
@@ -111,7 +111,8 @@ class VoteStore {
         'col4': 'andeanParliament'
       };
       
-      // Crear array de promesas para enviar TODOS en paralelo
+      // Enviar todos los votos en BACKGROUND (no esperar respuesta)
+      // Esto permite navegación instantánea mientras Firebase guarda por detrás
       const votePromises = [];
       
       for (const [columnId, voteData] of this.votes) {
@@ -124,30 +125,32 @@ class VoteStore {
         );
       }
       
-      // Enviar todos los votos simultáneamente (mucho más rápido)
-      const results = await Promise.all(votePromises);
-      
-      // Verificar si alguno falló por horario cerrado
-      const hasClosedError = results.some(r => r.error === 'VOTING_CLOSED');
-      if (hasClosedError) {
-        console.warn('🚫 Simulaciones cerradas. Los datos se guardaron localmente.');
-        this.isSubmitting = false;
-        return false;
-      }
-      
-      // Incrementar contador de simulaciones (1 por cada cédula completa entregada)
-      console.log('📊 Llamando incrementSimulationCount una vez...');
-      incrementSimulationCount(date).then(() => {
-        console.log('✅ incrementSimulationCount completado');
-      }).catch((err) => {
-        console.error('❌ Error en incrementSimulationCount:', err);
+      // Fire-and-forget: enviar votos sin bloquear
+      // Manejar resultados en background
+      Promise.all(votePromises).then(results => {
+        // Verificar si alguno falló por horario cerrado
+        const hasClosedError = results.some(r => r.error === 'VOTING_CLOSED');
+        if (hasClosedError) {
+          console.warn('🚫 Simulaciones cerradas detectado post-submit.');
+        }
+        
+        // Incrementar contador de simulaciones (fire-and-forget)
+        incrementSimulationCount(date).catch((err) => {
+          console.error('❌ Error en incrementSimulationCount:', err);
+        });
+        
+        // Marcar como completado si hay 5 votos (fire-and-forget)
+        if (this.count === this.total) {
+          markVoteCompleted(date).catch(() => {});
+        }
+        
+        console.log('✅ Votos enviados en background');
+      }).catch(err => {
+        console.error('❌ Error enviando votos en background:', err);
+        // No es crítico, el usuario ya navegó a resultados
       });
       
-      // Marcar como completado si hay 5 votos (fire-and-forget)
-      if (this.count === this.total) {
-        markVoteCompleted(date).catch(() => {});
-      }
-      
+      // Retornar INMEDIATAMENTE - no esperar a Firebase
       this.isSubmitting = false;
       return true;
     } catch (err) {

@@ -9,7 +9,7 @@
 
   let isSubmitting = $state(false);
 
-  // Función para entregar cédula - ultra rápida
+  // Función para entregar cédula - ULTRA RÁPIDA (fire-and-forget)
   async function deliverBallot() {
     if (!isBallotReady() || isSubmitting) {
       console.log('Botón bloqueado:', { isReady, isSubmitting });
@@ -17,15 +17,17 @@
     }
     
     isSubmitting = true;
-    console.log('🚀 Iniciando submitVotes...');
-    
-    // Iniciar envío a Firebase en background (fire-and-forget)
-    await vote.submitVotes();
-    
-    console.log('✅ submitVotes completado, navegando a resultados...');
+    console.log('🚀 Navegando inmediatamente...');
     
     // Navegar INMEDIATAMENTE sin esperar a Firebase
     goto('/resultados');
+    
+    // Enviar a Firebase en background (fire-and-forget)
+    // No usamos await, el guardado continúa por detrás
+    vote.submitVotes().catch(err => {
+      console.warn('⚠️ Error al guardar votos (no crítico):', err);
+      // En modo demo o si falla, ya estamos en la página de resultados
+    });
   }
 
   // Estados derivados
