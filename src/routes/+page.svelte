@@ -110,11 +110,20 @@
         <div class="video-subtitle">Aprende a recorrerla, marcar correctamente y practicar antes del día de la elección.</div>
         <div class="video-frame">
           <video 
-            class="video-player" 
+            class="video-player"
+            id="demo-video"
             autoplay 
             muted 
             loop 
             playsinline
+            preload="auto"
+            onended={() => {
+              const video = document.getElementById('demo-video') as HTMLVideoElement;
+              if (video) {
+                video.currentTime = 0;
+                video.play();
+              }
+            }}
           >
             <source src="/videos/demo.mp4" type="video/mp4" />
           </video>
