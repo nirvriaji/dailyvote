@@ -2321,6 +2321,19 @@
   }
 
   @media (max-width: 768px) {
+    .projection-card {
+      padding: 20px;
+      margin: 0 10px 20px;
+    }
+    
+    .projection-title {
+      font-size: 1.3rem;
+    }
+    
+    .projection-description {
+      font-size: 0.9rem;
+    }
+    
     .projection-selector {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -2328,6 +2341,26 @@
 
     .projection-option {
       width: 100%;
+      height: 40px;
+      padding: 0 12px;
+      font-size: 13px;
+    }
+    
+    .mode-option {
+      padding: 12px 14px;
+      font-size: 14px;
+    }
+    
+    .mode-icon {
+      font-size: 1.2rem;
+    }
+    
+    .mode-description {
+      font-size: 12px;
+    }
+    
+    .projection-section {
+      margin-bottom: 16px;
     }
   }
 
