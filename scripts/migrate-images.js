@@ -1,20 +1,28 @@
 #!/usr/bin/env node
 /**
  * Image Migration Script
- * Downloads images from RPP, optimizes them, and uploads to Firebase Storage
+ * Downloads images from RPP and prepares them for Firebase Storage upload
  * Run: node scripts/migrate-images.js
+ * 
+ * This script will:
+ * 1. Download all images from RPP
+ * 2. Save them locally in temp-images/
+ * 3. Upload them to Firebase Storage using firebase CLI
  */
 
-const https = require('https');
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
+import https from 'https';
+import fs from 'fs';
+import path from 'path';
+import { execSync } from 'child_process';
+import { fileURLToPath } from 'url';
 
-// Firebase Storage bucket
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const BUCKET_NAME = 'exitpollsimulator.firebasestorage.app';
 const STORAGE_BASE_URL = `https://storage.googleapis.com/${BUCKET_NAME}`;
 
-// Party data from mock.ts
+// Party data
 const PARTIES = [
   { number: 1, name: 'Alianza Venceremos', abbr: 'AV', symbolUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Alianza_Venceremos/logo_alianza_venceremos.webp', candidatePhotoUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Alianza_Venceremos/Ronald_Atencio.webp' },
   { number: 2, name: 'Partido Patriótico del Perú', abbr: 'PPP', symbolUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Partido_Patriotico_del_Peru/logo_ppp.webp', candidatePhotoUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Partido_Patriotico_del_Peru/Hebert_Caller.webp' },
@@ -62,15 +70,23 @@ const FREPAP_LOGO = {
   candidatePhotoUrl: ''
 };
 
-// Create temporary directory for downloads
 const TEMP_DIR = path.join(__dirname, '..', 'temp-images');
+const PUBLIC_DIR = path.join(__dirname, '..', 'static', 'images', 'parties');
 
-// Ensure temp directory exists
+// Ensure directories exist
 if (!fs.existsSync(TEMP_DIR)) {
   fs.mkdirSync(TEMP_DIR, { recursive: true });
 }
+if (!fs.existsSync(PUBLIC_DIR)) {
+  fs.mkdirSync(PUBLIC_DIR, { recursive: true });
+}
+if (!fs.existsSync(path.join(PUBLIC_DIR, 'logos'))) {
+  fs.mkdirSync(path.join(PUBLIC_DIR, 'logos'), { recursive: true });
+}
+if (!fs.existsSync(path.join(PUBLIC_DIR, 'candidates'))) {
+  fs.mkdirSync(path.join(PUBLIC_DIR, 'candidates'), { recursive: true });
+}
 
-// Helper to download image
 function downloadImage(url, dest) {
   return new Promise((resolve, reject) => {
     const file = fs.createWriteStream(dest);
@@ -91,7 +107,6 @@ function downloadImage(url, dest) {
   });
 }
 
-// Generate safe filename from party name
 function generateFilename(party, type) {
   const safeName = party.name.toLowerCase()
     .replace(/[^a-z0-9]/g, '-')
@@ -100,98 +115,50 @@ function generateFilename(party, type) {
   return `${party.number}-${safeName}-${type}.webp`;
 }
 
-// Upload to Firebase Storage using gsutil
-function uploadToStorage(localPath, remotePath) {
-  try {
-    execSync(`gsutil -h "Cache-Control:public,max-age=31536000" cp "${localPath}" "gs://${BUCKET_NAME}/images/${remotePath}"`, {
-      stdio: 'inherit'
-    });
-    return true;
-  } catch (error) {
-    console.error(`Failed to upload ${localPath}:`, error.message);
-    return false;
-  }
-}
-
-// Make file public
-function makePublic(remotePath) {
-  try {
-    execSync(`gsutil acl ch -u AllUsers:R "gs://${BUCKET_NAME}/images/${remotePath}"`, {
-      stdio: 'pipe'
-    });
-    return true;
-  } catch (error) {
-    console.error(`Failed to make public ${remotePath}:`, error.message);
-    return false;
-  }
-}
-
-// Main migration function
 async function migrateImages() {
   console.log('🚀 Starting image migration...\n');
+  console.log('Step 1: Downloading images from RPP...\n');
   
-  const imageMap = {
-    logos: {},
-    candidates: {}
-  };
-  
-  let successCount = 0;
+  let downloadCount = 0;
   let failCount = 0;
+  const downloadedFiles = [];
   
-  // Process all parties
-  for (const party of PARTIES) {
+  // Download all images
+  for (const party of [...PARTIES, FREPAP_LOGO]) {
     console.log(`📦 Processing ${party.name}...`);
     
-    // Download and upload logo
+    // Download logo
     if (party.symbolUrl) {
       try {
         const logoFile = generateFilename(party, 'logo');
         const localPath = path.join(TEMP_DIR, logoFile);
-        const remotePath = `parties/logos/${logoFile}`;
+        const publicPath = path.join(PUBLIC_DIR, 'logos', logoFile);
         
         await downloadImage(party.symbolUrl, localPath);
-        console.log(`  ✓ Downloaded logo`);
-        
-        if (uploadToStorage(localPath, remotePath)) {
-          makePublic(remotePath);
-          imageMap.logos[party.number] = `${STORAGE_BASE_URL}/images/${remotePath}`;
-          console.log(`  ✓ Uploaded logo to Storage`);
-          successCount++;
-        } else {
-          failCount++;
-        }
-        
-        // Clean up local file
-        fs.unlinkSync(localPath);
+        fs.copyFileSync(localPath, publicPath);
+        downloadedFiles.push({ local: localPath, public: publicPath, type: 'logo', party: party.number });
+        console.log(`  ✓ Downloaded and copied logo`);
+        downloadCount++;
       } catch (error) {
-        console.error(`  ✗ Failed to process logo for ${party.name}:`, error.message);
+        console.error(`  ✗ Failed to download logo:`, error.message);
         failCount++;
       }
     }
     
-    // Download and upload candidate photo
+    // Download candidate photo
     if (party.candidatePhotoUrl) {
       try {
         const photoFile = generateFilename(party, 'candidate');
         const localPath = path.join(TEMP_DIR, photoFile);
-        const remotePath = `parties/candidates/${photoFile}`;
+        const publicPath = path.join(PUBLIC_DIR, 'candidates', photoFile);
         
         await downloadImage(party.candidatePhotoUrl, localPath);
-        console.log(`  ✓ Downloaded candidate photo`);
-        
-        if (uploadToStorage(localPath, remotePath)) {
-          makePublic(remotePath);
-          imageMap.candidates[party.number] = `${STORAGE_BASE_URL}/images/${remotePath}`;
-          console.log(`  ✓ Uploaded candidate photo to Storage`);
-          successCount++;
-        } else {
-          failCount++;
-        }
-        
-        // Clean up local file
-        fs.unlinkSync(localPath);
+        fs.copyFileSync(localPath, publicPath);
+        downloadedFiles.push({ local: localPath, public: publicPath, type: 'candidate', party: party.number });
+        console.log(`  ✓ Downloaded and copied candidate photo`);
+        downloadCount++;
       } catch (error) {
-        console.error(`  ✗ Failed to process photo for ${party.name}:`, error.message);
+        console.error(`  ✗ Failed to download photo:`, error.message);
         failCount++;
       }
     }
@@ -199,46 +166,28 @@ async function migrateImages() {
     console.log('');
   }
   
-  // Process Frepap logo separately
-  console.log(`📦 Processing Frepap (legislative only)...`);
-  try {
-    const logoFile = generateFilename(FREPAP_LOGO, 'logo');
-    const localPath = path.join(TEMP_DIR, logoFile);
-    const remotePath = `parties/logos/${logoFile}`;
-    
-    await downloadImage(FREPAP_LOGO.symbolUrl, localPath);
-    console.log(`  ✓ Downloaded Frepap logo`);
-    
-    if (uploadToStorage(localPath, remotePath)) {
-      makePublic(remotePath);
-      imageMap.logos[FREPAP_LOGO.number] = `${STORAGE_BASE_URL}/images/${remotePath}`;
-      console.log(`  ✓ Uploaded Frepap logo to Storage`);
-      successCount++;
-    } else {
-      failCount++;
-    }
-    
-    fs.unlinkSync(localPath);
-  } catch (error) {
-    console.error(`  ✗ Failed to process Frepap:`, error.message);
-    failCount++;
-  }
+  console.log(`✅ Download complete!`);
+  console.log(`   Success: ${downloadCount} images`);
+  console.log(`   Failed: ${failCount} images`);
+  console.log(`\n📝 Images saved to:`);
+  console.log(`   - temp-images/ (temporary)`);
+  console.log(`   - static/images/parties/ (for deployment)`);
   
-  // Save image map to file
-  const mapPath = path.join(__dirname, '..', 'image-map.json');
-  fs.writeFileSync(mapPath, JSON.stringify(imageMap, null, 2));
-  console.log(`\n📝 Image map saved to: ${mapPath}`);
+  console.log('\n─────────────────────────────────────────');
+  console.log('NEXT STEPS:');
+  console.log('─────────────────────────────────────────');
+  console.log('\nOption A: Deploy with Firebase Hosting (recommended)');
+  console.log('   The images are now in static/images/parties/');
+  console.log('   They will be deployed automatically with:');
+  console.log('   npm run build && firebase deploy');
+  console.log('\nOption B: Upload to Firebase Storage manually');
+  console.log('   If you prefer Storage over static hosting, run:');
+  console.log('   ./scripts/upload-to-storage.sh');
+  console.log('   (Requires gsutil to be installed)');
   
   // Clean up temp directory
   fs.rmSync(TEMP_DIR, { recursive: true, force: true });
-  console.log(`🧹 Cleaned up temporary files`);
-  
-  console.log(`\n✅ Migration complete!`);
-  console.log(`   Success: ${successCount} images`);
-  console.log(`   Failed: ${failCount} images`);
-  console.log(`\n🌎 Images now available at:`);
-  console.log(`   ${STORAGE_BASE_URL}/images/parties/`);
+  console.log('\n🧹 Cleaned up temp-images/ directory');
 }
 
-// Run migration
 migrateImages().catch(console.error);

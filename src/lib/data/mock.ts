@@ -1,9 +1,10 @@
 import type { BallotColumn, BallotRow, VoteZone, Candidate, ZoneId } from '$lib/types';
 
-// ─── Firebase Storage Configuration ────────────────────────────────────────────
-const STORAGE_BASE_URL = 'https://storage.googleapis.com/exitpollsimulator.firebasestorage.app';
+// ─── Image URLs Configuration ───────────────────────────────────────────
+// Images are served from static/images/parties/ via Firebase Hosting CDN
+const BASE_IMAGE_URL = '/images/parties';
 
-// Helper to generate image URLs for party logos and candidate photos
+// Helper to generate local image URLs for party logos and candidate photos
 function getPartyImageUrl(partyNumber: number, type: 'logo' | 'candidate'): string {
   const partyMap: Record<number, { logo: string; candidate: string }> = {
     1: { logo: '1-alianza-venceremos-logo.webp', candidate: '1-alianza-venceremos-candidate.webp' },
@@ -48,12 +49,12 @@ function getPartyImageUrl(partyNumber: number, type: 'logo' | 'candidate'): stri
   if (!fileName) return '';
   
   const folder = type === 'logo' ? 'logos' : 'candidates';
-  return `${STORAGE_BASE_URL}/images/parties/${folder}/${fileName}`;
+  return `${BASE_IMAGE_URL}/${folder}/${fileName}`;
 }
 
 // Frepap logo URL (legislative only)
 function getFrepapLogoUrl(): string {
-  return `${STORAGE_BASE_URL}/images/parties/logos/4-frepap-logo.webp`;
+  return `${BASE_IMAGE_URL}/logos/4-frepap-logo.webp`;
 }
 
 // ─── Vote zones by column type ────────────────────────────────────────────────
