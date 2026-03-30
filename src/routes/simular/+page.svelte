@@ -235,6 +235,8 @@
   <div 
     class="ballot-sheet" 
     class:disabled={!canSimulate}
+    role="application"
+    aria-label="Cédula electoral"
     onpointerdown={markUserInteraction}
     onwheel={markUserInteraction}
     ontouchstart={markUserInteraction}
@@ -420,72 +422,6 @@
     .closed-text {
       font-size: 13px;
     }
-  }
-  
-  .closed-message {
-    background: white;
-    padding: 40px;
-    border-radius: 20px;
-    text-align: center;
-    max-width: 400px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  }
-  
-  .closed-icon {
-    font-size: 4rem;
-    display: block;
-    margin-bottom: 20px;
-  }
-  
-  .closed-message h2 {
-    margin: 0 0 15px 0;
-    color: #1a1a2e;
-    font-size: 1.8rem;
-  }
-  
-  .closed-message p {
-    color: #666;
-    margin: 0 0 10px 0;
-  }
-  
-  .next-open {
-    background: #fff3cd;
-    padding: 15px;
-    border-radius: 10px;
-    margin: 20px 0;
-    border-left: 4px solid #ffc107;
-  }
-  
-  .closed-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-top: 25px;
-  }
-  
-  .btn-primary, .btn-secondary {
-    padding: 14px 28px;
-    border-radius: 10px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    border: none;
-    font-size: 1rem;
-  }
-  
-  .btn-primary {
-    background: linear-gradient(135deg, #C8102E, #a00d25);
-    color: white;
-  }
-  
-  .btn-secondary {
-    background: #f0f0f0;
-    color: #333;
-  }
-  
-  .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(200, 16, 46, 0.3);
   }
   
   /* Demo Highlight - applied by ballotDemoTour.js */

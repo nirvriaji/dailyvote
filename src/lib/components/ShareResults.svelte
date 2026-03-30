@@ -69,7 +69,14 @@
 </script>
 
 <div class="share-overlay" transition:fade={{ duration: 300 }}>
-  <div class="share-backdrop" onclick={onClose}></div>
+  <div 
+    class="share-backdrop" 
+    role="button"
+    tabindex="-1"
+    aria-label="Cerrar"
+    onclick={onClose}
+    onkeydown={(e) => e.key === 'Escape' && onClose()}
+  ></div>
   
   <div class="share-card" transition:fly={{ y: 20, duration: 400 }}>
     <!-- Header -->
