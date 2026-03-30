@@ -880,6 +880,103 @@
     }
   }
   
+  // ─── GLOBAL SCENARIO ANALYSIS ────────────────────────────────────────────────
+  
+  interface GlobalScenario {
+    type: 'high' | 'balanced' | 'fragmented';
+    label: string;
+    color: string;
+    title: string;
+    description: string;
+    alignmentPoints: number;
+    fragmentation: number;
+  }
+  
+  function analyzeGlobalScenario(): GlobalScenario | null {
+    if (displayResults.length === 0) return null;
+    
+    // Get top party for each category
+    const presidentResults = displayResults.find(r => r.categoryId === 'president');
+    const senateNatResults = displayResults.find(r => r.categoryId === 'senatorsNational');
+    const senateRegResults = displayResults.find(r => r.categoryId === 'senatorsRegional');
+    const deputiesResults = displayResults.find(r => r.categoryId === 'deputies');
+    
+    const topPresident = presidentResults?.results[0]?.partyName;
+    const topSenateNat = senateNatResults?.results[0]?.partyName;
+    const topSenateReg = senateRegResults?.results[0]?.partyName;
+    const topDeputies = deputiesResults?.results[0]?.partyName;
+    
+    if (!topPresident || !topSenateNat || !topSenateReg || !topDeputies) {
+      return null;
+    }
+    
+    // Calculate alignment points
+    let alignmentPoints = 0;
+    if (topPresident === topSenateNat) alignmentPoints++;
+    if (topPresident === topSenateReg) alignmentPoints++;
+    if (topPresident === topDeputies) alignmentPoints++;
+    if (topSenateNat === topSenateReg) alignmentPoints++;
+    if (topSenateNat === topDeputies) alignmentPoints++;
+    if (topSenateReg === topDeputies) alignmentPoints++;
+    
+    // Calculate fragmentation index
+    const allGroups = [presidentResults, senateNatResults, senateRegResults, deputiesResults]
+      .filter(Boolean) as CategoryResults[];
+    
+    const partyVotes = new Map<string, number>();
+    let totalVotes = 0;
+    
+    allGroups.forEach(cat => {
+      cat.results.forEach(r => {
+        const current = partyVotes.get(r.partyName) || 0;
+        partyVotes.set(r.partyName, current + r.votes);
+        totalVotes += r.votes;
+      });
+    });
+    
+    let concentration = 0;
+    if (totalVotes > 0) {
+      partyVotes.forEach(votes => {
+        const share = votes / totalVotes;
+        concentration += share * share;
+      });
+    }
+    
+    const fragmentation = 1 - concentration;
+    
+    // Classify scenario
+    let type: 'high' | 'balanced' | 'fragmented';
+    let label: string;
+    let color: string;
+    let title: string;
+    let description: string;
+    
+    if (alignmentPoints >= 4 && fragmentation < 0.68) {
+      type = 'high';
+      label = '🟢 Alta coordinación';
+      color = '#28A745';
+      title = 'Escenario más coordinado';
+      description = 'Las preferencias en presidente y Congreso siguen una línea similar. Esto puede facilitar la coordinación política y hacer más ágil la implementación de propuestas.';
+    } else if (alignmentPoints <= 1 || fragmentation >= 0.78) {
+      type = 'fragmented';
+      label = '🔴 Fragmentado';
+      color = '#DC3545';
+      title = 'Escenario fragmentado';
+      description = 'Las preferencias están muy dispersas entre varias fuerzas. Cuando el poder se reparte demasiado, alcanzar acuerdos puede ser más complejo y los cambios pueden avanzar más lentamente.';
+    } else {
+      type = 'balanced';
+      label = '🟡 Equilibrado';
+      color = '#FFC107';
+      title = 'Escenario equilibrado';
+      description = 'Las decisiones están distribuidas entre distintas opciones. Esto puede generar mayor debate y control, aunque también puede requerir más acuerdos para avanzar.';
+    }
+    
+    return { type, label, color, title, description, alignmentPoints, fragmentation };
+  }
+  
+  // Analyze global scenario based on display results
+  let globalScenario = $derived(analyzeGlobalScenario());
+  
   // Go back to voting
   function goBack() {
     goto('/simular');
@@ -985,6 +1082,9 @@
     <div class="projection-banner" in:fade={{ duration: 300 }}>
       Viendo proyección: {projectionMultiplier} personas votarían igual que tú
     </div>
+    <p class="projection-explanation" in:fade={{ duration: 300, delay: 100 }}>
+      Este escenario muestra cómo cambiarían los resultados si más personas tomaran decisiones similares en toda la cédula.
+    </p>
   {/if}
 
   <!-- Presidential Results - Featured -->
@@ -1192,6 +1292,35 @@
     </section>
   {/each}
 
+  <!-- Global Scenario Interpretation -->
+  {#if globalScenario}
+    <section class="global-interpretation" in:fly={{ y: 30, duration: 600, delay: 700 }}>
+      <h2 class="interpretation-main-title">🧠 ¿Qué significa este resultado?</h2>
+      
+      <p class="interpretation-main-text">
+        Esta simulación no solo muestra quién tiene más votos, sino cómo se distribuye el poder entre presidente, Congreso y representación parlamentaria. La combinación entre estas decisiones puede dar lugar a un escenario más coordinado o más fragmentado.
+      </p>
+      
+      <!-- Scenario Classification -->
+      <div class="scenario-classification" style="border-color: {globalScenario.color};">
+        <div class="scenario-badge" style="background: {globalScenario.color};">
+          {globalScenario.label}
+        </div>
+        <h3 class="scenario-title">{globalScenario.title}</h3>
+        <p class="scenario-description">{globalScenario.description}</p>
+      </div>
+      
+      <!-- Congress Note -->
+      <div class="congress-note">
+        <div class="note-icon">📌</div>
+        <div class="note-content">
+          <strong>El Congreso también se define en esta etapa</strong>
+          <p>A diferencia de la elección presidencial, que puede tener una segunda vuelta, la composición del Congreso se decide ahora. Por eso, las decisiones en senadores y diputados tienen un impacto directo en el resultado final.</p>
+        </div>
+      </div>
+    </section>
+  {/if}
+
   <!-- Share Modal -->
   {#if showShareModal}
     <ShareResults results={shareData} onClose={() => showShareModal = false} />
@@ -1200,8 +1329,8 @@
   <!-- New Simulation Card -->
   <div class="simulation-card" in:fly={{ y: 30, duration: 600, delay: 800 }}>
     <div class="card-icon">🔄</div>
-    <h2 class="card-title">¿Quieres probar otra combinación?</h2>
-    <p class="card-text">Empieza una nueva simulación desde cero y compara cómo cambian los resultados.</p>
+    <h2 class="card-title">Probar otra combinación</h2>
+    <p class="card-text">Mira cómo cambian los resultados según tus decisiones en toda la cédula.</p>
     
     <button 
       class="new-simulation-btn" 
@@ -1212,7 +1341,7 @@
       {#if restarting}
         Preparando nueva simulación...
       {:else}
-        🔄 Nueva simulación
+        🔄 Probar otra combinación
       {/if}
     </button>
     
@@ -1273,11 +1402,33 @@
             </button>
           {/each}
         </div>
+        <p class="projection-explainer">
+          Prueba distintas combinaciones para entender cómo cambian los resultados cuando más personas votan de forma similar.
+        </p>
       </div>
       
       <p class="projection-note">Esto es una proyección y no modifica los resultados reales del día.</p>
     </div>
   {/if}
+  
+  <!-- Educational Footer Blocks -->
+  <div class="educational-footer" in:fly={{ y: 30, duration: 600, delay: 1000 }}>
+    <div class="footer-block">
+      <div class="footer-icon">📌</div>
+      <div class="footer-content">
+        <h3 class="footer-title">Todas las columnas importan</h3>
+        <p class="footer-text">El voto no termina en la elección presidencial. Las decisiones en senadores y diputados también influyen en cómo se gobierna y en qué tan fácil es implementar cambios.</p>
+      </div>
+    </div>
+    
+    <div class="footer-block">
+      <div class="footer-icon">📌</div>
+      <div class="footer-content">
+        <h3 class="footer-title">Este resultado se construye con todas tus decisiones</h3>
+        <p class="footer-text">En esta simulación no solo elegiste presidente. También tomaste decisiones en las demás columnas de la cédula. Esa combinación es la que define cómo se distribuye el poder en este escenario.</p>
+      </div>
+    </div>
+  </div>
 </div>
 
 <style>
@@ -3029,6 +3180,196 @@
     .educational-tip {
       flex-direction: column;
       text-align: center;
+    }
+  }
+
+  /* Global Interpretation Section */
+  .global-interpretation {
+    max-width: 760px;
+    margin: 32px auto;
+    padding: 24px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  }
+
+  .interpretation-main-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0 0 16px 0;
+    text-align: center;
+  }
+
+  .interpretation-main-text {
+    font-size: 1.05rem;
+    line-height: 1.6;
+    color: #444;
+    text-align: center;
+    margin: 0 0 24px 0;
+  }
+
+  .scenario-classification {
+    border: 2px solid;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+    text-align: center;
+  }
+
+  .scenario-badge {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 12px;
+  }
+
+  .scenario-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0 0 12px 0;
+  }
+
+  .scenario-description {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #555;
+    margin: 0;
+  }
+
+  .congress-note {
+    background: linear-gradient(135deg, #e8f4fd 0%, #d4ebfa 100%);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .note-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
+
+  .note-content strong {
+    display: block;
+    font-size: 1.05rem;
+    color: #1565c0;
+    margin-bottom: 8px;
+  }
+
+  .note-content p {
+    font-size: 0.95rem;
+    color: #444;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  /* Educational Footer */
+  .educational-footer {
+    max-width: 760px;
+    margin: 40px auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .footer-block {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .footer-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
+
+  .footer-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0 0 8px 0;
+  }
+
+  .footer-text {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #555;
+    margin: 0;
+  }
+
+  /* Projection Explainer */
+  .projection-explainer {
+    font-size: 13px;
+    color: #666;
+    margin: 12px 0 0 0;
+    font-style: italic;
+    line-height: 1.5;
+  }
+
+  .projection-explanation {
+    max-width: 760px;
+    margin: 12px auto 24px;
+    padding: 0 20px;
+    font-size: 0.95rem;
+    color: #555;
+    text-align: center;
+    font-style: italic;
+  }
+
+  @media (max-width: 768px) {
+    .global-interpretation {
+      padding: 20px;
+      margin: 24px 16px;
+    }
+
+    .interpretation-main-title {
+      font-size: 1.3rem;
+    }
+
+    .interpretation-main-text {
+      font-size: 0.95rem;
+    }
+
+    .scenario-title {
+      font-size: 1.1rem;
+    }
+
+    .congress-note {
+      flex-direction: column;
+      text-align: center;
+    }
+
+    .educational-footer {
+      margin: 32px 16px;
+    }
+
+    .footer-block {
+      flex-direction: column;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .footer-title {
+      font-size: 1.05rem;
+    }
+
+    .footer-text {
+      font-size: 0.9rem;
+    }
+
+    .projection-explanation {
+      padding: 0 16px;
+      font-size: 0.9rem;
     }
   }
 </style>

@@ -106,8 +106,8 @@
 
       <!-- Video Demo Section -->
       <div class="video-section" in:fade={{ duration: 400, delay: 800 }}>
-        <div class="video-title">Mira cómo votar en menos de 30 segundos</div>
-        <div class="video-subtitle">Aprende a recorrer la cédula y marcar correctamente antes del día de la elección</div>
+        <div class="video-title">Mira cómo usar la cédula en menos de 30 segundos</div>
+        <div class="video-subtitle">Aprende a recorrerla, marcar correctamente y practicar antes del día de la elección.</div>
         <div class="video-frame">
           <video 
             class="video-player" 
@@ -121,33 +121,39 @@
         </div>
       </div>
 
-      <!-- Educational Block 1 -->
+      <!-- Educational Block 1 - Primera Vuelta -->
       <div class="educational-block" in:fade={{ duration: 400, delay: 1000 }}>
-        <h2 class="block-title">Tu voto no es solo presidencial</h2>
-        <p class="block-text">En la cédula también eliges senadores y diputados. Esas decisiones influyen en qué tan fácil o difícil será gobernar después.</p>
+        <h2 class="block-title">Esta es la única vuelta donde eliges todo</h2>
+        <p class="block-text">En esta primera vuelta no solo votas por presidente. También eliges senadores, diputados y representantes al Parlamento Andino. Estas decisiones se toman ahora y definen cómo se verá el Congreso en los próximos años.</p>
       </div>
 
-      <!-- Educational Block 2 - Conciencia -->
+      <!-- Educational Block 2 - No es solo presidencial -->
       <div class="educational-block" in:fade={{ duration: 400, delay: 1200 }}>
-        <h2 class="block-title">Muchos quieren cambios. Ese día es cuando realmente se deciden.</h2>
-        <p class="block-text">No basta con elegir presidente. Las decisiones en el Congreso también determinan si esos cambios pueden avanzar o se quedan bloqueados.</p>
+        <h2 class="block-title">Tu voto no es solo presidencial</h2>
+        <p class="block-text">En la cédula también eliges quiénes tendrán poder en el Congreso. Esas decisiones influyen en qué tan fácil o difícil será gobernar después.</p>
       </div>
 
-      <!-- Educational Block 3 - Anti Error -->
+      <!-- Educational Block 3 - Evitar errores -->
       <div class="educational-block" in:fade={{ duration: 400, delay: 1400 }}>
         <h2 class="block-title">Votar bien también importa</h2>
-        <p class="block-text">Un error al marcar la cédula puede hacer que tu voto sea nulo o viciado. Practicar antes te ayuda a evitarlo.</p>
+        <p class="block-text">Un error al marcar la cédula puede hacer que tu voto sea nulo o viciado. Practicar antes te ayuda a entender las opciones y evitar equivocaciones.</p>
+      </div>
+
+      <!-- Educational Block 4 - Decisiones múltiples -->
+      <div class="educational-block" in:fade={{ duration: 400, delay: 1600 }}>
+        <h2 class="block-title">La cédula tiene varias decisiones</h2>
+        <p class="block-text">Puedes votar en distintas columnas y, en algunos casos, usar voto preferencial. Practicar antes te ayuda a llegar con más claridad el día de la elección.</p>
       </div>
 
       <!-- Secondary CTA -->
-      <div class="cta-wrapper secondary" in:fly={{ y: 20, duration: 400, delay: 1600 }}>
+      <div class="cta-wrapper secondary" in:fly={{ y: 20, duration: 400, delay: 1800 }}>
         <button class="cta-btn cta-secondary" onclick={goToSimulation}>
           Practicar ahora
         </button>
       </div>
 
       <!-- Trust Bar -->
-      <div class="trust-bar" in:fade={{ duration: 400, delay: 1800 }}>
+      <div class="trust-bar" in:fade={{ duration: 400, delay: 2000 }}>
         <span class="trust-item">
           <span class="trust-icon">✓</span>
           36 partidos reales
