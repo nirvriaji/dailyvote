@@ -7,10 +7,14 @@
   import { BALLOT_COLUMNS } from '$lib/data/mock';
   import ParliamentHemicycle from '$lib/components/ParliamentHemicycle.svelte';
   import ShareResults from '$lib/components/ShareResults.svelte';
+  import HelpPanel from '$lib/components/HelpPanel.svelte';
   import { getGlobalResultsWithPercentages, getGlobalStats, subscribeToGlobalStats } from '$lib/firebase/stats';
   import { initializeFirebase, isFirebaseReady, getVotingStatus, ELECTION_DAY_TARGET, getCountdownToElection, formatCountdown, canStillSimulate } from '$lib/firebase';
   import type { GlobalStats } from '$lib/firebase/config';
   import type { Unsubscribe } from 'firebase/firestore';
+  
+  // State for help panel
+  let showHelpPanel = $state(false);
   
   // Get party data from BALLOT_COLUMNS
   const presidentialRows = BALLOT_COLUMNS[0].rows.filter(r => r.partyName);
@@ -1018,29 +1022,17 @@
         </div>
         <p class="subtitle">Elecciones Generales Perú 2026</p>
         
-        <!-- Contact Badges -->
-        <div class="contact-badges-results">
-          <a 
-            href="https://x.com/nirvriaji" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            class="contact-pill-results"
-            title="Sugerencias en X"
-          >
-            <span class="contact-icon-results">𝕏</span>
-            <span class="contact-text-results">Feedback</span>
-          </a>
-          <a 
-            href="https://www.linkedin.com/in/irvin-pereyra/" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            class="contact-pill-results"
-            title="LinkedIn"
-          >
-            <span class="contact-icon-results">in</span>
-            <span class="contact-text-results">Contacto</span>
-          </a>
-        </div>
+        <!-- Help Button -->
+        <button 
+          class="help-button-results"
+          onclick={() => showHelpPanel = true}
+          aria-label="Ayuda y contacto"
+        >
+          <svg class="help-icon-results" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+          </svg>
+          <span class="help-text-results">Ayuda y contacto</span>
+        </button>
       </div>
       
       <!-- Right Card (Activity) -->
@@ -1100,6 +1092,9 @@
       </div>
     {/if}
   </header>
+
+  <!-- Help Panel -->
+  <HelpPanel isOpen={showHelpPanel} onClose={() => showHelpPanel = false} />
 
   <!-- Projection Banner (when viewing projection) -->
   {#if projectionMultiplier > 1}
@@ -1563,39 +1558,33 @@
     margin: 8px 0 0 0;
   }
 
-  /* Contact Badges in Results Header */
-  .contact-badges-results {
-    display: flex;
-    gap: 10px;
-    margin-top: 16px;
-    flex-wrap: wrap;
-  }
-
-  .contact-pill-results {
+  /* Help Button in Results Header */
+  .help-button-results {
+    height: 40px;
+    padding: 0 14px;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
+    gap: 8px;
+    border-radius: 999px;
     background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 50px;
-    font-size: 12px;
-    font-weight: 500;
-    color: rgba(255, 255, 255, 0.85);
-    text-decoration: none;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: rgba(255, 255, 255, 0.92);
     backdrop-filter: blur(8px);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
     transition: all 0.2s ease;
+    margin-top: 16px;
   }
 
-  .contact-pill-results:hover {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.3);
+  .help-button-results:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.22);
     transform: translateY(-1px);
   }
 
-  .contact-icon-results {
-    font-size: 14px;
-    font-weight: 700;
+  .help-icon-results {
+    flex-shrink: 0;
   }
 
   /* Live Stats Widget - Glassmorphism Card */
@@ -2792,8 +2781,7 @@
       justify-content: center;
     }
 
-    .contact-badges-results {
-      justify-content: center;
+    .help-button-results {
       margin-top: 12px;
     }
     
@@ -2920,15 +2908,13 @@
       max-width: 100%;
     }
 
-    .contact-badges-results {
-      gap: 8px;
+    .help-button-results {
+      height: 36px;
+      padding: 0 12px;
+      font-size: 13px;
     }
 
-    .contact-pill-results {
-      padding: 5px 10px;
-    }
-
-    .contact-text-results {
+    .help-text-results {
       display: none;
     }
     

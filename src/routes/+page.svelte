@@ -3,11 +3,13 @@
   import { fly, fade } from 'svelte/transition';
   import { goto } from '$app/navigation';
   import { ELECTION_DAY_TARGET } from '$lib/firebase';
+  import HelpPanel from '$lib/components/HelpPanel.svelte';
   
   // Animation state
   let isLoaded = $state(false);
   let countdownData = $state({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   let countdownInterval: ReturnType<typeof setInterval> | null = null;
+  let showHelpPanel = $state(false);
   
   function updateCountdown() {
     const now = new Date();
@@ -53,37 +55,28 @@
   <main class="landing">
     <!-- Content -->
     <div class="landing-inner" in:fly={{ y: 30, duration: 600 }}>
-      <!-- Top Row: Badge + Contact -->
+      <!-- Top Row: Badge + Help -->
       <div class="top-row" in:fade={{ duration: 400, delay: 200 }}>
         <!-- Top Pill -->
         <div class="pill-wrapper">
           <span class="top-pill">PE · ELECCIONES GENERALES 2026</span>
         </div>
         
-        <!-- Contact Badges -->
-        <div class="contact-badges">
-          <a 
-            href="https://x.com/nirvriaji" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            class="contact-pill"
-            title="Sugerencias en X"
-          >
-            <span class="contact-icon">𝕏</span>
-            <span class="contact-text">Feedback</span>
-          </a>
-          <a 
-            href="https://www.linkedin.com/in/irvin-pereyra/" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            class="contact-pill"
-            title="LinkedIn"
-          >
-            <span class="contact-icon">in</span>
-            <span class="contact-text">Contacto</span>
-          </a>
-        </div>
+        <!-- Help Button -->
+        <button 
+          class="help-button"
+          onclick={() => showHelpPanel = true}
+          aria-label="Ayuda y contacto"
+        >
+          <svg class="help-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+          </svg>
+          <span class="help-text">Ayuda y contacto</span>
+        </button>
       </div>
+
+      <!-- Help Panel -->
+      <HelpPanel isOpen={showHelpPanel} onClose={() => showHelpPanel = false} />
 
       <!-- Headline -->
       <h1 class="headline" in:fly={{ y: 20, duration: 500, delay: 300 }}>
@@ -255,7 +248,7 @@
     backdrop-filter: blur(8px);
   }
 
-  /* Top Row - Badge + Contact */
+  /* Top Row - Badge + Help */
   .top-row {
     display: flex;
     flex-direction: column;
@@ -265,38 +258,32 @@
     margin-bottom: 8px;
   }
 
-  /* Contact Badges */
-  .contact-badges {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-  }
-
-  .contact-pill {
+  /* Help Button */
+  .help-button {
+    height: 40px;
+    padding: 0 14px;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 50px;
-    font-size: 12px;
-    font-weight: 500;
-    color: rgba(255, 255, 255, 0.9);
-    text-decoration: none;
+    gap: 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: rgba(255, 255, 255, 0.92);
     backdrop-filter: blur(8px);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
     transition: all 0.2s ease;
   }
 
-  .contact-pill:hover {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.4);
+  .help-button:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.22);
     transform: translateY(-1px);
   }
 
-  .contact-icon {
-    font-size: 14px;
-    font-weight: 700;
+  .help-icon {
+    flex-shrink: 0;
   }
 
   /* Desktop: Horizontal layout */
@@ -306,25 +293,33 @@
       justify-content: space-between;
       align-items: flex-start;
     }
+  }
 
-    .contact-badges {
-      margin-top: 0;
+  /* Mobile: Compact version */
+  @media (max-width: 768px) {
+    .help-button {
+      height: 36px;
+      padding: 0 12px;
+      font-size: 13px;
+    }
+
+    .help-text {
+      display: none; /* Show only icon + "Ayuda" on mobile */
+    }
+
+    .help-text::before {
+      content: 'Ayuda';
+      display: inline;
     }
   }
 
-  /* Mobile: Stack vertically */
-  @media (max-width: 768px) {
-    .contact-badges {
-      gap: 8px;
+  @media (max-width: 480px) {
+    .help-button {
+      padding: 0 10px;
     }
 
-    .contact-pill {
-      padding: 5px 10px;
-      font-size: 11px;
-    }
-
-    .contact-text {
-      display: none; /* Hide text on mobile, show only icon */
+    .help-text {
+      font-size: 12px;
     }
   }
 
