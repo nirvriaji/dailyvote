@@ -104,9 +104,10 @@
     border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
     
-    /* Desktop: positioned top-right near header */
+    /* Desktop: centered horizontally near top */
     top: 80px;
-    right: 20px;
+    left: 50%;
+    transform: translateX(-50%);
   }
 
   .help-panel.mobile {
