@@ -3,6 +3,7 @@
   import { fade } from 'svelte/transition';
   import { goto } from '$app/navigation';
   import { BALLOT_COLUMNS } from '$lib/data/mock';
+  import { DEMO_BALLOT_COLUMNS } from '$lib/data/demoData';
   import { vote } from '$lib/stores/vote.svelte';
   import { ui } from '$lib/stores/ui.svelte';
   import { initializeFirebase, isFirebaseReady, canStillSimulate, ELECTION_DAY_TARGET } from '$lib/firebase';
@@ -18,6 +19,9 @@
   
   // ─── Demo Mode ───────────────────────────────────────────────────────────────
   let isDemoMode = $state(false);
+  
+  // ─── Ballot Columns (real or demo) ──────────────────────────────────────────
+  let ballotColumns = $derived(isDemoMode ? DEMO_BALLOT_COLUMNS : BALLOT_COLUMNS);
   
   // ─── Inline Help Banner ──────────────────────────────────────────────────────
   let showInlineHint = $state(false);
@@ -236,7 +240,7 @@
     ontouchstart={markUserInteraction}
     onscroll={markUserInteraction}
   >
-    <BallotStage columns={BALLOT_COLUMNS} bind:scroller={ballotScroller} />
+    <BallotStage columns={ballotColumns} bind:scroller={ballotScroller} />
   </div>
 
   <VoteOverlay />

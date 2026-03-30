@@ -592,6 +592,10 @@ async function phase3_Progressive() {
         await wait(200);
         await performTap(simboloBelow);
         await wait(200);
+        
+        // Reveal: show marked symbol
+        await revealResult(simboloBelow, 'right', 50);
+        await wait(1000);
       }
     }
   }

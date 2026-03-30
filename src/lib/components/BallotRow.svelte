@@ -42,6 +42,16 @@
   let hasOtherPresidentRow = $derived(row.isPresidential ? hasOtherPresidentRowSelected(row.id) : false);
   let hasOtherRowSelected = $derived(hasOtherLegislativeRowSelected || hasOtherPresidentRow);
 
+  // Helper to check if a string is an emoji (simplified)
+  function isEmoji(str: string): boolean {
+    if (!str) return false;
+    // If it's a URL (contains http or /), it's not an emoji
+    if (str.includes('http') || str.includes('/')) return false;
+    // If it's longer than 5 chars, probably not a single emoji
+    if (str.length > 5) return false;
+    return true;
+  }
+
   // Toggle selección de símbolo (para columnas legislativas)
   function handleSymbolClick() {
     if (!columnKey) return;
@@ -164,7 +174,9 @@
         tabindex="0" 
         onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && handlePresidentSymbolClick()}
       >
-        {#if row.partySymbolUrl}
+        {#if row.partySymbol}
+          <span class="party-symbol-emoji">{row.partySymbol}</span>
+        {:else if row.partySymbolUrl}
           <img src={row.partySymbolUrl} alt="Logo {row.partyAbbr}" />
         {:else}
           <span class="image-placeholder">{row.partyAbbr}</span>
@@ -186,7 +198,9 @@
         tabindex="0" 
         onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && handleSymbolClick()}
       >
-        {#if row.partySymbolUrl}
+        {#if row.partySymbol}
+          <span class="party-symbol-emoji">{row.partySymbol}</span>
+        {:else if row.partySymbolUrl}
           <img src={row.partySymbolUrl} alt="Logo {row.partyAbbr}" />
         {:else}
           <span class="image-placeholder">{row.partyAbbr}</span>
@@ -213,7 +227,11 @@
           tabindex="0" 
           onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && handlePresidentPhotoClick()}
         >
-          <img src={row.presidentialPhoto} alt={row.candidates[0]?.name || 'Candidato'} />
+          {#if isEmoji(row.presidentialPhoto)}
+            <span class="candidate-photo-emoji">{row.presidentialPhoto}</span>
+          {:else}
+            <img src={row.presidentialPhoto} alt={row.candidates[0]?.name || 'Candidato'} />
+          {/if}
           <!-- X mark when photo selected -->
           {#if isPresidentPhotoMarked}
             <div class="vote-x-overlay" aria-label="Foto seleccionada">
@@ -528,5 +546,22 @@
     flex: 1;
     height: 100%;
     grid-column: 1 / -1;
+  }
+
+  /* ─── Emoji Styles for Demo Mode ───────────────────────────────────────────── */
+  .party-symbol-emoji {
+    font-size: 28px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .candidate-photo-emoji {
+    font-size: 32px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 </style>

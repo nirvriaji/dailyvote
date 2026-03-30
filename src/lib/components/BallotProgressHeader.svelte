@@ -77,10 +77,10 @@
     left: 0;
     right: 0;
     z-index: 1000;
-    background: var(--paper-white);
-    border-bottom: 1px solid var(--grid-border);
+    background: #0f172a;
+    border-bottom: 1px solid #1e293b;
     padding: 12px 16px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
   }
 
   .progress-content {
@@ -103,7 +103,7 @@
     font-family: 'Roboto Condensed', 'Inter', sans-serif;
     font-size: 14px;
     font-weight: 700;
-    color: var(--text-primary);
+    color: #e2e8f0;
     margin: 0;
     line-height: 1.3;
     text-transform: uppercase;
@@ -113,7 +113,7 @@
   .progress-subtitle {
     font-family: 'Roboto Condensed', 'Inter', sans-serif;
     font-size: 12px;
-    color: var(--text-muted);
+    color: #94a3b8;
     margin: 0;
     line-height: 1.3;
   }
@@ -122,7 +122,7 @@
     font-family: 'Roboto Condensed', 'Inter', sans-serif;
     font-size: 12px;
     font-weight: 600;
-    color: var(--text-secondary);
+    color: #cbd5e1;
     margin-top: 2px;
   }
 
