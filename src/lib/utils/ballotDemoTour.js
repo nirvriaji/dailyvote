@@ -483,47 +483,31 @@ async function phase2_CoreInteraction() {
     await performTap(fotoDV);
     await wait(200);
     
-    // Reveal: show both X's (symbol + photo)
-    await revealResult(fotoDV, 'right', 60);
-    await wait(1500); // "Both symbol and photo marked"
+    // Done - no reveal, proceed directly to another row
   }
   
-  // ===== STEP 2: Scroll to row 3 and tap photo to show party change =====
-  console.log('👉 Step 2: Move to another party, tap photo');
+  // ===== STEP 2: Just mark photo in another row, then proceed to column 2 =====
+  console.log('👉 Step 2: Mark photo in another party, then proceed');
   if (row3) {
     const foto3 = row3.querySelector('[data-demo^="foto-"]') || 
                   row3.querySelector('.is-photo');
     
     if (foto3) {
       await ensureVisible(foto3);
+      
+      // Direct to photo - tap only
       await moveFingerTo(foto3, demoConfig.fingerMoveSpeed);
-      await wait(300);
+      await wait(200);
       await performTap(foto3);
       await wait(200);
       
-      // Reveal: show X on photo row 3
-      await revealResult(foto3, 'right', 50);
-      await wait(1000); // "Photo of different party marked"
-      
-      // ===== STEP 3: Move to symbol row 3 (reveals Demócrata Verde is unmarked) =====
-      console.log('👉 Step 3: Reveal - Demócrata Verde automatically unmarked');
-      const simbolo3 = row3.querySelector('[data-demo^="simbolo-"]') || 
-                       row3.querySelector('.image-frame');
-      
-      if (simbolo3) {
-        await moveFingerTo(simbolo3, demoConfig.fingerMoveSpeed);
-        await wait(300);
-        await performTap(simbolo3);
-        await wait(200);
-        
-        // Move aside to reveal: row 3 has both marks, Demócrata Verde is clean
-        await revealResult(simbolo3, 'left', 60);
-        await wait(1500); // "Changed party, Demócrata Verde automatically unmarked"
-      }
+      // That's it - no reveal, no symbol tap
+      // DV row auto-unmarked, this row has photo marked
+      // Proceed directly to column 2
     }
   }
   
-  // Hide finger before transitioning
+  // Hide finger before transitioning to column 2
   await hideFinger();
 }
 
@@ -557,11 +541,7 @@ async function phase3_Progressive() {
     await performTap(simbolo);
     await wait(300);
     
-    // Reveal: move finger aside to show selected row
-    await revealResult(simbolo, 'right', 50);
-    await wait(800);
-    
-    // ===== SLOT 1: Select "12" =====
+    // Direct to slot 1 - no reveal
     // Find the actual button inside the slot container
     const slot1Button = slot1.querySelector('.ballot-slot') || slot1;
     
