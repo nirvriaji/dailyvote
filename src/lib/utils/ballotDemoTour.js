@@ -68,11 +68,11 @@ function createDemoFinger() {
     top: -100px;
     width: 60px;
     height: 60px;
-    background: rgba(0, 102, 255, 0.95);
+    background: rgba(255, 105, 180, 0.95);
     border: 3px solid white;
     border-radius: 50%;
     box-shadow: 
-      0 4px 20px rgba(0, 102, 255, 0.4),
+      0 4px 20px rgba(255, 105, 180, 0.4),
       0 8px 30px rgba(0, 0, 0, 0.2),
       inset 0 -2px 4px rgba(0, 0, 0, 0.1);
     pointer-events: none;
@@ -94,7 +94,7 @@ function createDemoFinger() {
     left: -10px;
     right: -10px;
     bottom: -10px;
-    border: 2px solid rgba(0, 102, 255, 0.3);
+    border: 2px solid rgba(255, 105, 180, 0.3);
     border-radius: 50%;
     opacity: 0;
   `;
@@ -170,7 +170,7 @@ async function performTap(targetElement) {
   
   // Press down
   element.style.transform = 'translate(-50%, -50%) scale(0.85)';
-  element.style.background = 'rgba(0, 82, 204, 0.95)';
+  element.style.background = 'rgba(220, 20, 140, 0.95)';
   await wait(150);
   
   // Trigger actual click
@@ -190,7 +190,7 @@ async function performTap(targetElement) {
   // Release
   await wait(150);
   element.style.transform = 'translate(-50%, -50%) scale(1.1)';
-  element.style.background = 'rgba(0, 102, 255, 0.95)';
+  element.style.background = 'rgba(255, 105, 180, 0.95)';
   await wait(100);
   element.style.transform = 'translate(-50%, -50%) scale(1)';
   await wait(100);
