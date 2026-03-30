@@ -33,7 +33,11 @@
     if (!ballotScroller) return;
 
     const x = (ballotScroller.scrollWidth - ballotScroller.clientWidth) / 2;
-    const y = (ballotScroller.scrollHeight - ballotScroller.clientHeight) / 2 + 200;
+    
+    // Desktop: center vertically with offset
+    // Mobile: stay at top to keep headers visible (don't scroll down)
+    const isMobile = window.innerWidth <= 768;
+    const y = isMobile ? 0 : (ballotScroller.scrollHeight - ballotScroller.clientHeight) / 2 + 200;
 
     ballotScroller.scrollTo({
       left: x,
@@ -125,10 +129,14 @@
     if (canSimulate) {
       showInlineHint = true;
       
+      // Mobile users need more time to read and explore
+      const isMobile = window.innerWidth <= 768;
+      const hintDuration = isMobile ? 9000 : 6000; // 9s mobile, 6s desktop
+      
       autoHideHintTimeout = window.setTimeout(() => {
         showInlineHint = false;
         hintDismissedThisVisit = true;
-      }, 6000);
+      }, hintDuration);
       
       initialHintTimeout = window.setTimeout(() => {
         hintPan2D();
@@ -222,7 +230,7 @@
     top: 78px;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 100;
+    z-index: 1100;
     padding: 0 16px;
     pointer-events: none;
     max-width: 800px;
@@ -293,7 +301,8 @@
   
   @media (max-width: 768px) {
     .inline-hint-banner {
-      top: 110px;
+      top: 140px;
+      z-index: 1100;
       padding: 0 12px;
       width: calc(100% - 24px);
     }
@@ -315,7 +324,7 @@
     }
     
     .ballot-sheet {
-      inset: 110px 0 0 0;
+      inset: 140px 0 0 0;
     }
   }
   

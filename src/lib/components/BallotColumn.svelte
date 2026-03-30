@@ -119,10 +119,10 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: center;
     text-align: center;
-    min-height: 64px;
-    padding: 6px 6px;
+    min-height: 48px;
+    padding: 0 6px 6px 6px;
     background: #FFFFFF;
     border-bottom: 1px solid #BDBDBD;
     flex-shrink: 0;

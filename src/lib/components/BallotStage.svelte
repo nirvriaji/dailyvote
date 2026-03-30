@@ -84,9 +84,23 @@
   /* ─── Spacers ─────────────────────────────────────────────────────────────────── */
   .spacer-top,
   .spacer-bottom {
-    height: 24px;
+    height: 6px;
     flex-shrink: 0;
     background: var(--paper-offwhite);
+  }
+
+  /* Desktop: more top space for comfortable viewing */
+  @media (min-width: 769px) {
+    .spacer-top {
+      height: 32px;
+    }
+  }
+
+  /* Mobile: extra top space to prevent headers being cut off by fixed header */
+  @media (max-width: 768px) {
+    .spacer-top {
+      height: 60px;
+    }
   }
 
   .spacer-left,
