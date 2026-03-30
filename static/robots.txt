@@ -1,3 +1,14 @@
-# allow crawling everything by default
+# Allow all crawlers
 User-agent: *
-Disallow:
+Allow: /
+Allow: /simular
+Allow: /resultados
+Allow: /historial
+
+# Sitemap location
+Sitemap: https://lafechamasimportante.com/sitemap.xml
+
+# Block access to private directories (if any)
+Disallow: /admin
+Disallow: /api
+Disallow: /private

@@ -148,7 +148,29 @@
 </script>
 
 <svelte:head>
-  <title>Historial de Resultados | DailyVote Perú 2026</title>
+  <!-- Primary Meta Tags -->
+  <title>Historial de Resultados | Simulaciones Diarias | La Fecha Más Importante</title>
+  <meta name="description" content="Consulta el historial de simulaciones electorales Perú 2026. Visualiza cortes diarios acumulados y evolución de resultados." />
+  <meta name="keywords" content="historial resultados, simulaciones diarias, evolución electoral, cortes acumulados" />
+  <meta name="robots" content="index, follow" />
+  
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://lafechamasimportante.com/historial" />
+  
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://lafechamasimportante.com/historial" />
+  <meta property="og:title" content="Historial de Resultados | Simulaciones Diarias" />
+  <meta property="og:description" content="Consulta el historial de simulaciones electorales Perú 2026." />
+  <meta property="og:image" content="https://lafechamasimportante.com/favicon.svg" />
+  <meta property="og:locale" content="es_PE" />
+  
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary" />
+  <meta property="twitter:url" content="https://lafechamasimportante.com/historial" />
+  <meta property="twitter:title" content="Historial de Resultados | Simulaciones Diarias" />
+  <meta property="twitter:description" content="Consulta el historial de simulaciones electorales Perú 2026." />
+  <meta property="twitter:image" content="https://lafechamasimportante.com/favicon.svg" />
 </svelte:head>
 
   <div class="history-page">

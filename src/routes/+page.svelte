@@ -47,8 +47,57 @@
 </script>
 
 <svelte:head>
-  <title>Simulador Electoral Perú 2026 — Aprende a votar</title>
-  <meta name="description" content="Practica tu voto para las Elecciones Generales Perú 2026. Simulador interactivo de la cédula electoral con los 36 partidos políticos." />
+  <!-- Primary Meta Tags -->
+  <title>Simulador Electoral Perú 2026 — Aprende a votar | La Fecha Más Importante</title>
+  <meta name="description" content="Practica tu voto para las Elecciones Generales Perú 2026. Simulador interactivo de la cédula electoral con los partidos políticos. Aprende a votar correctamente por presidente, congreso y parlamento andino. Evita errores que anulan tu voto." />
+  <meta name="keywords" content="simulador voto Perú 2026, cédula electoral, elecciones Perú, cómo votar, practicar voto, voto preferencial, simulador electoral, fecha elecciones 2026" />
+  <meta name="author" content="Irvin Pereyra" />
+  <meta name="robots" content="index, follow" />
+  
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://lafechamasimportante.com/" />
+  
+  <!-- Open Graph / Facebook / LinkedIn -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://lafechamasimportante.com/" />
+  <meta property="og:site_name" content="La Fecha Más Importante" />
+  <meta property="og:title" content="Simulador Electoral Perú 2026 — Aprende a votar" />
+  <meta property="og:description" content="Practica tu voto para las Elecciones Generales Perú 2026. Simulador interactivo de la cédula electoral con los partidos políticos." />
+  <meta property="og:image" content="https://lafechamasimportante.com/favicon.svg" />
+  <meta property="og:image:type" content="image/svg+xml" />
+  <meta property="og:locale" content="es_PE" />
+  
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary" />
+  <meta property="twitter:url" content="https://lafechamasimportante.com/" />
+  <meta property="twitter:title" content="Simulador Electoral Perú 2026 — Aprende a votar" />
+  <meta property="twitter:description" content="Practica tu voto para las Elecciones Generales Perú 2026. Simulador interactivo de la cédula electoral." />
+  <meta property="twitter:image" content="https://lafechamasimportante.com/favicon.svg" />
+  <meta property="twitter:creator" content="@nirvriaji" />
+  
+  <!-- Schema.org JSON-LD -->
+  {@html `<script type="application/ld+json">${JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Simulador Electoral Perú 2026",
+    "description": "Practica tu voto para las Elecciones Generales Perú 2026",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Any",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "PEN"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "Irvin Pereyra",
+      "url": "https://x.com/nirvriaji"
+    },
+    "url": "https://lafechamasimportante.com/",
+    "datePublished": "2025-03-01",
+    "dateModified": "2025-03-30",
+    "inLanguage": "es"
+  })}</script>`}
 </svelte:head>
 
 {#if isLoaded}

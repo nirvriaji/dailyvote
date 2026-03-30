@@ -995,7 +995,42 @@
 </script>
 
 <svelte:head>
-  <title>Resultados Electorales 2026 | Simulación</title>
+  <!-- Primary Meta Tags -->
+  <title>Resultados Electorales 2026 | Simulación de Votación | La Fecha Más Importante</title>
+  <meta name="description" content="Explora los resultados de la simulación electoral Perú 2026. Visualiza escaños, porcentajes y distribución del poder. Análisis de gobernabilidad y escenarios políticos." />
+  <meta name="keywords" content="resultados elecciones Perú 2026, escaños congreso, distribución poder, simulación electoral, análisis político" />
+  <meta name="robots" content="index, follow" />
+  
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://lafechamasimportante.com/resultados" />
+  
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://lafechamasimportante.com/resultados" />
+  <meta property="og:title" content="Resultados Electorales 2026 | Simulación de Votación" />
+  <meta property="og:description" content="Explora los resultados de la simulación electoral Perú 2026. Visualiza escaños y distribución del poder." />
+  <meta property="og:image" content="https://lafechamasimportante.com/favicon.svg" />
+  <meta property="og:locale" content="es_PE" />
+  
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary" />
+  <meta property="twitter:url" content="https://lafechamasimportante.com/resultados" />
+  <meta property="twitter:title" content="Resultados Electorales 2026 | Simulación de Votación" />
+  <meta property="twitter:description" content="Explora los resultados de la simulación electoral Perú 2026." />
+  <meta property="twitter:image" content="https://lafechamasimportante.com/favicon.svg" />
+  
+  <!-- Schema.org -->
+  {@html `<script type="application/ld+json">${JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "ElectionEvent",
+    "name": "Elecciones Generales Perú 2026",
+    "startDate": "2026-04-12",
+    "location": {
+      "@type": "Country",
+      "name": "Perú"
+    },
+    "description": "Simulación de resultados electorales"
+  })}</script>`}
 </svelte:head>
 
 <!-- Confetti Effect -->

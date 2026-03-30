@@ -220,7 +220,29 @@
 </script>
 
 <svelte:head>
-  <title>Simular voto — Cédula Electoral Perú 2026</title>
+  <!-- Primary Meta Tags -->
+  <title>Simular Voto — Cédula Electoral Perú 2026 | Practica tu Voto</title>
+  <meta name="description" content="Simula tu voto con la cédula electoral real de Perú 2026. Practica el voto preferencial, presidencial y congresal. Aprende a marcar correctamente antes del 12 de abril." />
+  <meta name="keywords" content="simular voto, practicar voto, cédula electoral 2026, voto preferencial, simulador voto Perú" />
+  <meta name="robots" content="index, follow" />
+  
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://lafechamasimportante.com/simular" />
+  
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://lafechamasimportante.com/simular" />
+  <meta property="og:title" content="Simular Voto — Cédula Electoral Perú 2026" />
+  <meta property="og:description" content="Simula tu voto con la cédula electoral real de Perú 2026. Practica el voto preferencial, presidencial y congresal." />
+  <meta property="og:image" content="https://lafechamasimportante.com/favicon.svg" />
+  <meta property="og:locale" content="es_PE" />
+  
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary" />
+  <meta property="twitter:url" content="https://lafechamasimportante.com/simular" />
+  <meta property="twitter:title" content="Simular Voto — Cédula Electoral Perú 2026" />
+  <meta property="twitter:description" content="Simula tu voto con la cédula electoral real de Perú 2026." />
+  <meta property="twitter:image" content="https://lafechamasimportante.com/favicon.svg" />
 </svelte:head>
 
 <div class="app-shell">
