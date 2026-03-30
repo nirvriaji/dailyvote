@@ -40,12 +40,33 @@
   function centerBallot() {
     if (!ballotScroller) return;
 
-    const x = (ballotScroller.scrollWidth - ballotScroller.clientWidth) / 2;
-    
-    // Desktop: center vertically but 40px higher (closer to top)
-    // Mobile: stay at top to keep headers visible (don't scroll down)
     const isMobile = window.innerWidth <= 768;
-    const y = isMobile ? 0 : (ballotScroller.scrollHeight - ballotScroller.clientHeight) / 2 - 40;
+    
+    // Calculate horizontal position
+    let x: number;
+    if (isMobile) {
+      // Mobile: Center on 2nd column (Senadores Nacional, col1, index 1)
+      // Each column is 320px with 16px gap
+      const colWidth = 320;
+      const gap = 16;
+      const leftSpacer = 24;
+      // Center of 2nd column = leftSpacer + (colWidth + gap) + colWidth/2
+      const centerOfCol2 = leftSpacer + (colWidth + gap) + (colWidth / 2);
+      x = centerOfCol2 - (ballotScroller.clientWidth / 2);
+    } else {
+      // Desktop: Center horizontally (show middle of all columns)
+      x = (ballotScroller.scrollWidth - ballotScroller.clientWidth) / 2;
+    }
+    
+    // Calculate vertical position
+    let y: number;
+    if (isMobile) {
+      // Mobile: Center vertically to show content in middle of screen
+      y = (ballotScroller.scrollHeight - ballotScroller.clientHeight) / 2;
+    } else {
+      // Desktop: Center vertically but 40px higher (closer to top)
+      y = (ballotScroller.scrollHeight - ballotScroller.clientHeight) / 2 - 40;
+    }
 
     ballotScroller.scrollTo({
       left: x,
