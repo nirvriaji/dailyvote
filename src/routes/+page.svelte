@@ -51,21 +51,6 @@
 
 {#if isLoaded}
   <main class="landing">
-    <!-- Video Background -->
-    <div class="video-container">
-      <video 
-        class="video-bg" 
-        autoplay 
-        muted 
-        loop 
-        playsinline
-        poster="/images/demo-poster.jpg"
-      >
-        <source src="/videos/demo.mp4" type="video/mp4" />
-      </video>
-      <div class="video-overlay"></div>
-    </div>
-    
     <!-- Content -->
     <div class="landing-inner" in:fly={{ y: 30, duration: 600 }}>
       <!-- Top Pill -->
@@ -107,7 +92,7 @@
 
       <!-- Description -->
       <p class="subline" in:fade={{ duration: 400, delay: 500 }}>
-        Explora la cédula electoral real, prueba distintas elecciones y descubre cómo cambiarían los resultados.
+        Explora la cédula electoral real, practica cómo votar correctamente por foto, símbolo o voto preferencial y evita errores que puedan convertir tu voto en nulo o viciado.
       </p>
 
       <!-- Primary CTA -->
@@ -119,8 +104,50 @@
         <span class="cta-note">Gratis · Sin registro · 100% educativo</span>
       </div>
 
+      <!-- Video Demo Section -->
+      <div class="video-section" in:fade={{ duration: 400, delay: 800 }}>
+        <div class="video-title">Mira cómo votar en menos de 30 segundos</div>
+        <div class="video-subtitle">Aprende a recorrer la cédula y marcar correctamente antes del día de la elección</div>
+        <div class="video-frame">
+          <video 
+            class="video-player" 
+            autoplay 
+            muted 
+            loop 
+            playsinline
+          >
+            <source src="/videos/demo.mp4" type="video/mp4" />
+          </video>
+        </div>
+      </div>
+
+      <!-- Educational Block 1 -->
+      <div class="educational-block" in:fade={{ duration: 400, delay: 1000 }}>
+        <h2 class="block-title">Tu voto no es solo presidencial</h2>
+        <p class="block-text">En la cédula también eliges senadores y diputados. Esas decisiones influyen en qué tan fácil o difícil será gobernar después.</p>
+      </div>
+
+      <!-- Educational Block 2 - Conciencia -->
+      <div class="educational-block" in:fade={{ duration: 400, delay: 1200 }}>
+        <h2 class="block-title">Muchos quieren cambios. Ese día es cuando realmente se deciden.</h2>
+        <p class="block-text">No basta con elegir presidente. Las decisiones en el Congreso también determinan si esos cambios pueden avanzar o se quedan bloqueados.</p>
+      </div>
+
+      <!-- Educational Block 3 - Anti Error -->
+      <div class="educational-block" in:fade={{ duration: 400, delay: 1400 }}>
+        <h2 class="block-title">Votar bien también importa</h2>
+        <p class="block-text">Un error al marcar la cédula puede hacer que tu voto sea nulo o viciado. Practicar antes te ayuda a evitarlo.</p>
+      </div>
+
+      <!-- Secondary CTA -->
+      <div class="cta-wrapper secondary" in:fly={{ y: 20, duration: 400, delay: 1600 }}>
+        <button class="cta-btn cta-secondary" onclick={goToSimulation}>
+          Practicar ahora
+        </button>
+      </div>
+
       <!-- Trust Bar -->
-      <div class="trust-bar" in:fade={{ duration: 400, delay: 800 }}>
+      <div class="trust-bar" in:fade={{ duration: 400, delay: 1800 }}>
         <span class="trust-item">
           <span class="trust-icon">✓</span>
           36 partidos reales
@@ -138,15 +165,9 @@
       </div>
 
       <!-- Disclaimer -->
-      <p class="disclaimer" in:fade={{ duration: 400, delay: 1000 }}>
+      <p class="disclaimer" in:fade={{ duration: 400, delay: 2000 }}>
         <strong>Nota:</strong> Este es un simulador educativo. Los resultados son generados por simulaciones acumuladas y no representan resultados oficiales.
       </p>
-
-      <!-- Scroll Indicator -->
-      <div class="scroll-indicator" in:fade={{ duration: 400, delay: 1200 }}>
-        <span class="scroll-text">Ver demo</span>
-        <span class="scroll-arrow">↓</span>
-      </div>
     </div>
   </main>
 {/if}
@@ -154,53 +175,27 @@
 <style>
   .landing {
     min-height: 100dvh;
-    position: relative;
+    background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
-    overflow: hidden;
-  }
-
-  /* Video Background */
-  .video-container {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-  }
-
-  .video-bg {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: center;
-  }
-
-  .video-overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(15, 23, 42, 0.75);
-    z-index: 1;
+    padding: 20px 16px;
   }
 
   /* Content */
   .landing-inner {
-    position: relative;
-    z-index: 2;
-    max-width: 800px;
+    max-width: 600px;
     width: 100%;
     text-align: center;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 40px 24px;
-    min-height: 100dvh;
-    justify-content: center;
+    gap: 28px;
   }
 
   /* Top Pill */
   .pill-wrapper {
-    margin-bottom: 24px;
+    margin-bottom: 8px;
   }
 
   .top-pill {
@@ -223,7 +218,7 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
-    margin-bottom: 24px;
+    margin-bottom: 8px;
   }
 
   .headline-line1 {
@@ -246,7 +241,7 @@
 
   /* Countdown - Apple Style */
   .countdown-wrapper {
-    margin-bottom: 24px;
+    margin-bottom: 8px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -308,7 +303,6 @@
     font-size: clamp(16px, 2.5vw, 20px);
     color: rgba(255, 255, 255, 0.85);
     line-height: 1.6;
-    margin-bottom: 32px;
     max-width: 550px;
   }
 
@@ -318,7 +312,10 @@
     flex-direction: column;
     align-items: center;
     gap: 12px;
-    margin-bottom: 32px;
+  }
+
+  .cta-wrapper.secondary {
+    margin-top: 12px;
   }
 
   .cta-btn {
@@ -349,6 +346,17 @@
     transform: translateY(-1px) scale(0.98);
   }
 
+  .cta-btn.cta-secondary {
+    background: transparent;
+    border: 2px solid #C8102E;
+    box-shadow: none;
+  }
+
+  .cta-btn.cta-secondary:hover {
+    background: #C8102E;
+    box-shadow: 0 8px 30px rgba(200, 16, 46, 0.3);
+  }
+
   .cta-icon {
     font-size: 26px;
   }
@@ -360,6 +368,91 @@
     letter-spacing: 0.3px;
   }
 
+  /* Video Section - Phone Mockup */
+  .video-section {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .video-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: white;
+    line-height: 1.4;
+  }
+
+  .video-subtitle {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.5;
+    max-width: 360px;
+  }
+
+  .video-frame {
+    position: relative;
+    background: #1a1a1a;
+    border-radius: 24px;
+    padding: 8px;
+    box-shadow: 
+      0 0 0 2px #333,
+      0 20px 60px rgba(0, 0, 0, 0.6),
+      inset 0 2px 4px rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+    width: 100%;
+    max-width: 320px;
+  }
+
+  .video-frame::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 20px;
+    background: #1a1a1a;
+    border-radius: 0 0 12px 12px;
+    z-index: 10;
+  }
+
+  .video-player {
+    width: 100%;
+    height: auto;
+    max-height: 500px;
+    border-radius: 16px;
+    display: block;
+    background: #000;
+  }
+
+  /* Educational Blocks */
+  .educational-block {
+    max-width: 520px;
+    text-align: center;
+    padding: 24px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .block-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: white;
+    margin: 0 0 12px 0;
+    line-height: 1.4;
+  }
+
+  .block-text {
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.75);
+    line-height: 1.6;
+    margin: 0;
+  }
+
   /* Trust Bar - Minimal */
   .trust-bar {
     display: flex;
@@ -367,7 +460,6 @@
     justify-content: center;
     gap: 16px;
     flex-wrap: wrap;
-    margin-bottom: 32px;
     padding: 12px 24px;
     background: rgba(0, 0, 0, 0.3);
     border-radius: 50px;
@@ -415,46 +507,18 @@
     color: rgba(255, 255, 255, 0.7);
   }
 
-  /* Scroll Indicator */
-  .scroll-indicator {
-    position: absolute;
-    bottom: 30px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    color: rgba(255, 255, 255, 0.5);
-    animation: bounce 2s infinite;
-  }
-
-  .scroll-text {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    font-weight: 600;
-  }
-
-  .scroll-arrow {
-    font-size: 20px;
-    line-height: 1;
-  }
-
-  @keyframes bounce {
-    0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
-    40% { transform: translateX(-50%) translateY(-10px); }
-    60% { transform: translateX(-50%) translateY(-5px); }
-  }
-
   /* Mobile Responsive */
   @media (max-width: 640px) {
+    .landing {
+      padding: 16px;
+    }
+
     .landing-inner {
-      padding: 24px 16px;
+      gap: 24px;
     }
 
     .pill-wrapper {
-      margin-bottom: 16px;
+      margin-bottom: 4px;
     }
 
     .top-pill {
@@ -463,7 +527,7 @@
     }
 
     .headline {
-      margin-bottom: 16px;
+      margin-bottom: 4px;
     }
 
     .headline-line1,
@@ -485,12 +549,35 @@
 
     .subline {
       font-size: 15px;
-      margin-bottom: 24px;
     }
 
     .cta-btn {
       padding: 16px 32px;
       font-size: 16px;
+    }
+
+    .video-title {
+      font-size: 16px;
+    }
+
+    .video-subtitle {
+      font-size: 13px;
+    }
+
+    .video-frame {
+      max-width: 280px;
+    }
+
+    .educational-block {
+      padding: 20px;
+    }
+
+    .block-title {
+      font-size: 18px;
+    }
+
+    .block-text {
+      font-size: 14px;
     }
 
     .trust-bar {
@@ -512,10 +599,6 @@
       font-size: 11px;
       max-width: 100%;
       padding: 0 16px;
-    }
-
-    .scroll-indicator {
-      bottom: 20px;
     }
   }
 
