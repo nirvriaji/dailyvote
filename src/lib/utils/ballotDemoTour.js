@@ -416,83 +416,80 @@ async function ensureVisible(element, padding = 20) {
 // ============================================
 
 // Phase 1: Discovery (0-4s)
-// Shows that the ballot is freely navigable
+// Starts from top-right, moves left continuously to show Presidente column
 async function phase1_Discovery() {
-  console.log('🎬 Phase 1: Discovery');
+  console.log('🎬 Phase 1: Discovery - From right to Presidente');
   const container = getScrollContainer();
   if (!container) return;
   
-  // Start centered
-  const centerX = (container.scrollWidth - container.clientWidth) / 2;
-  await smoothScrollTo(centerX, 0, 0);
+  // Calculate positions
+  const maxScrollX = container.scrollWidth - container.clientWidth;
   
+  // Start at top-right (last column - Parlamento Andino)
+  await smoothScrollTo(maxScrollX, 0, 0);
   await wait(300);
   
-  // Diagonal pan: up-left to down-right
-  await smoothScrollTo(centerX - 100, 150, demoConfig.panDuration);
-  await wait(200);
+  // Single continuous scroll from right to left (Presidente)
+  // Shows all columns along the way with constant speed
+  await smoothScrollX(0, 2400);
   
-  // Return to center
-  await smoothScrollTo(centerX, 0, demoConfig.panDuration);
-  await wait(demoConfig.shortPause);
+  // Small vertical pan to show scrolling is possible
+  await smoothScrollY(100, 600);
+  await wait(150);
+  await smoothScrollY(0, 600);
+  await wait(400);
 }
 
 // Phase 2: Core Interaction (4-10s)
 // Demonstrates: symbol selection, photo selection, and automatic unmarking when changing parties
+// Uses Demócrata Verde (5th row, index 4) as primary demonstration row
 async function phase2_CoreInteraction() {
-  console.log('🎬 Phase 2: Core Interaction - Presidente');
+  console.log('🎬 Phase 2: Core Interaction - Presidente (Demócrata Verde)');
   
   // Ensure we're at Presidente column
   await smoothScrollX(0, demoConfig.scrollDuration);
   
-  // Find rows - use first row and third row (2 rows down)
-  const row1 = getElement('row-presidente-0') || 
-               document.querySelector('[data-demo="col-presidente"] .ballot-row');
+  // Find Demócrata Verde row (5th row, index 4) and third row for comparison
+  const rowDV = getElement('row-presidente-4') || 
+                document.querySelectorAll('[data-demo="col-presidente"] .ballot-row')[4];
   
   const row3 = getElement('row-presidente-2') || 
                document.querySelectorAll('[data-demo="col-presidente"] .ballot-row')[2];
   
-  if (!row1) {
-    console.warn('⚠️  No presidential rows found');
+  if (!rowDV) {
+    console.warn('⚠️  Demócrata Verde row not found');
     return;
   }
   
-  // Get elements from row 1
-  const simbolo1 = row1.querySelector('[data-demo^="simbolo-"]') || 
-                   row1.querySelector('.image-frame');
-  const foto1 = row1.querySelector('[data-demo^="foto-"]') || 
-                row1.querySelector('.is-photo');
+  // Get elements from Demócrata Verde row
+  const simboloDV = rowDV.querySelector('[data-demo^="simbolo-"]') || 
+                    rowDV.querySelector('.image-frame');
+  const fotoDV = rowDV.querySelector('[data-demo^="foto-"]') || 
+                 rowDV.querySelector('.is-photo');
   
   await showFinger();
   
-  // ===== STEP 1: Tap on symbol (row 1) =====
-  console.log('👉 Step 1: Tap symbol row 1');
-  if (simbolo1) {
-    await moveFingerTo(simbolo1, demoConfig.fingerMoveSpeed);
+  // ===== STEP 1: Tap on symbol (Demócrata Verde) =====
+  console.log('👉 Step 1: Tap symbol - Demócrata Verde');
+  if (simboloDV) {
+    await moveFingerTo(simboloDV, demoConfig.fingerMoveSpeed);
     await wait(300);
-    await performTap(simbolo1);
+    await performTap(simboloDV);
     await wait(200);
     
-    // Reveal: show X on symbol
-    await revealResult(simbolo1, 'right', 50);
-    await wait(1200); // "Symbol is marked"
-  }
-  
-  // ===== STEP 2: Tap on photo (same row 1) =====
-  console.log('👉 Step 2: Tap photo row 1');
-  if (foto1) {
-    await moveFingerTo(foto1, demoConfig.fingerMoveSpeed);
+    // Go directly to photo (symbol with X remains visible to the left)
+    await moveFingerTo(fotoDV, demoConfig.fingerMoveSpeed);
     await wait(300);
-    await performTap(foto1);
+    await performTap(fotoDV);
     await wait(200);
     
     // Reveal: show both X's (symbol + photo)
-    await revealResult(foto1, 'right', 60);
+    await revealResult(fotoDV, 'right', 60);
     await wait(1500); // "Both symbol and photo marked"
   }
   
-  // ===== STEP 3: Scroll down to row 3 and tap photo =====
-  console.log('👉 Step 3: Move to row 3, tap photo');
+  // ===== STEP 2: Scroll to row 3 and tap photo to show party change =====
+  console.log('👉 Step 2: Move to another party, tap photo');
   if (row3) {
     const foto3 = row3.querySelector('[data-demo^="foto-"]') || 
                   row3.querySelector('.is-photo');
@@ -506,10 +503,10 @@ async function phase2_CoreInteraction() {
       
       // Reveal: show X on photo row 3
       await revealResult(foto3, 'right', 50);
-      await wait(1000); // "Photo row 3 is marked"
+      await wait(1000); // "Photo of different party marked"
       
-      // ===== STEP 4: Move to symbol row 3 (reveals row 1 is unmarked) =====
-      console.log('👉 Step 4: Reveal - row 1 automatically unmarked');
+      // ===== STEP 3: Move to symbol row 3 (reveals Demócrata Verde is unmarked) =====
+      console.log('👉 Step 3: Reveal - Demócrata Verde automatically unmarked');
       const simbolo3 = row3.querySelector('[data-demo^="simbolo-"]') || 
                        row3.querySelector('.image-frame');
       
@@ -519,9 +516,9 @@ async function phase2_CoreInteraction() {
         await performTap(simbolo3);
         await wait(200);
         
-        // Move aside to reveal: row 3 has both marks, row 1 is clean
+        // Move aside to reveal: row 3 has both marks, Demócrata Verde is clean
         await revealResult(simbolo3, 'left', 60);
-        await wait(1500); // "Changed party, row 1 automatically unmarked"
+        await wait(1500); // "Changed party, Demócrata Verde automatically unmarked"
       }
     }
   }
