@@ -257,8 +257,9 @@
   .ballot-row {
     display: grid;
     align-items: center;
-    /* Default (Legislativo): Party Name | Logo | Vote 1 | Vote 2 */
-    grid-template-columns: 1fr var(--col-logo-width, 56px) var(--col-vote-width, 52px) var(--col-vote-width, 52px);
+    /* Legislative: Party Name | Logo | Vote 1 | Vote 2 */
+    grid-template-columns: 1fr var(--col-logo-width, 56px) 56px 56px;
+    column-gap: 4px;
     height: var(--row-height, 56px);
     border-bottom: 2px solid #FFFFFF;
     cursor: pointer;
@@ -393,11 +394,12 @@
   }
 
   .vote-box {
-    width: 52px;
-    height: 52px;
+    width: 56px;
+    height: 56px;
     border: 2px solid #000000;
     border-radius: 0;
     background-color: #ffffff;
+    box-sizing: border-box;
   }
 
   .ballot-row:hover .vote-box {

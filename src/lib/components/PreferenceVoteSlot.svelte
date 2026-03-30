@@ -96,11 +96,11 @@
 
 <style>
   .ballot-slot {
-    /* Mismo tamaño exacto que el símbolo (44x44px) */
-    width: 44px;
-    height: 44px;
-    min-width: 44px;
-    min-height: 44px;
+    /* Match grid column width: 56px */
+    width: 56px;
+    height: 56px;
+    min-width: 56px;
+    min-height: 56px;
     
     /* Mismo borde que los símbolos */
     border: 1.5px solid var(--grid-border);

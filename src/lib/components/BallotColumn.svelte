@@ -164,7 +164,7 @@
   /* Versión dual (con voto preferencial) */
   .instructional-strip.dual {
     display: grid;
-    grid-template-columns: 1fr 118px;
+    grid-template-columns: 1fr 56px 56px;
     column-gap: 4px;
     padding: 0;
     align-items: stretch;
@@ -197,7 +197,8 @@
     padding: 4px 6px;
     text-align: center;
     flex-direction: column;
-    width: 118px;
+    grid-column: 2 / span 2;
+    width: 100%;
     border: none;
     border-left: 1px solid #BDBDBD;
     background: transparent;
