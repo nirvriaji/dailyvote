@@ -74,7 +74,8 @@
     { label: 'Solo tú (x1)', value: 1 },
     { label: '10 personas', value: 10 },
     { label: '100 personas', value: 100 },
-    { label: '1000 personas', value: 1000 }
+    { label: '1,000 personas', value: 1000 },
+    { label: '10,000 personas', value: 10000 }
   ];
   
   // Load saved projection from sessionStorage and hydrate vote store
@@ -107,30 +108,113 @@
     category: voteData.columnId
   })));
   
-  // Calculate projected results - force update when multiplier changes
-  let projectedResults = $state([...allResults]);
-  
-  // Watch for changes and recalculate
-  $effect(() => {
-    console.log('🔄 Efecto de proyección ejecutándose. Multiplier:', projectionMultiplier);
+  // Calculate projected results inline
+  function getProjectedResults() {
+    console.log('🔧 getProjectedResults llamado. Multiplier:', projectionMultiplier);
     
-    if (projectionMultiplier === 1 || allResults.length === 0) {
-      projectedResults = [...allResults];
-      return;
+    if (projectionMultiplier === 1) {
+      console.log('↩️ Multiplier=1, retornando allResults sin cambios');
+      return allResults;
     }
     
     const extra = getHypotheticalExtra(projectionMultiplier);
-    const cloned = JSON.parse(JSON.stringify(allResults));
+    console.log('➕ Extra a agregar:', extra);
+    console.log('👤 User votes:', userVotes);
+    
+    // Mapeo de colId a categoryId
+    const colIdToCategoryId: Record<string, string> = {
+      'col0': 'president',
+      'col1': 'senatorsNational',
+      'col2': 'senatorsRegional',
+      'col3': 'deputies',
+      'col4': 'andeanParliament'
+    };
+    
+    const categoryInfo: Record<string, { name: string; totalSeats: number }> = {
+      'president': { name: 'Presidente', totalSeats: 1 },
+      'senatorsNational': { name: 'Senadores', totalSeats: 30 },
+      'senatorsRegional': { name: 'Senadores', totalSeats: 30 },
+      'deputies': { name: 'Diputados', totalSeats: 130 },
+      'andeanParliament': { name: 'Parlamento Andino', totalSeats: 5 }
+    };
+    
+    // Start with existing results or create empty array
+    let cloned: CategoryResults[] = allResults.length > 0 
+      ? JSON.parse(JSON.stringify(allResults))
+      : [];
+    
+    console.log('📊 Categorías disponibles:', cloned.map(c => ({ categoryId: c.categoryId, category: c.category })));
     
     // Apply extra votes to user's selections
     for (const userVote of userVotes) {
-      const category = cloned.find(c => c.categoryId === userVote.colId || c.category === userVote.category);
+      const targetCategoryId = colIdToCategoryId[userVote.colId];
+      console.log('🔍 Buscando categoría:', { colId: userVote.colId, targetCategoryId });
+      
+      let category = cloned.find(c => c.categoryId === targetCategoryId);
+      
+      // If category doesn't exist in results, create it
+      if (!category && targetCategoryId) {
+        console.log('🆕 Creando nueva categoría:', targetCategoryId);
+        const info = categoryInfo[targetCategoryId];
+        category = {
+          category: info.name,
+          categoryId: targetCategoryId,
+          totalVotes: 0,
+          totalSeats: info.totalSeats,
+          results: [],
+          seatDistribution: [],
+          userVote: userVote.partyName
+        };
+        cloned.push(category);
+      }
+      
       if (category) {
-        const result = category.results.find(r => r.partyName === userVote.partyName);
-        if (result) {
-          result.votes += extra;
+        console.log('✅ Categoría encontrada/creada:', category.category);
+        
+        // Find or create result for user's party
+        let result = category.results.find(r => r.partyName === userVote.partyName);
+        
+        if (!result) {
+          console.log('🆕 Creando resultado para:', userVote.partyName);
+          // Get party data from rows
+          const isPresident = targetCategoryId === 'president';
+          const partyRow = isPresident
+            ? presidentialRows.find(r => r.partyName === userVote.partyName)
+            : legislativeRows.find(r => r.partyName === userVote.partyName);
+          
+          if (partyRow) {
+            result = {
+              partyId: partyRow.partyAbbr || userVote.partyName,
+              partyName: partyRow.partyName,
+              partyColor: partyRow.partyColor,
+              partySymbolUrl: partyRow.partySymbolUrl || '',
+              photoUrl: isPresident ? partyRow.presidentialPhoto : null,
+              votes: 1, // User's vote
+              percentage: 0,
+              seats: 0
+            };
+            category.results.push(result);
+          }
         }
-        category.totalVotes += extra;
+        
+        if (result) {
+          console.log(`🎯 Agregando ${extra} votos a ${userVote.partyName} (tenía ${result.votes})`);
+          result.votes += extra;
+          console.log(`✨ Ahora tiene ${result.votes} votos`);
+        } else {
+          console.log('❌ No se pudo crear resultado para:', userVote.partyName);
+        }
+        
+        // Recalculate totalVotes from all results to avoid double counting
+        category.totalVotes = category.results.reduce((sum, r) => sum + r.votes, 0);
+        
+        category.totalVotes += extra + (result ? 1 : 0); // Add user's vote too if new
+        if (category.totalVotes > extra + 1) {
+          // Already counted the +1 above, so just add extra
+          category.totalVotes = category.results.reduce((sum, r) => sum + r.votes, 0);
+        }
+      } else {
+        console.log('❌ Categoría no encontrada para:', targetCategoryId);
       }
     }
     
@@ -142,43 +226,82 @@
           : 0;
       }
       category.results.sort((a, b) => b.votes - a.votes);
-    }
-    
-    console.log('✨ Asignando nuevos projectedResults:', cloned[0]?.results?.[0]?.votes);
-    projectedResults = cloned;
-  });
-  
-  // Display results (real or projected)
-  let displayResults = $state<CategoryResults[]>([]);
-  
-  // Track previous values to force updates
-  let previousMultiplier = $state(1);
-  
-  // Update display results when projection or allResults changes
-  $effect(() => {
-    const currentMultiplier = projectionMultiplier;
-    const currentResults = allResults;
-    
-    console.log('🎭 Efecto displayResults. Multiplier:', currentMultiplier, 'AllResults length:', currentResults.length);
-    
-    if (currentResults.length === 0) {
-      console.log('⏳ Esperando datos...');
-      return;
-    }
-    
-    // Always update on first load or when multiplier changes
-    if (displayResults.length === 0 || currentMultiplier !== previousMultiplier) {
-      previousMultiplier = currentMultiplier;
       
-      if (currentMultiplier === 1) {
-        displayResults = JSON.parse(JSON.stringify(currentResults));
-        console.log('✅ displayResults actualizado con resultados reales:', displayResults.length, 'categorías');
-      } else {
-        displayResults = JSON.parse(JSON.stringify(projectedResults));
-        console.log('✅ displayResults actualizado con proyección:', displayResults.length, 'categorías');
-        console.log('📊 Primera categoría - Votos:', displayResults[0]?.results?.[0]?.votes, 'Partido:', displayResults[0]?.results?.[0]?.partyName);
+      // Calculate seats for legislative categories (totalSeats > 1)
+      if (category.totalSeats > 1 && category.totalVotes > 0) {
+        const minVotesForSeats = category.totalSeats * 10;
+        
+        if (category.totalVotes >= minVotesForSeats) {
+          // Calculate seats based on percentage
+          let remainingSeats = category.totalSeats;
+          
+          // Assign seats proportionally
+          for (let i = 0; i < category.results.length && remainingSeats > 0; i++) {
+            const result = category.results[i];
+            if (result.votes > 0) {
+              let seatCount = Math.max(1, Math.round((result.percentage / 100) * category.totalSeats));
+              seatCount = Math.min(seatCount, remainingSeats);
+              result.seats = seatCount;
+              remainingSeats -= seatCount;
+            } else {
+              result.seats = 0;
+            }
+          }
+          
+          // Generate seat distribution array for hemicycle
+          const seatDistribution: Seat[] = [];
+          category.results.forEach(result => {
+            const partySeats = result.seats || 0;
+            for (let i = 0; i < partySeats; i++) {
+              seatDistribution.push({
+                partyColor: result.partyColor,
+                partyName: result.partyName,
+                partySymbolUrl: result.partySymbolUrl
+              });
+            }
+          });
+          category.seatDistribution = seatDistribution;
+        }
       }
     }
+    
+    return cloned;
+  }
+  
+  // Display results - use derived with explicit dependencies
+  let displayResults = $derived.by(() => {
+    const multiplier = projectionMultiplier;
+    const results = allResults;
+    const resultsLength = results.length;
+    const userVotesList = userVotes; // Dependencia explícita
+    const hasUserVotes = userVotesList.length > 0;
+    
+    console.log('🔄 Calculando displayResults. Multiplier:', multiplier, 'Results length:', resultsLength, 'User votes:', hasUserVotes);
+    
+    // If projection is active and user has votes, always calculate projection
+    // even if allResults is empty
+    if (multiplier > 1 && hasUserVotes) {
+      console.log('🔧 Proyección activa con votos de usuario, calculando...');
+      const projected = getProjectedResults();
+      console.log('✅ Retornando proyección:', projected.length, 'categorías');
+      return projected;
+    }
+    
+    if (resultsLength === 0) {
+      console.log('⚠️ Results vacío y sin proyección, retornando array vacío');
+      return [];
+    }
+    
+    if (multiplier === 1) {
+      console.log('✅ Retornando resultados reales:', results.length, 'categorías');
+      return results;
+    }
+    
+    console.log('🔧 Llamando getProjectedResults...');
+    const projected = getProjectedResults();
+    console.log('✅ Retornando proyección:', projected.length, 'categorías');
+    console.log('📊 Primer candidato:', projected[0]?.results?.[0]?.partyName, '-', projected[0]?.results?.[0]?.votes, 'votos');
+    return projected;
   });
   
   // Prepare data for sharing (include projection info)
@@ -257,9 +380,31 @@
       let parties: ElectionResult[];
       
       if (realResults.length === 0) {
-        // No votes at all in this category - return empty array
-        // The UI will show a message instead
-        parties = [];
+        // No votes at all in this category - check if user voted with projection
+        if (userPartyName && projectionMultiplier > 1) {
+          // User voted and projection is active - create result for their party
+          const partyRow = cat.id === 'president' 
+            ? presidentialRows.find(r => r.partyName === userPartyName)
+            : legislativeRows.find(r => r.partyName === userPartyName);
+          
+          if (partyRow) {
+            parties = [{
+              partyId: partyRow.partyAbbr || userPartyName,
+              partyName: partyRow.partyName,
+              partyColor: partyRow.partyColor,
+              partySymbolUrl: partyRow.partySymbolUrl || '',
+              photoUrl: cat.id === 'president' ? partyRow.presidentialPhoto : null,
+              votes: 1, // User's real vote (will be updated by projection)
+              percentage: 100,
+              seats: 0
+            }];
+          } else {
+            parties = [];
+          }
+        } else {
+          // No votes and no user vote with projection - return empty array
+          parties = [];
+        }
       } else if (totalVoteCount < 5) {
         // Few votes total - ONLY show candidates/parties that received actual votes
         const totalCatVotes = realResults.reduce((sum, r) => sum + r.count, 0);
@@ -365,16 +510,30 @@
       
       // Generate seat distribution
       let seatDistribution: Seat[] = [];
-      if (cat.totalSeats > 1 && realResults.length > 0 && totalVoteCount >= 5) {
-        // Only create seats when there are enough total votes
-        parties.forEach(party => {
-          const partySeats = party.seats || 0;
-          for (let i = 0; i < partySeats; i++) {
-            seatDistribution.push({
-              partyColor: party.partyColor,
-              partyName: party.partyName,
-              partySymbolUrl: party.partySymbolUrl
-            });
+      const totalVotes = parties.reduce((sum, r) => sum + r.votes, 0);
+      const minVotesForSeats = cat.totalSeats * 10;
+      
+      // Generate seats if: legislative category AND enough total votes
+      // (works for both real results and projections)
+      if (cat.totalSeats > 1 && totalVotes >= minVotesForSeats) {
+        // Calculate seats based on percentages
+        let remainingSeats = cat.totalSeats;
+        parties.forEach((party, i) => {
+          if (party.votes > 0 && remainingSeats > 0) {
+            const percentage = totalVotes > 0 ? (party.votes / totalVotes) * 100 : 0;
+            let seatCount = Math.max(1, Math.round((percentage / 100) * cat.totalSeats));
+            seatCount = Math.min(seatCount, remainingSeats);
+            party.seats = seatCount;
+            remainingSeats -= seatCount;
+            
+            // Add seats to distribution array
+            for (let j = 0; j < seatCount; j++) {
+              seatDistribution.push({
+                partyColor: party.partyColor,
+                partyName: party.partyName,
+                partySymbolUrl: party.partySymbolUrl
+              });
+            }
           }
         });
       }
@@ -402,9 +561,13 @@
     
     // Load real results from Firestore
     try {
-      allResults = await loadRealResults();
+      console.log('📥 Cargando resultados de Firestore...');
+      const loadedResults = await loadRealResults();
+      console.log('✅ Resultados cargados:', loadedResults.length, 'categorías');
+      console.log('📊 Primera categoría:', loadedResults[0]?.category, '-', loadedResults[0]?.results?.length, 'resultados');
+      allResults = loadedResults;
     } catch (err) {
-      console.error('Error loading results:', err);
+      console.error('❌ Error loading results:', err);
     } finally {
       isLoading = false;
     }
@@ -585,16 +748,19 @@
               </div>
             </div>
             
-            <div class="candidate-info">
-              <h3 class="party-name">{candidate.partyName}</h3>
-              <div class="percentage-display">
-                <span class="percentage-number">{candidate.percentage.toFixed(1)}%</span>
-                <div class="percentage-bar">
-                  <div class="bar-fill" style="width: {candidate.percentage}%; background: {candidate.partyColor}"></div>
-                </div>
-              </div>
-              <span class="vote-count">{candidate.votes.toLocaleString()} votos</span>
-            </div>
+             <div class="candidate-info">
+               <h3 class="party-name">{candidate.partyName}</h3>
+               <div class="percentage-display">
+                 <span class="percentage-number">{candidate.percentage.toFixed(1)}%</span>
+                 <div class="percentage-bar">
+                   <div class="bar-fill" style="width: {candidate.percentage}%; background: {candidate.partyColor}"></div>
+                 </div>
+               </div>
+               <span class="vote-count" data-votes={candidate.votes}>{candidate.votes.toLocaleString()} votos</span>
+               {#if projectionMultiplier > 1}
+                 <span style="font-size: 10px; color: #666;">(multiplier: {projectionMultiplier})</span>
+               {/if}
+             </div>
             
             {#if candidate.partyName === displayResults[0].userVote}
               <div class="user-vote-ribbon">TU VOTO</div>
