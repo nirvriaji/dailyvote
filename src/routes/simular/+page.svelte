@@ -208,13 +208,6 @@
 
   <BallotProgressHeader />
 
-  <!-- Demo Badge - solo visible en modo demo -->
-  {#if isDemoMode}
-    <div class="demo-badge" transition:fade={{ duration: 300 }}>
-      <span class="demo-badge-text">Demo interactiva</span>
-    </div>
-  {/if}
-
   {#if showInlineHint}
     <div 
       class="inline-hint-banner"
@@ -489,27 +482,6 @@
   .btn-primary:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(200, 16, 46, 0.3);
-  }
-  
-  /* Demo Badge Styles */
-  .demo-badge {
-    position: fixed;
-    top: 80px;
-    right: 16px;
-    z-index: 1101;
-    background: rgba(59, 130, 246, 0.9);
-    color: white;
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.3px;
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
-    backdrop-filter: blur(4px);
-  }
-  
-  .demo-badge-text {
-    text-transform: uppercase;
   }
   
   /* Demo Highlight - applied by ballotDemoTour.js */

@@ -263,11 +263,9 @@
   }
 
   .picker-button.selected {
-    background: #C8102E;
-    border-color: #C8102E;
-    color: white;
-    box-shadow: 0 2px 6px rgba(200, 16, 46, 0.4);
-    font-weight: 600;
+    background: white;
+    border-color: #dee2e6;
+    color: #495057;
   }
 
   .picker-button.disabled {
@@ -280,7 +278,6 @@
   }
 
   .picker-button:focus {
-    outline: 2px solid rgba(200, 16, 46, 0.4);
-    outline-offset: 2px;
+    outline: none;
   }
 </style>

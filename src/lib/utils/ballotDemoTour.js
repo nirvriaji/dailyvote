@@ -416,9 +416,9 @@ async function ensureVisible(element, padding = 20) {
 // ============================================
 
 // Phase 1: Discovery (0-4s)
-// Starts from top-right, moves left continuously to show Presidente column
+// Starts from top-right, moves diagonally left-down to Presidente column (positioned at Demócrata Verde row)
 async function phase1_Discovery() {
-  console.log('🎬 Phase 1: Discovery - From right to Presidente');
+  console.log('🎬 Phase 1: Discovery - Diagonal from right to Presidente');
   const container = getScrollContainer();
   if (!container) return;
   
@@ -427,16 +427,13 @@ async function phase1_Discovery() {
   
   // Start at top-right (last column - Parlamento Andino)
   await smoothScrollTo(maxScrollX, 0, 0);
-  await wait(300);
+  await wait(800); // Stay in top-right for 0.8 seconds
   
-  // Single continuous scroll from right to left (Presidente)
-  // Shows all columns along the way with constant speed
-  await smoothScrollX(0, 2400);
+  // Single smooth diagonal scroll: from top-right to left + slightly down
+  // This positions us directly at Demócrata Verde row in Presidente column
+  await smoothScrollTo(0, 150, 2400);
   
-  // Small vertical pan to show scrolling is possible
-  await smoothScrollY(100, 600);
-  await wait(150);
-  await smoothScrollY(0, 600);
+  // Brief pause before Phase 2 starts
   await wait(400);
 }
 
@@ -520,6 +517,12 @@ async function phase3_Progressive() {
   await smoothScrollX(336, demoConfig.scrollDuration);
   await wait(demoConfig.shortPause);
   
+  // Reset finger position to off-screen before showing
+  const { element } = getDemoFinger();
+  element.style.transition = 'none';
+  element.style.left = '-100px';
+  element.style.top = '-100px';
+  
   // Show finger again (it was hidden at end of Phase 2)
   await showFinger();
   
@@ -555,42 +558,42 @@ async function phase3_Progressive() {
     const picker1 = await waitForPicker();
     
     if (picker1) {
-      // Select number 12 in picker
-      await selectNumberInPicker(12);
+      // Quick number selection without full reveal sequence
+      const button12 = findPickerButton(12);
+      if (button12) {
+        const { element } = getDemoFinger();
+        const rect = button12.getBoundingClientRect();
+        
+        // Quick approach and tap
+        element.style.transition = 'left 300ms ease-out, top 300ms ease-out';
+        element.style.left = (rect.left + rect.width / 2) + 'px';
+        element.style.top = (rect.top + rect.height / 2) + 'px';
+        await wait(300);
+        await performTap(button12);
+        await wait(200);
+      }
     } else {
       console.warn('⚠️  Picker did not appear for slot 1');
-      // Fallback: try clicking again or use direct input
       await wait(400);
     }
     
-    // Reveal: show "12" in slot 1
-    await revealResult(slot1Button, 'down', 40);
-    await wait(800);
+    // ===== DIRECT TO SYMBOL IN ANOTHER ROW =====
+    console.log('👉 Direct to symbol in another row after 12');
+    const rowBelow = document.querySelectorAll('[data-demo="col-senadores-nacional"] .ballot-row')[3] ||
+                     document.querySelectorAll('[data-demo="col-senadores-nacional"] .ballot-row')[4];
     
-    // ===== SLOT 2: Select "24" =====
-    // Find the actual button inside the slot container
-    const slot2Button = slot2.querySelector('.ballot-slot') || slot2;
-    
-    // Move to second slot and tap the button
-    await moveFingerTo(slot2Button, demoConfig.fingerMoveSpeed);
-    await wait(200);
-    await performTap(slot2Button);
-    await wait(500); // Wait longer for picker to open
-    
-    // Wait for picker to appear
-    const picker2 = await waitForPicker();
-    
-    if (picker2) {
-      // Select number 24 in picker
-      await selectNumberInPicker(24);
-    } else {
-      console.warn('⚠️  Picker did not appear for slot 2');
-      await wait(400);
+    if (rowBelow) {
+      const simboloBelow = rowBelow.querySelector('[data-demo^="simbolo-"]') || 
+                           rowBelow.querySelector('.image-frame');
+      
+      if (simboloBelow) {
+        await ensureVisible(simboloBelow);
+        await moveFingerTo(simboloBelow, demoConfig.fingerMoveSpeed);
+        await wait(200);
+        await performTap(simboloBelow);
+        await wait(200);
+      }
     }
-    
-    // Reveal: show "24" in slot 2
-    await revealResult(slot2Button, 'down', 40);
-    await wait(1000);
   }
 }
 
