@@ -14,10 +14,19 @@
   // Only President (col0) does NOT have preferential voting
   const hasPreferential = column.id !== 'col0';
   
-  // Format title based on column type
+  // Format title based on column type - combine title with scope in two lines
   function getTitleParts(col: BallotColumn): string[] {
     if (col.id === 'col0') {
       return ['PRESIDENTE Y', 'VICEPRESIDENTES'];
+    }
+    if (col.id === 'col1') {
+      return ['SENADORES', 'NACIONAL'];
+    }
+    if (col.id === 'col2') {
+      return ['SENADORES', 'REGIONAL'];
+    }
+    if (col.id === 'col3') {
+      return ['DIPUTADOS', 'REGIONAL'];
     }
     if (col.id === 'col4') {
       return ['PARLAMENTO', 'ANDINO'];
@@ -25,16 +34,7 @@
     return [col.title.toUpperCase()];
   }
   
-  // Get subtitle based on column type
-  function getSubtitle(col: BallotColumn): string | null {
-    if (col.id === 'col1') return 'A NIVEL NACIONAL';
-    if (col.id === 'col2') return 'A NIVEL REGIONAL';
-    if (col.id === 'col3') return 'A NIVEL REGIONAL';
-    return null;
-  }
-  
   const titleParts = getTitleParts(column);
-  const subtitleText = getSubtitle(column);
 </script>
 
 <!--
@@ -52,9 +52,6 @@
         <span class="title-line">{part}</span>
       {/each}
     </div>
-    {#if subtitleText}
-      <span class="subtitle">{subtitleText}</span>
-    {/if}
   </header>
 
   <!-- NIVEL 2: FRANJA INSTRUCTIVA -->
@@ -64,7 +61,7 @@
       <!-- Bloque instructivo principal -->
       <div class="instruction-block main-instruction">
         <p class="instruction-text">
-          Marque con una cruz (+) o un aspa (×) dentro del recuadro del símbolo de su preferencia
+          Marque con una cruz (+) o un aspa (×)<br>dentro del recuadro del símbolo de su preferencia
         </p>
       </div>
       
@@ -72,7 +69,7 @@
       <div class="instruction-block preferential-block">
         <p class="preferential-title">VOTO PREFERENCIAL</p>
         <p class="preferential-text">
-          Si desea coloque dentro de los recuadros uno o dos números de los candidatos de su preferencia
+          Escriba 1 o 2 números<br>de sus candidatos
         </p>
       </div>
     </div>
@@ -81,7 +78,7 @@
     <div class="instructional-strip single">
       <div class="instruction-block full-width">
         <p class="instruction-text">
-          Marque con una cruz (+) o un aspa (×) dentro del recuadro del símbolo y/o fotografía de su preferencia
+          Marque con una cruz (+) o un aspa (×)<br>dentro del recuadro del símbolo y/o fotografía de su preferencia
         </p>
       </div>
     </div>
@@ -124,8 +121,8 @@
     align-items: center;
     justify-content: flex-end;
     text-align: center;
-    min-height: auto;
-    padding: 6px 10px;
+    min-height: 64px;
+    padding: 6px 6px;
     background: #FFFFFF;
     border-bottom: 1px solid #BDBDBD;
     flex-shrink: 0;
@@ -139,20 +136,10 @@
   }
 
   .title-line {
-    font-size: 22px;
+    font-size: 18px;
     font-weight: 800;
     line-height: 0.95;
-    letter-spacing: -0.5px;
-    text-transform: uppercase;
-    color: #1F1F1F;
-    font-family: 'Roboto Condensed', 'Inter', sans-serif;
-  }
-
-  .subtitle {
-    font-size: 13px;
-    font-weight: 700;
-    line-height: 1;
-    margin-top: 4px;
+    letter-spacing: -0.4px;
     text-transform: uppercase;
     color: #1F1F1F;
     font-family: 'Roboto Condensed', 'Inter', sans-serif;
@@ -167,21 +154,21 @@
 
   /* Versión única (Presidente) */
   .instructional-strip.single {
-    padding: 6px 10px;
+    padding: 6px 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: auto;
+    min-height: 52px;
   }
 
   /* Versión dual (con voto preferencial) */
   .instructional-strip.dual {
     display: grid;
-    grid-template-columns: 1fr 104px;
+    grid-template-columns: 1fr 118px;
     column-gap: 4px;
     padding: 0;
     align-items: stretch;
-    min-height: auto;
+    min-height: 52px;
   }
 
   /* Bloques instructivos */
@@ -207,10 +194,10 @@
   }
 
   .instruction-block.preferential-block {
-    padding: 4px 4px;
+    padding: 4px 6px;
     text-align: center;
     flex-direction: column;
-    width: 104px;
+    width: 118px;
     border: none;
     border-left: 1px solid #BDBDBD;
     background: transparent;
@@ -220,7 +207,7 @@
   .instruction-text {
     font-size: 11px;
     font-weight: 700;
-    line-height: 1.15;
+    line-height: 1.05;
     color: #111111;
     margin: 0;
     font-family: 'Roboto Condensed', 'Inter', sans-serif;
@@ -229,7 +216,7 @@
   .preferential-title {
     font-size: 10px;
     font-weight: 800;
-    line-height: 1.05;
+    line-height: 1;
     margin: 0 0 2px 0;
     text-transform: uppercase;
     color: #111111;
@@ -239,7 +226,7 @@
   .preferential-text {
     font-size: 9px;
     font-weight: 700;
-    line-height: 1.05;
+    line-height: 1;
     color: #111111;
     margin: 0;
     font-family: 'Roboto Condensed', 'Inter', sans-serif;
