@@ -1,33 +1,47 @@
 /**
- * Ballot Demo Tour - Automated interactive demonstration
- * For recording tutorial videos from mobile
- * Activate with ?demo=1 query parameter
+ * Ballot Demo Tour V3 - Interactive Demo for Video Recording
+ * Optimized for mobile viewport with clear narrative
+ * Duration: ~15 seconds
+ * 
+ * Usage: Add ?demo=1 to URL
+ * Example: https://exitpollsimulator.web.app/simular?demo=1
  */
 
-// Configuration
+// ============================================
+// CONFIGURATION
+// ============================================
 const demoConfig = {
   autoStart: true,
   autoStartDelay: 1200,
   restart: true,
-  restartDelay: 2500,
-  tapScale: 0.88,
-  shortPause: 500,
-  mediumPause: 900,
-  longPause: 1400,
-  scrollShort: 700,
-  scrollMedium: 1100,
-  scrollLong: 1600,
-  preferencialValue1: '12',
-  preferencialValue2: '24'
+  restartDelay: 3000, // 3s pause before restart
+  
+  // Timing
+  shortPause: 800,      // 0.8s - for processing
+  mediumPause: 1200,    // 1.2s - for success moments
+  longPause: 1500,      // 1.5s - dramatic pauses
+  
+  // Movement speeds
+  fingerMoveSpeed: 500,     // 0.5s to move between elements
+  scrollDuration: 900,      // 0.9s for smooth scrolls
+  panDuration: 1200,        // 1.2s for discovery pans
+  
+  // Visual
+  preferentialValue1: '12',
+  preferentialValue2: '24',
+  demoFingerColor: '#0066FF',
 };
 
-// State
+// ============================================
+// STATE
+// ============================================
 let isDemoRunning = false;
-let currentScene = 0;
-let tapIndicator = null;
-let abortController = null;
+let demoFinger = null;
+let currentAbortController = null;
 
-// Utility functions
+// ============================================
+// UTILITY FUNCTIONS
+// ============================================
 function wait(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -36,468 +50,716 @@ function easeOutCubic(t) {
   return 1 - Math.pow(1 - t, 3);
 }
 
-function smoothScrollX(container, targetX, duration) {
-  return new Promise(resolve => {
-    const startX = container.scrollLeft;
-    const distance = targetX - startX;
-    const startTime = performance.now();
-    
-    function animate(currentTime) {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = easeOutCubic(progress);
-      
-      container.scrollLeft = startX + (distance * eased);
-      
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      } else {
-        resolve();
-      }
-    }
-    
-    requestAnimationFrame(animate);
-  });
+function easeOutBack(t) {
+  const c1 = 1.70158;
+  const c3 = c1 + 1;
+  return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
 }
 
-function smoothScrollY(container, targetY, duration) {
-  return new Promise(resolve => {
-    const startY = container.scrollTop;
-    const distance = targetY - startY;
-    const startTime = performance.now();
-    
-    function animate(currentTime) {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = easeOutCubic(progress);
-      
-      container.scrollTop = startY + (distance * eased);
-      
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      } else {
-        resolve();
-      }
-    }
-    
-    requestAnimationFrame(animate);
-  });
-}
-
-function createTapIndicator() {
-  const indicator = document.createElement('div');
-  indicator.id = 'demo-tap-indicator';
-  indicator.style.cssText = `
+// ============================================
+// DEMO FINGER (Visual Tap Indicator)
+// ============================================
+function createDemoFinger() {
+  const finger = document.createElement('div');
+  finger.id = 'demo-finger';
+  finger.style.cssText = `
     position: fixed;
-    width: 42px;
-    height: 42px;
-    border-radius: 999px;
-    background: rgba(255,255,255,0.55);
-    border: 2px solid rgba(0,0,0,0.18);
-    backdrop-filter: blur(2px);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.18);
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 0;
+    left: -100px;
+    top: -100px;
+    width: 60px;
+    height: 60px;
+    background: rgba(0, 102, 255, 0.95);
+    border: 3px solid white;
+    border-radius: 50%;
+    box-shadow: 
+      0 4px 20px rgba(0, 102, 255, 0.4),
+      0 8px 30px rgba(0, 0, 0, 0.2),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.1);
     pointer-events: none;
-    z-index: 9999;
-    transition: transform 220ms ease, opacity 220ms ease;
+    z-index: 99999;
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.5);
+    transition: 
+      left 400ms ease-out,
+      top 400ms ease-out,
+      opacity 300ms ease,
+      transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
   `;
-  document.body.appendChild(indicator);
-  return indicator;
+  
+  // Ripple effect
+  const ripple = document.createElement('div');
+  ripple.style.cssText = `
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    right: -10px;
+    bottom: -10px;
+    border: 2px solid rgba(0, 102, 255, 0.3);
+    border-radius: 50%;
+    opacity: 0;
+  `;
+  finger.appendChild(ripple);
+  
+  document.body.appendChild(finger);
+  return { finger, ripple };
 }
 
-function getTapIndicator() {
-  if (!tapIndicator) {
-    tapIndicator = createTapIndicator();
+function getDemoFinger() {
+  if (!demoFinger) {
+    const { finger, ripple } = createDemoFinger();
+    demoFinger = { element: finger, ripple };
   }
-  return tapIndicator;
+  return demoFinger;
 }
 
-function moveTapIndicatorTo(element) {
-  const indicator = getTapIndicator();
-  const rect = element.getBoundingClientRect();
-  const x = rect.left + rect.width / 2;
-  const y = rect.top + rect.height / 2;
+async function showFinger() {
+  const { element } = getDemoFinger();
+  element.style.opacity = '1';
+  element.style.transform = 'translate(-50%, -50%) scale(1)';
+  await wait(300);
+}
+
+async function hideFinger() {
+  const { element } = getDemoFinger();
+  element.style.opacity = '0';
+  element.style.transform = 'translate(-50%, -50%) scale(0.5)';
+  await wait(300);
+}
+
+async function moveFingerTo(targetElement, duration = demoConfig.fingerMoveSpeed) {
+  const { element } = getDemoFinger();
+  const rect = targetElement.getBoundingClientRect();
+  const targetX = rect.left + rect.width / 2;
+  const targetY = rect.top + rect.height / 2;
   
-  indicator.style.left = x + 'px';
-  indicator.style.top = y + 'px';
-  indicator.style.opacity = '1';
-  indicator.style.transform = 'translate(-50%, -50%) scale(1)';
-}
-
-async function animateTap() {
-  const indicator = getTapIndicator();
+  // Get current position
+  const currentTransform = element.style.transform;
+  const currentX = element.offsetLeft || window.innerWidth / 2;
+  const currentY = element.offsetTop || window.innerHeight / 2;
   
-  // Scale down
-  indicator.style.transform = 'translate(-50%, -50%) scale(0.88)';
-  await wait(220);
+  // Animate movement
+  const startX = currentX;
+  const startY = currentY;
+  const startTime = performance.now();
   
-  // Scale back
-  indicator.style.transform = 'translate(-50%, -50%) scale(1)';
-  await wait(220);
-  
-  // Fade out
-  indicator.style.opacity = '0';
-  await wait(220);
-}
-
-function highlightElement(element) {
-  element.classList.add('demo-highlight');
-}
-
-function clearHighlight(element) {
-  if (element) {
-    element.classList.remove('demo-highlight');
-  }
-}
-
-function clearAllHighlights() {
-  document.querySelectorAll('.demo-highlight').forEach(el => {
-    el.classList.remove('demo-highlight');
+  return new Promise(resolve => {
+    function animate(currentTime) {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = easeOutCubic(progress);
+      
+      const x = startX + (targetX - startX) * eased;
+      const y = startY + (targetY - startY) * eased;
+      
+      element.style.left = x + 'px';
+      element.style.top = y + 'px';
+      
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        resolve();
+      }
+    }
+    
+    requestAnimationFrame(animate);
   });
 }
 
-function getElementByDemoId(demoId) {
+async function performTap(targetElement) {
+  const { element, ripple } = getDemoFinger();
+  
+  // Press down
+  element.style.transform = 'translate(-50%, -50%) scale(0.85)';
+  element.style.background = 'rgba(0, 82, 204, 0.95)';
+  await wait(150);
+  
+  // Trigger actual click
+  targetElement.click();
+  
+  // Ripple animation
+  ripple.style.transition = 'none';
+  ripple.style.transform = 'scale(0.8)';
+  ripple.style.opacity = '1';
+  
+  setTimeout(() => {
+    ripple.style.transition = 'transform 600ms ease-out, opacity 600ms ease-out';
+    ripple.style.transform = 'scale(1.5)';
+    ripple.style.opacity = '0';
+  }, 50);
+  
+  // Release
+  await wait(150);
+  element.style.transform = 'translate(-50%, -50%) scale(1.1)';
+  element.style.background = 'rgba(0, 102, 255, 0.95)';
+  await wait(100);
+  element.style.transform = 'translate(-50%, -50%) scale(1)';
+  await wait(100);
+}
+
+async function revealResult(targetElement, direction = 'right', distance = 70) {
+  // Move finger aside to reveal the result
+  const { element } = getDemoFinger();
+  const rect = targetElement.getBoundingClientRect();
+  
+  let offsetX = 0;
+  let offsetY = 0;
+  
+  switch(direction) {
+    case 'right':
+      offsetX = distance;
+      break;
+    case 'left':
+      offsetX = -distance;
+      break;
+    case 'down':
+      offsetY = distance;
+      break;
+    case 'up':
+      offsetY = -distance;
+      break;
+  }
+  
+  const targetX = rect.left + rect.width / 2 + offsetX;
+  const targetY = rect.top + rect.height / 2 + offsetY;
+  
+  // Animate to side position
+  element.style.transition = 'left 400ms ease-out, top 400ms ease-out';
+  element.style.left = targetX + 'px';
+  element.style.top = targetY + 'px';
+  
+  await wait(400);
+  
+  // Reset transition for next movement
+  element.style.transition = 'transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 300ms ease';
+}
+
+// ============================================
+// PICKER INTERACTION FUNCTIONS
+// ============================================
+async function waitForPicker(timeout = 2000) {
+  console.log('⏳ Waiting for picker to appear...');
+  const startTime = Date.now();
+  
+  while (Date.now() - startTime < timeout) {
+    const picker = document.querySelector('.picker-backdrop');
+    if (picker) {
+      console.log('✅ Picker appeared');
+      await wait(200); // Small delay for render
+      return picker;
+    }
+    await wait(100);
+  }
+  
+  console.warn('⚠️  Picker timeout - continuing without picker');
+  return null;
+}
+
+async function waitForPickerToClose(timeout = 2000) {
+  console.log('⏳ Waiting for picker to close...');
+  const startTime = Date.now();
+  
+  while (Date.now() - startTime < timeout) {
+    const picker = document.querySelector('.picker-backdrop');
+    if (!picker) {
+      console.log('✅ Picker closed');
+      await wait(200);
+      return;
+    }
+    await wait(100);
+  }
+  
+  console.warn('⚠️  Picker close timeout');
+}
+
+function findPickerButton(number) {
+  const button = document.querySelector(`.picker-button[data-value="${number}"]`);
+  if (!button) {
+    console.warn(`⚠️  Could not find picker button for number ${number}`);
+  }
+  return button;
+}
+
+async function selectNumberInPicker(number, fingerOffset = 60) {
+  const button = findPickerButton(number);
+  if (!button) return;
+  
+  const { element } = getDemoFinger();
+  const rect = button.getBoundingClientRect();
+  
+  // 1. Approach from left
+  console.log(`🎯 Approaching number ${number} from left`);
+  const approachX = rect.left + rect.width / 2 - fingerOffset;
+  const approachY = rect.top + rect.height / 2;
+  
+  element.style.transition = 'left 500ms ease-out, top 500ms ease-out';
+  element.style.left = approachX + 'px';
+  element.style.top = approachY + 'px';
+  await wait(500);
+  
+  // 2. Move onto the number
+  console.log(`👉 Moving onto number ${number}`);
+  element.style.transition = 'left 300ms ease-out, top 300ms ease-out';
+  element.style.left = (rect.left + rect.width / 2) + 'px';
+  element.style.top = approachY + 'px';
+  await wait(300);
+  
+  // 3. Perform tap
+  await wait(200);
+  await performTap(button);
+  
+  // 4. Reveal: move aside to show selected number
+  console.log(`👀 Revealing selected number ${number}`);
+  const revealX = rect.left + rect.width / 2 + 50;
+  element.style.transition = 'left 400ms ease-out';
+  element.style.left = revealX + 'px';
+  await wait(400);
+  
+  // Reset transition
+  element.style.transition = 'transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 300ms ease';
+  
+  // 5. Wait for picker to close
+  await wait(1500); // Show the selection
+  await waitForPickerToClose();
+}
+
+// ============================================
+// SCROLL FUNCTIONS
+// ============================================
+function getScrollContainer() {
+  return document.querySelector('[data-demo="scroll-container"]') || 
+         document.querySelector('.stage-viewport');
+}
+
+async function smoothScrollTo(x, y, duration = demoConfig.scrollDuration) {
+  const container = getScrollContainer();
+  if (!container) return;
+  
+  const startX = container.scrollLeft;
+  const startY = container.scrollTop;
+  const startTime = performance.now();
+  
+  return new Promise(resolve => {
+    function animate(currentTime) {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = easeOutCubic(progress);
+      
+      container.scrollLeft = startX + (x - startX) * eased;
+      container.scrollTop = startY + (y - startY) * eased;
+      
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        resolve();
+      }
+    }
+    
+    requestAnimationFrame(animate);
+  });
+}
+
+async function smoothScrollX(targetX, duration = demoConfig.scrollDuration) {
+  const container = getScrollContainer();
+  if (!container) return;
+  
+  const maxScroll = container.scrollWidth - container.clientWidth;
+  if (maxScroll <= 0) return; // No horizontal scroll available
+  
+  const clampedTarget = Math.max(0, Math.min(targetX, maxScroll));
+  await smoothScrollTo(clampedTarget, container.scrollTop, duration);
+}
+
+async function smoothScrollY(targetY, duration = demoConfig.scrollDuration) {
+  const container = getScrollContainer();
+  if (!container) return;
+  
+  const maxScroll = container.scrollHeight - container.clientHeight;
+  if (maxScroll <= 0) return; // No vertical scroll available
+  
+  const clampedTarget = Math.max(0, Math.min(targetY, maxScroll));
+  await smoothScrollTo(container.scrollLeft, clampedTarget, duration);
+}
+
+// ============================================
+// ELEMENT HELPERS
+// ============================================
+function getElement(demoId) {
   return document.querySelector(`[data-demo="${demoId}"]`);
 }
 
-async function typeInInput(input, text, stepDelay = 150) {
-  input.focus();
-  for (let i = 0; i < text.length; i++) {
-    input.value += text[i];
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-    await wait(stepDelay);
+async function ensureVisible(element, padding = 20) {
+  const container = getScrollContainer();
+  if (!container || !element) return;
+  
+  const containerRect = container.getBoundingClientRect();
+  const elementRect = element.getBoundingClientRect();
+  
+  // Calculate relative position within scroll container
+  const relativeLeft = elementRect.left - containerRect.left + container.scrollLeft;
+  const relativeTop = elementRect.top - containerRect.top + container.scrollTop;
+  
+  // Check if element is outside visible area
+  const isOutsideX = relativeLeft < container.scrollLeft + padding || 
+                     relativeLeft > container.scrollLeft + container.clientWidth - padding;
+  const isOutsideY = relativeTop < container.scrollTop + padding || 
+                     relativeTop > container.scrollTop + container.clientHeight - padding;
+  
+  if (isOutsideX || isOutsideY) {
+    const targetX = isOutsideX ? relativeLeft - padding : container.scrollLeft;
+    const targetY = isOutsideY ? relativeTop - padding : container.scrollTop;
+    await smoothScrollTo(targetX, targetY, demoConfig.scrollDuration);
   }
-  input.blur();
 }
 
-function getScrollContainer() {
-  return getElementByDemoId('scroll-container') || document.querySelector('.stage-viewport');
-}
+// ============================================
+// DEMO PHASES
+// ============================================
 
-// Demo Scenes
-async function scene1_Entrada() {
-  console.log('🎬 Scene 1: Entrada');
+// Phase 1: Discovery (0-4s)
+// Shows that the ballot is freely navigable
+async function phase1_Discovery() {
+  console.log('🎬 Phase 1: Discovery');
   const container = getScrollContainer();
+  if (!container) return;
   
-  // Wait initial delay
-  await wait(demoConfig.autoStartDelay);
+  // Start centered
+  const centerX = (container.scrollWidth - container.clientWidth) / 2;
+  await smoothScrollTo(centerX, 0, 0);
   
-  // Small horizontal pan to show cédula is scrollable
-  await smoothScrollX(container, 150, demoConfig.scrollShort);
-  await wait(demoConfig.shortPause);
+  await wait(300);
   
-  // Return slightly
-  await smoothScrollX(container, 50, demoConfig.scrollShort);
-  await wait(500);
-}
-
-async function scene2_RecorridoHorizontal() {
-  console.log('🎬 Scene 2: Recorrido Horizontal');
-  const container = getScrollContainer();
+  // Diagonal pan: up-left to down-right
+  await smoothScrollTo(centerX - 100, 150, demoConfig.panDuration);
+  await wait(200);
   
-  const columns = [
-    'col-presidente',
-    'col-senadores-nacional',
-    'col-senadores-regional',
-    'col-diputados',
-    'col-parlamento'
-  ];
-  
-  let currentX = 0;
-  const colWidth = 336; // 320px + 16px gap
-  
-  for (let i = 0; i < columns.length; i++) {
-    currentX = i * colWidth;
-    await smoothScrollX(container, currentX, demoConfig.scrollMedium);
-    await wait(demoConfig.shortPause);
-  }
-  
-  // Return to start
-  await smoothScrollX(container, 0, demoConfig.scrollLong);
+  // Return to center
+  await smoothScrollTo(centerX, 0, demoConfig.panDuration);
   await wait(demoConfig.shortPause);
 }
 
-async function scene3_ScrollVertical() {
-  console.log('🎬 Scene 3: Scroll Vertical');
-  const container = getScrollContainer();
-  
-  // Scroll down to show more parties (2-3 rows)
-  await smoothScrollY(container, 180, demoConfig.scrollMedium);
-  await wait(demoConfig.mediumPause);
-  
-  // Scroll back up for interaction zone
-  await smoothScrollY(container, 60, demoConfig.scrollMedium);
-  await wait(demoConfig.shortPause);
-}
-
-async function scene4_TapFotografia() {
-  console.log('🎬 Scene 4: Tap sobre Fotografía');
-  const container = getScrollContainer();
+// Phase 2: Core Interaction (4-10s)
+// Demonstrates: symbol selection, photo selection, and automatic unmarking when changing parties
+async function phase2_CoreInteraction() {
+  console.log('🎬 Phase 2: Core Interaction - Presidente');
   
   // Ensure we're at Presidente column
-  await smoothScrollX(container, 0, demoConfig.scrollShort);
+  await smoothScrollX(0, demoConfig.scrollDuration);
   
-  // Get first presidential row with photo
-  const fotoElement = getElementByDemoId('foto-presidente-0') || 
-                      document.querySelector('[data-demo^="foto-"]');
+  // Find rows - use first row and third row (2 rows down)
+  const row1 = getElement('row-presidente-0') || 
+               document.querySelector('[data-demo="col-presidente"] .ballot-row');
   
-  if (fotoElement) {
-    highlightElement(fotoElement);
-    await wait(400);
-    
-    moveTapIndicatorTo(fotoElement);
-    await wait(300);
-    await animateTap();
-    
-    // Trigger actual click
-    fotoElement.click();
-    await wait(1000);
-    
-    clearHighlight(fotoElement);
+  const row3 = getElement('row-presidente-2') || 
+               document.querySelectorAll('[data-demo="col-presidente"] .ballot-row')[2];
+  
+  if (!row1) {
+    console.warn('⚠️  No presidential rows found');
+    return;
   }
-}
-
-async function scene5_TapSimbolo() {
-  console.log('🎬 Scene 5: Tap sobre Símbolo');
   
-  // Get first symbol (could be same party or another)
-  const simboloElement = getElementByDemoId('simbolo-presidente-0') || 
-                         document.querySelector('[data-demo^="simbolo-"]');
+  // Get elements from row 1
+  const simbolo1 = row1.querySelector('[data-demo^="simbolo-"]') || 
+                   row1.querySelector('.image-frame');
+  const foto1 = row1.querySelector('[data-demo^="foto-"]') || 
+                row1.querySelector('.is-photo');
   
-  if (simboloElement) {
-    highlightElement(simboloElement);
-    await wait(400);
-    
-    moveTapIndicatorTo(simboloElement);
+  await showFinger();
+  
+  // ===== STEP 1: Tap on symbol (row 1) =====
+  console.log('👉 Step 1: Tap symbol row 1');
+  if (simbolo1) {
+    await moveFingerTo(simbolo1, demoConfig.fingerMoveSpeed);
     await wait(300);
-    await animateTap();
+    await performTap(simbolo1);
+    await wait(200);
     
-    // Trigger actual click
-    simboloElement.click();
-    await wait(1000);
-    
-    clearHighlight(simboloElement);
+    // Reveal: show X on symbol
+    await revealResult(simbolo1, 'right', 50);
+    await wait(1200); // "Symbol is marked"
   }
-}
-
-async function scene6_IrAColumnaPreferencial() {
-  console.log('🎬 Scene 6: Ir a Columna con Voto Preferencial');
-  const container = getScrollContainer();
   
-  // Scroll to Senadores Nacional (2nd column)
-  await smoothScrollX(container, 336, demoConfig.scrollMedium);
-  await wait(400);
-  
-  // Highlight preferential area
-  const preferentialBlock = getElementByDemoId('voto-preferencial-senadores-nacional') ||
-                            document.querySelector('.preferential-block');
-  if (preferentialBlock) {
-    highlightElement(preferentialBlock);
-    await wait(600);
-    clearHighlight(preferentialBlock);
-  }
-}
-
-async function scene7_PrimeraCasillaPreferencial() {
-  console.log('🎬 Scene 7: Primera Casilla Preferencial');
-  
-  // Get first preferential slot
-  const slot1 = getElementByDemoId('preferencial-senadores-nacional-0-0') ||
-                document.querySelector('.ballot-slot');
-  
-  if (slot1) {
-    highlightElement(slot1);
-    await wait(400);
-    
-    moveTapIndicatorTo(slot1);
+  // ===== STEP 2: Tap on photo (same row 1) =====
+  console.log('👉 Step 2: Tap photo row 1');
+  if (foto1) {
+    await moveFingerTo(foto1, demoConfig.fingerMoveSpeed);
     await wait(300);
-    await animateTap();
+    await performTap(foto1);
+    await wait(200);
     
-    // Click to open picker
-    slot1.click();
-    await wait(400);
+    // Reveal: show both X's (symbol + photo)
+    await revealResult(foto1, 'right', 60);
+    await wait(1500); // "Both symbol and photo marked"
+  }
+  
+  // ===== STEP 3: Scroll down to row 3 and tap photo =====
+  console.log('👉 Step 3: Move to row 3, tap photo');
+  if (row3) {
+    const foto3 = row3.querySelector('[data-demo^="foto-"]') || 
+                  row3.querySelector('.is-photo');
     
-    // Simulate typing
-    const input = document.querySelector('.preference-input') || slot1.querySelector('input');
-    if (input) {
-      await typeInInput(input, demoConfig.preferencialValue1);
+    if (foto3) {
+      await ensureVisible(foto3);
+      await moveFingerTo(foto3, demoConfig.fingerMoveSpeed);
+      await wait(300);
+      await performTap(foto3);
+      await wait(200);
+      
+      // Reveal: show X on photo row 3
+      await revealResult(foto3, 'right', 50);
+      await wait(1000); // "Photo row 3 is marked"
+      
+      // ===== STEP 4: Move to symbol row 3 (reveals row 1 is unmarked) =====
+      console.log('👉 Step 4: Reveal - row 1 automatically unmarked');
+      const simbolo3 = row3.querySelector('[data-demo^="simbolo-"]') || 
+                       row3.querySelector('.image-frame');
+      
+      if (simbolo3) {
+        await moveFingerTo(simbolo3, demoConfig.fingerMoveSpeed);
+        await wait(300);
+        await performTap(simbolo3);
+        await wait(200);
+        
+        // Move aside to reveal: row 3 has both marks, row 1 is clean
+        await revealResult(simbolo3, 'left', 60);
+        await wait(1500); // "Changed party, row 1 automatically unmarked"
+      }
     }
-    
-    await wait(900);
-    clearHighlight(slot1);
   }
+  
+  // Hide finger before transitioning
+  await hideFinger();
 }
 
-async function scene8_SegundaCasillaPreferencial() {
-  console.log('🎬 Scene 8: Segunda Casilla Preferencial');
+// Phase 3: Progressive Discovery (9-13s)
+// Shows Senadores Nacional with preferential voting
+async function phase3_Progressive() {
+  console.log('🎬 Phase 3: Progressive Discovery');
   
-  // Get second preferential slot
-  const slot2 = getElementByDemoId('preferencial-senadores-nacional-0-1') ||
+  // Scroll to Senadores Nacional (column 1)
+  await smoothScrollX(336, demoConfig.scrollDuration);
+  await wait(demoConfig.shortPause);
+  
+  // Show finger again (it was hidden at end of Phase 2)
+  await showFinger();
+  
+  // Find a row with preferential voting (third row is usually good)
+  const simbolo = getElement('simbolo-senadores-nacional-2') ||
+                  document.querySelector('[data-demo="col-senadores-nacional"] .image-frame');
+  
+  const slot1 = getElement('preferencial-senadores-nacional-2-0') ||
+                document.querySelectorAll('.ballot-slot')[0];
+  
+  const slot2 = getElement('preferencial-senadores-nacional-2-1') ||
                 document.querySelectorAll('.ballot-slot')[1];
   
-  if (slot2) {
-    highlightElement(slot2);
-    await wait(400);
-    
-    moveTapIndicatorTo(slot2);
+  if (simbolo && slot1 && slot2) {
+    // Tap symbol to select row
+    await ensureVisible(simbolo);
+    await moveFingerTo(simbolo, demoConfig.fingerMoveSpeed);
+    await wait(200);
+    await performTap(simbolo);
     await wait(300);
-    await animateTap();
     
-    // Click to open picker
-    slot2.click();
-    await wait(400);
+    // Reveal: move finger aside to show selected row
+    await revealResult(simbolo, 'right', 50);
+    await wait(800);
     
-    // Simulate typing
-    const input = document.querySelector('.preference-input') || slot2.querySelector('input');
-    if (input) {
-      await typeInInput(input, demoConfig.preferencialValue2);
+    // ===== SLOT 1: Select "12" =====
+    // Find the actual button inside the slot container
+    const slot1Button = slot1.querySelector('.ballot-slot') || slot1;
+    
+    // Move to first slot and tap the button
+    await moveFingerTo(slot1Button, demoConfig.fingerMoveSpeed);
+    await wait(200);
+    await performTap(slot1Button);
+    await wait(500); // Wait longer for picker to open
+    
+    // Wait for picker to appear
+    const picker1 = await waitForPicker();
+    
+    if (picker1) {
+      // Select number 12 in picker
+      await selectNumberInPicker(12);
+    } else {
+      console.warn('⚠️  Picker did not appear for slot 1');
+      // Fallback: try clicking again or use direct input
+      await wait(400);
     }
     
+    // Reveal: show "12" in slot 1
+    await revealResult(slot1Button, 'down', 40);
     await wait(800);
-    clearHighlight(slot2);
+    
+    // ===== SLOT 2: Select "24" =====
+    // Find the actual button inside the slot container
+    const slot2Button = slot2.querySelector('.ballot-slot') || slot2;
+    
+    // Move to second slot and tap the button
+    await moveFingerTo(slot2Button, demoConfig.fingerMoveSpeed);
+    await wait(200);
+    await performTap(slot2Button);
+    await wait(500); // Wait longer for picker to open
+    
+    // Wait for picker to appear
+    const picker2 = await waitForPicker();
+    
+    if (picker2) {
+      // Select number 24 in picker
+      await selectNumberInPicker(24);
+    } else {
+      console.warn('⚠️  Picker did not appear for slot 2');
+      await wait(400);
+    }
+    
+    // Reveal: show "24" in slot 2
+    await revealResult(slot2Button, 'down', 40);
+    await wait(1000);
   }
 }
 
-async function scene9_RecorridoFinal() {
-  console.log('🎬 Scene 9: Recorrido Final Resumen');
-  const container = getScrollContainer();
+// Phase 4: Closing (13-15s)
+// Shows final success state
+async function phase4_Closing() {
+  console.log('🎬 Phase 4: Closing');
   
-  // Horizontal pan showing multiple columns
-  await smoothScrollX(container, 168, demoConfig.scrollShort);
-  await wait(600);
+  // Scroll to show the complete selection
+  await smoothScrollX(336, demoConfig.scrollDuration);
+  await wait(200);
   
-  await smoothScrollX(container, 672, demoConfig.scrollMedium);
-  await wait(600);
+  // Hide finger with fade
+  await hideFinger();
   
-  // Small vertical scroll
-  await smoothScrollY(container, 120, demoConfig.scrollShort);
-  await wait(500);
-  
-  // Return to nice closing position
-  await smoothScrollX(container, 336, demoConfig.scrollMedium);
-  await smoothScrollY(container, 60, demoConfig.scrollShort);
-  await wait(500);
+  // Dramatic pause showing the result
+  await wait(demoConfig.longPause);
 }
 
-async function scene10_Cierre() {
-  console.log('🎬 Scene 10: Cierre');
-  
-  // Stay quiet or restart
-  await wait(demoConfig.restartDelay);
-}
-
-// Main demo controller
-const scenes = [
-  scene1_Entrada,
-  scene2_RecorridoHorizontal,
-  scene3_ScrollVertical,
-  scene4_TapFotografia,
-  scene5_TapSimbolo,
-  scene6_IrAColumnaPreferencial,
-  scene7_PrimeraCasillaPreferencial,
-  scene8_SegundaCasillaPreferencial,
-  scene9_RecorridoFinal,
-  scene10_Cierre
+// ============================================
+// MAIN CONTROLLER
+// ============================================
+const demoPhases = [
+  phase1_Discovery,
+  phase2_CoreInteraction,
+  phase3_Progressive,
+  phase4_Closing
 ];
 
-async function runScene(sceneIndex) {
-  if (!isDemoRunning || sceneIndex >= scenes.length) return;
+async function runDemo() {
+  if (!isDemoRunning) return;
   
-  currentScene = sceneIndex;
+  console.log('🎬 Starting Demo Sequence');
   
   try {
-    await scenes[sceneIndex]();
+    // Run all phases
+    for (const phase of demoPhases) {
+      if (!isDemoRunning) break;
+      await phase();
+    }
     
-    if (isDemoRunning && sceneIndex < scenes.length - 1) {
-      await runScene(sceneIndex + 1);
-    } else if (isDemoRunning && demoConfig.restart) {
-      // Restart from beginning
-      await wait(demoConfig.restartDelay);
-      await resetDemo();
-      await runScene(0);
+    // Closing
+    if (isDemoRunning) {
+      console.log('✅ Demo completed');
+      
+      if (demoConfig.restart) {
+        await wait(demoConfig.restartDelay);
+        await resetDemo();
+        await runDemo();
+      }
     }
   } catch (error) {
-    console.error('Demo scene error:', error);
-    stopDemo();
+    console.error('❌ Demo error:', error);
+    stopBallotDemoTour();
   }
 }
 
-export function startBallotDemoTour() {
-  if (isDemoRunning) return;
-  
-  console.log('🎬 Starting Ballot Demo Tour');
-  isDemoRunning = true;
-  currentScene = 0;
-  
-  // Add styles if not present
-  if (!document.getElementById('demo-styles')) {
-    const styles = document.createElement('style');
-    styles.id = 'demo-styles';
-    styles.textContent = `
-      .demo-highlight {
-        position: relative;
-        z-index: 3;
-        box-shadow: 0 0 0 3px rgba(59,130,246,0.28);
-        transition: box-shadow 260ms ease;
-      }
-    `;
-    document.head.appendChild(styles);
-  }
-  
-  // Start demo sequence
-  runScene(0);
-}
-
-export function stopBallotDemoTour() {
-  console.log('🛑 Stopping Ballot Demo Tour');
-  isDemoRunning = false;
-  currentScene = 0;
-  
-  // Cleanup
-  clearAllHighlights();
-  if (tapIndicator) {
-    tapIndicator.style.opacity = '0';
-  }
-  
-  if (abortController) {
-    abortController.abort();
-    abortController = null;
-  }
-}
-
-export async function resetDemo() {
+async function resetDemo() {
   console.log('🔄 Resetting Demo');
   
-  // Clear selections
-  clearAllHighlights();
+  // Hide finger
+  await hideFinger();
   
-  // Reset scroll
+  // Clear votes (trigger reset)
+  const resetBtn = document.querySelector('[data-demo="reset"]') || 
+                   document.querySelector('.reset-button');
+  if (resetBtn) resetBtn.click();
+  
+  // Reset scroll position
   const container = getScrollContainer();
   if (container) {
     container.scrollTo({ left: 0, top: 0, behavior: 'auto' });
   }
   
-  // Clear votes (if needed, trigger reset)
-  const resetButton = document.querySelector('[data-demo="reset"]');
-  if (resetButton) {
-    resetButton.click();
+  // Clear any selections
+  document.querySelectorAll('.is-voted, .demo-highlight').forEach(el => {
+    el.classList.remove('is-voted', 'demo-highlight');
+  });
+  
+  await wait(500);
+}
+
+// ============================================
+// PUBLIC API
+// ============================================
+export function startBallotDemoTour() {
+  if (isDemoRunning) return;
+  
+  console.log('🎬 Starting Ballot Demo Tour V3');
+  isDemoRunning = true;
+  
+  // Add global styles
+  if (!document.getElementById('demo-styles-v3')) {
+    const styles = document.createElement('style');
+    styles.id = 'demo-styles-v3';
+    styles.textContent = `
+      .demo-highlight {
+        position: relative;
+        z-index: 3;
+        box-shadow: 0 0 0 4px rgba(0, 102, 255, 0.3) !important;
+        transition: box-shadow 300ms ease;
+      }
+      
+      .demo-highlight::after {
+        content: '';
+        position: absolute;
+        inset: -4px;
+        border-radius: inherit;
+        background: rgba(0, 102, 255, 0.1);
+        z-index: -1;
+        pointer-events: none;
+      }
+    `;
+    document.head.appendChild(styles);
   }
   
-  await wait(300);
+  // Start sequence
+  setTimeout(() => {
+    runDemo();
+  }, demoConfig.autoStartDelay);
 }
 
-// Auto-start detection
+export function stopBallotDemoTour() {
+  console.log('🛑 Stopping Demo');
+  isDemoRunning = false;
+  
+  // Hide finger
+  hideFinger();
+  
+  // Remove highlights
+  document.querySelectorAll('.demo-highlight').forEach(el => {
+    el.classList.remove('demo-highlight');
+  });
+}
+
 export function initDemoMode() {
-  if (typeof window !== 'undefined' && window.location.search.includes('demo=1')) {
-    console.log('🎬 Demo mode detected, starting in', demoConfig.autoStartDelay, 'ms');
-    setTimeout(() => {
+  if (typeof window !== 'undefined') {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('demo')) {
+      console.log('🎬 Demo mode detected');
       startBallotDemoTour();
-    }, demoConfig.autoStartDelay);
+    }
   }
 }
 
-// Expose globally for debugging
+// Expose for debugging
 if (typeof window !== 'undefined') {
   window.ballotDemo = {
     start: startBallotDemoTour,
