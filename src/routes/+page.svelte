@@ -196,8 +196,6 @@
             </svg>
             <span>¿Dudas o sugerencias?</span>
           </button>
-          <span class="footer-separator">·</span>
-          <span class="footer-credit">Hecho con ♥ por <a href="https://x.com/nirvriaji" target="_blank" rel="noopener noreferrer">@nirvriaji</a></span>
         </div>
       </footer>
 
@@ -290,30 +288,11 @@
     flex-shrink: 0;
   }
 
-  .footer-separator {
-    color: rgba(255, 255, 255, 0.3);
-  }
-
-  .footer-credit a {
-    color: rgba(255, 255, 255, 0.7);
-    text-decoration: none;
-    transition: color 0.2s ease;
-  }
-
-  .footer-credit a:hover {
-    color: rgba(255, 255, 255, 0.95);
-    text-decoration: underline;
-  }
-
   /* Mobile: Footer adjustments */
   @media (max-width: 480px) {
     .footer-links {
       flex-direction: column;
       gap: 8px;
-    }
-
-    .footer-separator {
-      display: none;
     }
   }
 
