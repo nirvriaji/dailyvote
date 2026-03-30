@@ -53,9 +53,36 @@
   <main class="landing">
     <!-- Content -->
     <div class="landing-inner" in:fly={{ y: 30, duration: 600 }}>
-      <!-- Top Pill -->
-      <div class="pill-wrapper" in:fade={{ duration: 400, delay: 200 }}>
-        <span class="top-pill">PE · ELECCIONES GENERALES 2026</span>
+      <!-- Top Row: Badge + Contact -->
+      <div class="top-row" in:fade={{ duration: 400, delay: 200 }}>
+        <!-- Top Pill -->
+        <div class="pill-wrapper">
+          <span class="top-pill">PE · ELECCIONES GENERALES 2026</span>
+        </div>
+        
+        <!-- Contact Badges -->
+        <div class="contact-badges">
+          <a 
+            href="https://x.com/nirvriaji" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            class="contact-pill"
+            title="Sugerencias en X"
+          >
+            <span class="contact-icon">𝕏</span>
+            <span class="contact-text">Feedback</span>
+          </a>
+          <a 
+            href="https://www.linkedin.com/in/irvin-pereyra/" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            class="contact-pill"
+            title="LinkedIn"
+          >
+            <span class="contact-icon">in</span>
+            <span class="contact-text">Contacto</span>
+          </a>
+        </div>
       </div>
 
       <!-- Headline -->
@@ -226,6 +253,79 @@
     text-transform: uppercase;
     color: white;
     backdrop-filter: blur(8px);
+  }
+
+  /* Top Row - Badge + Contact */
+  .top-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    margin-bottom: 8px;
+  }
+
+  /* Contact Badges */
+  .contact-badges {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .contact-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50px;
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
+    text-decoration: none;
+    backdrop-filter: blur(8px);
+    transition: all 0.2s ease;
+  }
+
+  .contact-pill:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: translateY(-1px);
+  }
+
+  .contact-icon {
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  /* Desktop: Horizontal layout */
+  @media (min-width: 769px) {
+    .top-row {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .contact-badges {
+      margin-top: 0;
+    }
+  }
+
+  /* Mobile: Stack vertically */
+  @media (max-width: 768px) {
+    .contact-badges {
+      gap: 8px;
+    }
+
+    .contact-pill {
+      padding: 5px 10px;
+      font-size: 11px;
+    }
+
+    .contact-text {
+      display: none; /* Hide text on mobile, show only icon */
+    }
   }
 
   /* Headline */

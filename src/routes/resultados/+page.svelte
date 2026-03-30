@@ -1017,6 +1017,30 @@
           <h1 class="main-title">RESULTADOS ELECTORALES</h1>
         </div>
         <p class="subtitle">Elecciones Generales Perú 2026</p>
+        
+        <!-- Contact Badges -->
+        <div class="contact-badges-results">
+          <a 
+            href="https://x.com/nirvriaji" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            class="contact-pill-results"
+            title="Sugerencias en X"
+          >
+            <span class="contact-icon-results">𝕏</span>
+            <span class="contact-text-results">Feedback</span>
+          </a>
+          <a 
+            href="https://www.linkedin.com/in/irvin-pereyra/" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            class="contact-pill-results"
+            title="LinkedIn"
+          >
+            <span class="contact-icon-results">in</span>
+            <span class="contact-text-results">Contacto</span>
+          </a>
+        </div>
       </div>
       
       <!-- Right Card (Activity) -->
@@ -1537,6 +1561,41 @@
     font-weight: 400;
     color: #9CA3AF;
     margin: 8px 0 0 0;
+  }
+
+  /* Contact Badges in Results Header */
+  .contact-badges-results {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+
+  .contact-pill-results {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 50px;
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.85);
+    text-decoration: none;
+    backdrop-filter: blur(8px);
+    transition: all 0.2s ease;
+  }
+
+  .contact-pill-results:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+  }
+
+  .contact-icon-results {
+    font-size: 14px;
+    font-weight: 700;
   }
 
   /* Live Stats Widget - Glassmorphism Card */
@@ -2732,6 +2791,11 @@
     .title-row {
       justify-content: center;
     }
+
+    .contact-badges-results {
+      justify-content: center;
+      margin-top: 12px;
+    }
     
     .main-title {
       font-size: 28px;
@@ -2854,6 +2918,18 @@
     
     .title-wrapper {
       max-width: 100%;
+    }
+
+    .contact-badges-results {
+      gap: 8px;
+    }
+
+    .contact-pill-results {
+      padding: 5px 10px;
+    }
+
+    .contact-text-results {
+      display: none;
     }
     
     .live-stats-widget {
