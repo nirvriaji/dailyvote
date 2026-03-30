@@ -1,5 +1,61 @@
 import type { BallotColumn, BallotRow, VoteZone, Candidate, ZoneId } from '$lib/types';
 
+// ─── Firebase Storage Configuration ────────────────────────────────────────────
+const STORAGE_BASE_URL = 'https://storage.googleapis.com/exitpollsimulator.firebasestorage.app';
+
+// Helper to generate image URLs for party logos and candidate photos
+function getPartyImageUrl(partyNumber: number, type: 'logo' | 'candidate'): string {
+  const partyMap: Record<number, { logo: string; candidate: string }> = {
+    1: { logo: '1-alianza-venceremos-logo.webp', candidate: '1-alianza-venceremos-candidate.webp' },
+    2: { logo: '2-partido-patriotico-del-peru-logo.webp', candidate: '2-partido-patriotico-del-peru-candidate.webp' },
+    3: { logo: '3-partido-civico-obras-logo.webp', candidate: '3-partido-civico-obras-candidate.webp' },
+    4: { logo: '4-partido-democrata-verde-logo.webp', candidate: '4-partido-democrata-verde-candidate.webp' },
+    5: { logo: '5-partido-del-buen-gobierno-logo.webp', candidate: '5-partido-del-buen-gobierno-candidate.webp' },
+    6: { logo: '6-peru-accion-logo.webp', candidate: '6-peru-accion-candidate.webp' },
+    7: { logo: '7-prin-logo.webp', candidate: '7-prin-candidate.webp' },
+    8: { logo: '8-progresemos-logo.webp', candidate: '8-progresemos-candidate.webp' },
+    9: { logo: '9-si-creo-logo.webp', candidate: '9-si-creo-candidate.webp' },
+    10: { logo: '10-pais-para-todos-logo.webp', candidate: '10-pais-para-todos-candidate.webp' },
+    11: { logo: '11-frente-de-la-esperanza-logo.webp', candidate: '11-frente-de-la-esperanza-candidate.webp' },
+    12: { logo: '12-peru-libre-logo.webp', candidate: '12-peru-libre-candidate.webp' },
+    13: { logo: '13-primero-la-gente-logo.webp', candidate: '13-primero-la-gente-candidate.webp' },
+    14: { logo: '14-juntos-por-el-peru-logo.webp', candidate: '14-juntos-por-el-peru-candidate.webp' },
+    15: { logo: '15-podemos-peru-logo.webp', candidate: '15-podemos-peru-candidate.webp' },
+    16: { logo: '16-partido-democratico-federal-logo.webp', candidate: '16-partido-democratico-federal-candidate.webp' },
+    17: { logo: '17-fe-en-el-peru-logo.webp', candidate: '17-fe-en-el-peru-candidate.webp' },
+    18: { logo: '18-integridad-democratica-logo.webp', candidate: '18-integridad-democratica-candidate.webp' },
+    19: { logo: '19-fuerza-popular-logo.webp', candidate: '19-fuerza-popular-candidate.webp' },
+    20: { logo: '20-alianza-para-el-progreso-logo.webp', candidate: '20-alianza-para-el-progreso-candidate.webp' },
+    21: { logo: '21-cooperacion-popular-logo.webp', candidate: '21-cooperacion-popular-candidate.webp' },
+    22: { logo: '22-ahora-nacion-logo.webp', candidate: '22-ahora-nacion-candidate.webp' },
+    23: { logo: '23-libertad-popular-logo.webp', candidate: '23-libertad-popular-candidate.webp' },
+    24: { logo: '24-un-camino-diferente-logo.webp', candidate: '24-un-camino-diferente-candidate.webp' },
+    25: { logo: '25-avanza-pais-logo.webp', candidate: '25-avanza-pais-candidate.webp' },
+    26: { logo: '26-peru-moderno-logo.webp', candidate: '26-peru-moderno-candidate.webp' },
+    27: { logo: '27-peru-primero-logo.webp', candidate: '27-peru-primero-candidate.webp' },
+    28: { logo: '28-salvemos-al-peru-logo.webp', candidate: '28-salvemos-al-peru-candidate.webp' },
+    29: { logo: '29-somos-peru-logo.webp', candidate: '29-somos-peru-candidate.webp' },
+    30: { logo: '30-partido-aprista-peruano-logo.webp', candidate: '30-partido-aprista-peruano-candidate.webp' },
+    31: { logo: '31-renovacion-popular-logo.webp', candidate: '31-renovacion-popular-candidate.webp' },
+    32: { logo: '32-partido-democrata-unido-peru-logo.webp', candidate: '32-partido-democrata-unido-peru-candidate.webp' },
+    33: { logo: '33-alianza-fuerza-y-libertad-logo.webp', candidate: '33-alianza-fuerza-y-libertad-candidate.webp' },
+    34: { logo: '34-partido-de-los-trabajadores-y-emprendedores-logo.webp', candidate: '34-partido-de-los-trabajadores-y-emprendedores-candidate.webp' },
+    35: { logo: '35-alianza-unidad-nacional-logo.webp', candidate: '35-alianza-unidad-nacional-candidate.webp' },
+    36: { logo: '36-partido-morado-logo.webp', candidate: '36-partido-morado-candidate.webp' },
+  };
+  
+  const fileName = partyMap[partyNumber]?.[type];
+  if (!fileName) return '';
+  
+  const folder = type === 'logo' ? 'logos' : 'candidates';
+  return `${STORAGE_BASE_URL}/images/parties/${folder}/${fileName}`;
+}
+
+// Frepap logo URL (legislative only)
+function getFrepapLogoUrl(): string {
+  return `${STORAGE_BASE_URL}/images/parties/logos/4-frepap-logo.webp`;
+}
+
 // ─── Vote zones by column type ────────────────────────────────────────────────
 
 const PRESIDENTIAL_ZONES: VoteZone[] = [
@@ -17,16 +73,7 @@ const LEGISLATIVE_ZONES: VoteZone[] = [
 interface Party { 
   number: number; 
   name: string; 
-  abbr: string; 
-  color: string;
-  symbolUrl: string;
-  candidatePhotoUrl: string;
-}
-
-interface Party { 
-  number: number; 
-  name: string; 
-  abbr: string; 
+  abbr: string;
   color: string;
   symbolUrl: string;
   candidatePhotoUrl: string;
@@ -34,42 +81,42 @@ interface Party {
 
 // 36 parties participating in presidential election
 const PARTIES: Party[] = [
-  { number: 1,  name: 'Alianza Venceremos',                     abbr: 'AV',   color: '#D32F2F',   symbolUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Alianza_Venceremos/logo_alianza_venceremos.webp', candidatePhotoUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Alianza_Venceremos/Ronald_Atencio.webp' },
-  { number: 2,  name: 'Partido Patriótico del Perú',            abbr: 'PPP',  color: '#1976D2',   symbolUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Partido_Patriotico_del_Peru/logo_ppp.webp', candidatePhotoUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Partido_Patriotico_del_Peru/Hebert_Caller.webp' },
-  { number: 3,  name: 'Partido Cívico Obras',                   abbr: 'PCO',  color: '#388E3C',   symbolUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Partido_Civico_Obras/logo_partido_civico_obras.webp', candidatePhotoUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Partido_Civico_Obras/Ricardo_Belmont.webp' },
-  { number: 4,  name: 'Partido Demócrata Verde',                abbr: 'PDV',  color: '#689F38',   symbolUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Partido_Democrata_Verde/logo_partido_democrata_verde.webp', candidatePhotoUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Partido_Democrata_Verde/Alex_Gonzales.webp' },
-  { number: 5,  name: 'Partido del Buen Gobierno',              abbr: 'PBG',  color: '#FBC02D',   symbolUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Partido_del_Buen_Gobierno/logo_partido_del_buen_gobierno.webp', candidatePhotoUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Partido_del_Buen_Gobierno/Jorge_Nieto.webp' },
-  { number: 6,  name: 'Perú Acción',                            abbr: 'PA',   color: '#E64A19',   symbolUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Peru_Accion/logo_peru_accion.webp', candidatePhotoUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Peru_Accion/Francisco_Diez_Canseco.webp' },
-  { number: 7,  name: 'PRIN',                                   abbr: 'PRIN', color: '#5E35B1',   symbolUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/PRIN/logo_prin.webp', candidatePhotoUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/PRIN/Walter_Chirinos.webp' },
-  { number: 8,  name: 'Progresemos',                            abbr: 'PROG', color: '#00796B',   symbolUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Progresemos/logo_progresemos.webp', candidatePhotoUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Progresemos/Paul_Jaimes.webp' },
-  { number: 9,  name: 'Sí Creo',                                abbr: 'SC',   color: '#F57C00',   symbolUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Si_Creo/logo_si_creo.webp', candidatePhotoUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Si_Creo/Carlos_Espa.webp' },
-  { number: 10, name: 'País para Todos',                        abbr: 'PPT',  color: '#C2185B',   symbolUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Pais_para_Todos/logo_pais_para_todos.webp', candidatePhotoUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Pais_para_Todos/Carlos_Alvarez.webp' },
-  { number: 11, name: 'Frente de la Esperanza',                 abbr: 'FE',   color: '#303F9F',   symbolUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Frente_de_la_Esperanza/logo_Frente_de_la_Esperanza.webp', candidatePhotoUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Frente_de_la_Esperanza/Fernando_Olivera.webp' },
-  { number: 12, name: 'Perú Libre',                             abbr: 'PL',   color: '#D32F2F',   symbolUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Peru_Libre/logo_peru_libre.webp', candidatePhotoUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Peru_Libre/Vladimir_Cerron.webp' },
-  { number: 13, name: 'Primero la Gente',                       abbr: 'PG',   color: '#0288D1',   symbolUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Primero_la_Gente/logo_primero_la_gente.webp', candidatePhotoUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Primero_la_Gente/Marisol_Perez_Tello.webp' },
-  { number: 14, name: 'Juntos por el Perú',                     abbr: 'JP',   color: '#7B1FA2',   symbolUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Juntos_por_el_Peru/logo_juntos_por_el_peru.webp', candidatePhotoUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Juntos_por_el_Peru/Roberto_Sanchez.webp' },
-  { number: 15, name: 'Podemos Perú',                           abbr: 'PP',   color: '#303F9F',   symbolUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Podemos_Peru/logo_podemos_peru.webp', candidatePhotoUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Podemos_Peru/Jose_Luna_Galvez.webp' },
-  { number: 16, name: 'Partido Democrático Federal',            abbr: 'PDF',  color: '#455A64',   symbolUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Partido_Democratico_Federal/logo_partido_democratico_federal.webp', candidatePhotoUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Partido_Democratico_Federal/Armando_Masse.webp' },
-  { number: 17, name: 'Fe en el Perú',                          abbr: 'FEP',  color: '#795548',   symbolUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Fe_en_el_Peru/logo_Fe_en_el_Peru.webp', candidatePhotoUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Fe_en_el_Peru/Alvaro_Paz_de_la_Barra.webp' },
-  { number: 18, name: 'Integridad Democrática',                 abbr: 'ID',   color: '#E91E63',   symbolUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Integridad_Democratica/logo_integridad_democratica.webp', candidatePhotoUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Integridad_Democratica/Wolfgang_Grozo.webp' },
-  { number: 19, name: 'Fuerza Popular',                         abbr: 'FP',   color: '#FF6F00',   symbolUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Fuerza_Popular/logo_fuerza_popular.webp', candidatePhotoUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Fuerza_Popular/Keiko_Fujimori.webp' },
-  { number: 20, name: 'Alianza para el Progreso',               abbr: 'APP',  color: '#F57F17',   symbolUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Alianza_para_el_Progreso/logo_alianza_para_el_progreso.webp', candidatePhotoUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Alianza_para_el_Progreso/Cesar_Acuna.webp' },
-  { number: 21, name: 'Cooperación Popular',                    abbr: 'CP',   color: '#558B2F',   symbolUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Cooperacion_Popular/logo_cooperacion_popular.webp', candidatePhotoUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Cooperacion_Popular/Yonhy_Lescano.webp' },
-  { number: 22, name: 'Ahora Nación',                           abbr: 'AN',   color: '#1565C0',   symbolUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Ahora_Nacion/logo_ahora_nacion.webp', candidatePhotoUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Ahora_Nacion/Alfonso_Lopez_Chau.webp' },
-  { number: 23, name: 'Libertad Popular',                       abbr: 'LP',   color: '#00695C',   symbolUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Libertad_Popular/logo_libertad_popular.webp', candidatePhotoUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Libertad_Popular/Rafael_Belaunde.webp' },
-  { number: 24, name: 'Un Camino Diferente',                    abbr: 'UCD',  color: '#AD1457',   symbolUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Un_Camino_Diferente/logo_un_camino_diferente.webp', candidatePhotoUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Un_Camino_Diferente/Rosario_Fernandez_Bazan.webp' },
-  { number: 25, name: 'Avanza País',                            abbr: 'AVP',  color: '#0277BD',   symbolUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Avanza_Pais/logo_avanza_pais.webp', candidatePhotoUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Avanza_Pais/Jose_Williams.webp' },
-  { number: 26, name: 'Perú Moderno',                           abbr: 'PMOD', color: '#6A1B9A',   symbolUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Peru_Moderno/logo_peru_moderno.webp', candidatePhotoUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Peru_Moderno/Carlos_Jaico.webp' },
-  { number: 27, name: 'Perú Primero',                           abbr: 'PPRI', color: '#283593',   symbolUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Peru_Primero/logo_peru_primero.webp', candidatePhotoUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Peru_Primero/Martin_Vizcarra.webp' },
-  { number: 28, name: 'Salvemos al Perú',                       abbr: 'SPP',  color: '#C62828',   symbolUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Salvemos_al_Peru/logo_salvemos_al_peru.webp', candidatePhotoUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Salvemos_al_Peru/Antonio_Ortiz.webp' },
-  { number: 29, name: 'Somos Perú',                             abbr: 'SP',   color: '#00695C',   symbolUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Somos_Peru/logo_somos_peru.webp', candidatePhotoUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Somos_Peru/George_Forsyth.webp' },
-  { number: 30, name: 'Partido Aprista Peruano',                abbr: 'APRA', color: '#B71C1C',   symbolUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Partido_Aprista_Peruano/logo_partido_aprista_peruano.webp', candidatePhotoUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Partido_Aprista_Peruano/Enrique_Valderrama.webp' },
-  { number: 31, name: 'Renovación Popular',                     abbr: 'RP',   color: '#2E7D32',   symbolUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Renovacion_Popular/logo_renovacion_popular.webp', candidatePhotoUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Renovacion_Popular/Rafael_Lopez_Aliaga.webp' },
-  { number: 32, name: 'Partido Demócrata Unido Perú',           abbr: 'PDUP', color: '#00838F',   symbolUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Partido_Democrata_Unido_Peru/logo_partido_democrata_unido_peru.webp', candidatePhotoUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Partido_Democrata_Unido_Peru/Charlie_Carrasco.webp' },
-  { number: 33, name: 'Alianza Fuerza y Libertad',              abbr: 'AFYL', color: '#4527A0',   symbolUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Alianza_Fuerza_y_Libertad/logo_fuerza_y_libertad.webp', candidatePhotoUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Alianza_Fuerza_y_Libertad/Fiorella_Molinelli.webp' },
-  { number: 34, name: 'Partido de los Trabajadores y Emprendedores', abbr: 'PTYE', color: '#BF360C',   symbolUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Partido_de_los_Trabajadores_y_Emprendedores/logo_partido_de_los_trabajadores_y_emprendedores.webp', candidatePhotoUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Partido_de_los_Trabajadores_y_Emprendedores/Napoleon_Becerra.webp' },
-  { number: 35, name: 'Alianza Unidad Nacional',                abbr: 'AUN',  color: '#4A148C',   symbolUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Alianza_Unidad_Nacional/logo_alianza_unidad_nacional.webp', candidatePhotoUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Alianza_Unidad_Nacional/Roberto_Chiabra.webp' },
-  { number: 36, name: 'Partido Morado',                         abbr: 'PM',   color: '#6A1B9A',   symbolUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Partido_Morado/logo_partido_morado.webp', candidatePhotoUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/Partido_Morado/Mesias_Guevara.webp' },
+  { number: 1,  name: 'Alianza Venceremos',                     abbr: 'AV',   color: '#D32F2F',   symbolUrl: getPartyImageUrl(1, 'logo'), candidatePhotoUrl: getPartyImageUrl(1, 'candidate') },
+  { number: 2,  name: 'Partido Patriótico del Perú',            abbr: 'PPP',  color: '#1976D2',   symbolUrl: getPartyImageUrl(2, 'logo'), candidatePhotoUrl: getPartyImageUrl(2, 'candidate') },
+  { number: 3,  name: 'Partido Cívico Obras',                   abbr: 'PCO',  color: '#388E3C',   symbolUrl: getPartyImageUrl(3, 'logo'), candidatePhotoUrl: getPartyImageUrl(3, 'candidate') },
+  { number: 4,  name: 'Partido Demócrata Verde',                abbr: 'PDV',  color: '#689F38',   symbolUrl: getPartyImageUrl(4, 'logo'), candidatePhotoUrl: getPartyImageUrl(4, 'candidate') },
+  { number: 5,  name: 'Partido del Buen Gobierno',              abbr: 'PBG',  color: '#FBC02D',   symbolUrl: getPartyImageUrl(5, 'logo'), candidatePhotoUrl: getPartyImageUrl(5, 'candidate') },
+  { number: 6,  name: 'Perú Acción',                            abbr: 'PA',   color: '#E64A19',   symbolUrl: getPartyImageUrl(6, 'logo'), candidatePhotoUrl: getPartyImageUrl(6, 'candidate') },
+  { number: 7,  name: 'PRIN',                                   abbr: 'PRIN', color: '#5E35B1',   symbolUrl: getPartyImageUrl(7, 'logo'), candidatePhotoUrl: getPartyImageUrl(7, 'candidate') },
+  { number: 8,  name: 'Progresemos',                            abbr: 'PROG', color: '#00796B',   symbolUrl: getPartyImageUrl(8, 'logo'), candidatePhotoUrl: getPartyImageUrl(8, 'candidate') },
+  { number: 9,  name: 'Sí Creo',                                abbr: 'SC',   color: '#F57C00',   symbolUrl: getPartyImageUrl(9, 'logo'), candidatePhotoUrl: getPartyImageUrl(9, 'candidate') },
+  { number: 10, name: 'País para Todos',                        abbr: 'PPT',  color: '#C2185B',   symbolUrl: getPartyImageUrl(10, 'logo'), candidatePhotoUrl: getPartyImageUrl(10, 'candidate') },
+  { number: 11, name: 'Frente de la Esperanza',                 abbr: 'FE',   color: '#303F9F',   symbolUrl: getPartyImageUrl(11, 'logo'), candidatePhotoUrl: getPartyImageUrl(11, 'candidate') },
+  { number: 12, name: 'Perú Libre',                             abbr: 'PL',   color: '#D32F2F',   symbolUrl: getPartyImageUrl(12, 'logo'), candidatePhotoUrl: getPartyImageUrl(12, 'candidate') },
+  { number: 13, name: 'Primero la Gente',                       abbr: 'PG',   color: '#0288D1',   symbolUrl: getPartyImageUrl(13, 'logo'), candidatePhotoUrl: getPartyImageUrl(13, 'candidate') },
+  { number: 14, name: 'Juntos por el Perú',                     abbr: 'JP',   color: '#7B1FA2',   symbolUrl: getPartyImageUrl(14, 'logo'), candidatePhotoUrl: getPartyImageUrl(14, 'candidate') },
+  { number: 15, name: 'Podemos Perú',                           abbr: 'PP',   color: '#303F9F',   symbolUrl: getPartyImageUrl(15, 'logo'), candidatePhotoUrl: getPartyImageUrl(15, 'candidate') },
+  { number: 16, name: 'Partido Democrático Federal',            abbr: 'PDF',  color: '#455A64',   symbolUrl: getPartyImageUrl(16, 'logo'), candidatePhotoUrl: getPartyImageUrl(16, 'candidate') },
+  { number: 17, name: 'Fe en el Perú',                          abbr: 'FEP',  color: '#795548',   symbolUrl: getPartyImageUrl(17, 'logo'), candidatePhotoUrl: getPartyImageUrl(17, 'candidate') },
+  { number: 18, name: 'Integridad Democrática',                 abbr: 'ID',   color: '#E91E63',   symbolUrl: getPartyImageUrl(18, 'logo'), candidatePhotoUrl: getPartyImageUrl(18, 'candidate') },
+  { number: 19, name: 'Fuerza Popular',                         abbr: 'FP',   color: '#FF6F00',   symbolUrl: getPartyImageUrl(19, 'logo'), candidatePhotoUrl: getPartyImageUrl(19, 'candidate') },
+  { number: 20, name: 'Alianza para el Progreso',               abbr: 'APP',  color: '#F57F17',   symbolUrl: getPartyImageUrl(20, 'logo'), candidatePhotoUrl: getPartyImageUrl(20, 'candidate') },
+  { number: 21, name: 'Cooperación Popular',                    abbr: 'CP',   color: '#558B2F',   symbolUrl: getPartyImageUrl(21, 'logo'), candidatePhotoUrl: getPartyImageUrl(21, 'candidate') },
+  { number: 22, name: 'Ahora Nación',                           abbr: 'AN',   color: '#1565C0',   symbolUrl: getPartyImageUrl(22, 'logo'), candidatePhotoUrl: getPartyImageUrl(22, 'candidate') },
+  { number: 23, name: 'Libertad Popular',                       abbr: 'LP',   color: '#00695C',   symbolUrl: getPartyImageUrl(23, 'logo'), candidatePhotoUrl: getPartyImageUrl(23, 'candidate') },
+  { number: 24, name: 'Un Camino Diferente',                    abbr: 'UCD',  color: '#AD1457',   symbolUrl: getPartyImageUrl(24, 'logo'), candidatePhotoUrl: getPartyImageUrl(24, 'candidate') },
+  { number: 25, name: 'Avanza País',                            abbr: 'AVP',  color: '#0277BD',   symbolUrl: getPartyImageUrl(25, 'logo'), candidatePhotoUrl: getPartyImageUrl(25, 'candidate') },
+  { number: 26, name: 'Perú Moderno',                           abbr: 'PMOD', color: '#6A1B9A',   symbolUrl: getPartyImageUrl(26, 'logo'), candidatePhotoUrl: getPartyImageUrl(26, 'candidate') },
+  { number: 27, name: 'Perú Primero',                           abbr: 'PPRI', color: '#283593',   symbolUrl: getPartyImageUrl(27, 'logo'), candidatePhotoUrl: getPartyImageUrl(27, 'candidate') },
+  { number: 28, name: 'Salvemos al Perú',                       abbr: 'SPP',  color: '#C62828',   symbolUrl: getPartyImageUrl(28, 'logo'), candidatePhotoUrl: getPartyImageUrl(28, 'candidate') },
+  { number: 29, name: 'Somos Perú',                             abbr: 'SP',   color: '#00695C',   symbolUrl: getPartyImageUrl(29, 'logo'), candidatePhotoUrl: getPartyImageUrl(29, 'candidate') },
+  { number: 30, name: 'Partido Aprista Peruano',                abbr: 'APRA', color: '#B71C1C',   symbolUrl: getPartyImageUrl(30, 'logo'), candidatePhotoUrl: getPartyImageUrl(30, 'candidate') },
+  { number: 31, name: 'Renovación Popular',                     abbr: 'RP',   color: '#2E7D32',   symbolUrl: getPartyImageUrl(31, 'logo'), candidatePhotoUrl: getPartyImageUrl(31, 'candidate') },
+  { number: 32, name: 'Partido Demócrata Unido Perú',           abbr: 'PDUP', color: '#00838F',   symbolUrl: getPartyImageUrl(32, 'logo'), candidatePhotoUrl: getPartyImageUrl(32, 'candidate') },
+  { number: 33, name: 'Alianza Fuerza y Libertad',              abbr: 'AFYL', color: '#4527A0',   symbolUrl: getPartyImageUrl(33, 'logo'), candidatePhotoUrl: getPartyImageUrl(33, 'candidate') },
+  { number: 34, name: 'Partido de los Trabajadores y Emprendedores', abbr: 'PTYE', color: '#BF360C',   symbolUrl: getPartyImageUrl(34, 'logo'), candidatePhotoUrl: getPartyImageUrl(34, 'candidate') },
+  { number: 35, name: 'Alianza Unidad Nacional',                abbr: 'AUN',  color: '#4A148C',   symbolUrl: getPartyImageUrl(35, 'logo'), candidatePhotoUrl: getPartyImageUrl(35, 'candidate') },
+  { number: 36, name: 'Partido Morado',                         abbr: 'PM',   color: '#6A1B9A',   symbolUrl: getPartyImageUrl(36, 'logo'), candidatePhotoUrl: getPartyImageUrl(36, 'candidate') },
 ];
 
 // Legislative elections include Frepap at position #4 (after Partido Cívico Obras)
@@ -77,7 +124,7 @@ const LEGISLATIVE_PARTIES: Party[] = [
   PARTIES[0],  // 1. Alianza Venceremos
   PARTIES[1],  // 2. Partido Patriótico del Perú
   PARTIES[2],  // 3. Partido Cívico Obras
-  { number: 4, name: 'Frepap', abbr: 'FREPAP', color: '#3E2723', symbolUrl: 'https://s2.rpp-noticias.io/static/especial/simulador-voto/dist/images/partidos/frepap/frepap.webp', candidatePhotoUrl: '' },  // 4. Frepap (legislative only, no presidential candidate)
+  { number: 4, name: 'Frepap', abbr: 'FREPAP', color: '#3E2723', symbolUrl: getFrepapLogoUrl(), candidatePhotoUrl: '' },  // 4. Frepap (legislative only, no presidential candidate)
   PARTIES[3],  // 5. Partido Demócrata Verde
   PARTIES[4],  // 6. Partido del Buen Gobierno
   PARTIES[5],  // 7. Perú Acción
