@@ -494,7 +494,7 @@
     .cta-btn {
       padding: 16px 28px;
       font-size: 17px;
-      width: 100%;
+      width: auto;
       max-width: 300px;
     }
     
