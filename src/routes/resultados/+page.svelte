@@ -8,7 +8,7 @@
   import ParliamentHemicycle from '$lib/components/ParliamentHemicycle.svelte';
   import ShareResults from '$lib/components/ShareResults.svelte';
   import { getGlobalResultsWithPercentages, getGlobalStats, subscribeToGlobalStats } from '$lib/firebase/stats';
-  import { initializeFirebase, isFirebaseReady, getVotingStatus } from '$lib/firebase';
+  import { initializeFirebase, isFirebaseReady, getVotingStatus, ELECTION_DAY_TARGET, getCountdownToElection, formatCountdown, canStillSimulate } from '$lib/firebase';
   import type { GlobalStats } from '$lib/firebase/config';
   import type { Unsubscribe } from 'firebase/firestore';
   
@@ -55,7 +55,6 @@
   let allResults = $state<CategoryResults[]>([]);
   let votingStatus = $state<'open' | 'closed'>('open');
   let currentTime = $state(new Date());
-  let nextResetTime = $state<Date | null>(null);
   let activeCategory = $state<string | null>(null);
   let showConfetti = $state(false);
   let showShareModal = $state(false);
@@ -65,6 +64,10 @@
   let lastUpdateTime = $state<Date | null>(null);
   let unsubscribe: Unsubscribe | null = null;
   let restarting = $state(false);
+  
+  // Countdown to election day (April 12, 2026 07:00 AM)
+  let electionCountdown = $state(getCountdownToElection(new Date()));
+  let countdownInterval: ReturnType<typeof setInterval> | null = null;
   
   // ─── Proyección de simulación ────────────────────────────────────────────────
   let projectionMultiplier = $state(1);
@@ -329,15 +332,18 @@
     goto('/simular');
   }
   
-  // Check voting status (00:00 - 20:00 open, 20:00 - 23:59 closed)
+  // Check voting status - now continuous until April 12, 2026 07:00 AM
   function checkVotingStatus() {
     votingStatus = getVotingStatus();
+  }
+  
+  // Update countdown every second
+  function startCountdown() {
+    electionCountdown = getCountdownToElection(new Date());
     
-    // Calculate next reset time (midnight)
-    const now = new Date();
-    const midnight = new Date(now);
-    midnight.setHours(24, 0, 0, 0);
-    nextResetTime = midnight;
+    countdownInterval = setInterval(() => {
+      electionCountdown = getCountdownToElection(new Date());
+    }, 1000);
   }
   
   // Load real results from Firestore
@@ -600,6 +606,9 @@
       showConfetti = true;
     }, 500);
     
+    // Start election countdown
+    startCountdown();
+    
     // Update countdown every second
     const interval = setInterval(() => {
       currentTime = new Date();
@@ -612,6 +621,10 @@
       if (unsubscribe) {
         unsubscribe();
       }
+      // Clear countdown interval
+      if (countdownInterval) {
+        clearInterval(countdownInterval);
+      }
     };
   });
   
@@ -620,20 +633,10 @@
     if (unsubscribe) {
       unsubscribe();
     }
+    if (countdownInterval) {
+      clearInterval(countdownInterval);
+    }
   });
-  
-  // Format countdown
-  function formatCountdown(target: Date): string {
-    const now = new Date();
-    const diff = target.getTime() - now.getTime();
-    if (diff <= 0) return '00:00:00';
-    
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-    
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  }
   
   // Check absolute majority
   function hasAbsoluteMajority(results: ElectionResult[]): boolean {
@@ -682,9 +685,16 @@
       <div class="live-stats-widget" in:fly={{ x: 30, duration: 600, delay: 300 }}>
         <div class="widget-header">
           <span class="live-pulse"></span>
-          <span class="live-label">{votingStatus === 'closed' ? 'VOTACIÓN CERRADA' : 'ACTIVIDAD EN VIVO'}</span>
-          {#if votingStatus === 'open' && nextResetTime}
-            <span class="widget-timer">{formatCountdown(nextResetTime)}</span>
+          <span class="live-label">ACTIVIDAD EN VIVO</span>
+        </div>
+        
+        <!-- Countdown to election day -->
+        <div class="election-countdown">
+          {#if electionCountdown.isExpired}
+            <span class="countdown-expired">La jornada de votación ya comenzó</span>
+          {:else}
+            <span class="countdown-label">Faltan:</span>
+            <span class="countdown-value">{formatCountdown(electionCountdown)}</span>
           {/if}
         </div>
         
@@ -692,17 +702,19 @@
           <div class="widget-icon">🗳️</div>
           <div class="widget-data">
             <span class="widget-number">{liveVoterCount.toLocaleString()}</span>
-            <span class="widget-unit">votos</span>
+            <span class="widget-unit">simulaciones acumuladas</span>
           </div>
         </div>
+        
+        <p class="countdown-subtitle">Cuenta regresiva para votar el domingo 12 de abril desde las 7:00 a. m.</p>
       </div>
     </div>
     
-    <!-- Final Results Banner (when voting is closed) -->
-    {#if votingStatus === 'closed'}
+    <!-- Final Results Banner (when simulations are closed permanently) -->
+    {#if !canStillSimulate()}
       <div class="final-results-banner" in:fade={{ duration: 300, delay: 400 }}>
-        <h2 class="final-title">Resultados finales del día</h2>
-        <p class="final-subtitle">Las simulaciones se cerraron a las 20:00. Estos resultados ya no cambian.</p>
+        <h2 class="final-title">Simulaciones cerradas</h2>
+        <p class="final-subtitle">Las simulaciones ya cerraron el 12 de abril a las 07:00. Ahora solo puedes revisar los resultados acumulados.</p>
       </div>
     {/if}
   </header>
@@ -1150,6 +1162,46 @@
     font-weight: 500;
     text-transform: lowercase;
     margin-top: 2px;
+  }
+
+  /* Election Countdown Styles */
+  .election-countdown {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 0;
+  }
+
+  .countdown-label {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.8);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .countdown-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #fff;
+    font-family: 'Courier New', monospace;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    letter-spacing: 1px;
+  }
+
+  .countdown-expired {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #ff6b6b;
+    text-align: center;
+  }
+
+  .countdown-subtitle {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.6);
+    text-align: center;
+    margin-top: 4px;
+    font-style: italic;
   }
 
   .widget-body {

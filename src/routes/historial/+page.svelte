@@ -151,14 +151,14 @@
   <title>Historial de Resultados | DailyVote Perú 2026</title>
 </svelte:head>
 
-<div class="history-page">
+  <div class="history-page">
   <!-- Header -->
   <header class="page-header" in:fly={{ y: -20, duration: 400 }}>
     <button class="btn-back" onclick={() => goto('/resultados')}>
       ← Volver a Resultados
     </button>
     <h1>📊 Historial de Simulaciones</h1>
-    <p class="subtitle">Registro de votaciones diarias</p>
+    <p class="subtitle">Cortes acumulados diarios</p>
   </header>
 
   {#if isLoading}
@@ -173,9 +173,9 @@
     <div class="empty-state" in:fade={{ duration: 300 }}>
       <div class="empty-icon">🗳️</div>
       <h2>No hay historial aún</h2>
-      <p>Los resultados de cada día se guardarán automáticamente en Firebase después de las 8:00 PM.</p>
+      <p>Los snapshots diarios se guardarán automáticamente en Firebase a la medianoche de cada día.</p>
       <button class="btn-primary" onclick={() => goto('/simular')}>
-        Ir a Votar
+        Ir a Simular
       </button>
     </div>
   {:else}
@@ -187,7 +187,7 @@
       </div>
       <div class="stat-item">
         <span class="stat-number">{totalHistoricalVotes.toLocaleString()}</span>
-        <span class="stat-label">Votos totales históricos</span>
+        <span class="stat-label">Simulaciones totales históricas</span>
       </div>
       <div class="stat-item">
         <span class="stat-number">{history[0]?.winners?.length || 0}</span>
@@ -212,8 +212,9 @@
             tabindex="0"
           >
             <div class="day-info">
-              <span class="day-date">{formatDate(day.date)}</span>
-              <span class="day-ago">{getDaysSince(day.date)}</span>
+              <span class="day-date">Corte acumulado al cierre del día</span>
+              <span class="day-ago">{formatDate(day.date)}</span>
+              <span class="day-snapshot">Snapshot acumulado guardado a medianoche</span>
             </div>
             <div class="day-winners-preview">
               {#each day.winners.slice(0, 3) as winner}
@@ -232,7 +233,7 @@
           
           {#if selectedDay?.date === day.date}
             <div class="day-details" transition:fade={{ duration: 200 }}>
-              <h3>Ganadores del día</h3>
+              <h3>Resultados acumulados hasta esta fecha</h3>
               <div class="winners-grid">
                 {#each day.winners as winner}
                   <div class="winner-detail-card">
@@ -416,18 +417,29 @@
 
   .day-info {
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
   }
 
   .day-date {
     display: block;
-    font-weight: 600;
+    font-weight: 700;
     color: #1a1a2e;
-    font-size: 1.1rem;
+    font-size: 1rem;
   }
 
   .day-ago {
-    font-size: 0.85rem;
-    color: #666;
+    font-size: 0.9rem;
+    color: #444;
+    font-weight: 500;
+  }
+
+  .day-snapshot {
+    font-size: 0.75rem;
+    color: #888;
+    font-style: italic;
+    margin-top: 2px;
   }
 
   .day-winners-preview {

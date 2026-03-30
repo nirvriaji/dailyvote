@@ -5,15 +5,15 @@
   import { BALLOT_COLUMNS } from '$lib/data/mock';
   import { vote } from '$lib/stores/vote.svelte';
   import { ui } from '$lib/stores/ui.svelte';
-  import { initializeFirebase, isFirebaseReady, getVotingStatus } from '$lib/firebase';
+  import { initializeFirebase, isFirebaseReady, canStillSimulate, ELECTION_DAY_TARGET } from '$lib/firebase';
   import BallotStage from '$lib/components/BallotStage.svelte';
   import BallotProgressHeader from '$lib/components/BallotProgressHeader.svelte';
   import VoteOverlay from '$lib/components/VoteOverlay.svelte';
   import ProgressPanel from '$lib/components/ProgressPanel.svelte';
   import ShareResults from '$lib/components/ShareResults.svelte';
 
-  // ─── Check voting status (00:00 - 20:00 open, 20:00 - 23:59 closed) ────────────
-  let votingStatus = $state<'open' | 'closed'>('open');
+  // ─── Check if simulations are still open ─────────────────────────────────────
+  let canSimulate = $state(true);
   
   // ─── Inline Help Banner ──────────────────────────────────────────────────────
   let showInlineHint = $state(false);
@@ -25,8 +25,8 @@
   let ballotScroller: HTMLDivElement | null = $state(null);
   let userHasInteracted = $state(false);
   
-  function checkVotingStatus() {
-    votingStatus = getVotingStatus();
+  function checkSimulationStatus() {
+    canSimulate = canStillSimulate();
   }
   
   function centerBallot() {
@@ -97,8 +97,8 @@
   }
 
   onMount(() => {
-    // Check voting status (00:00 - 20:00 open, 20:00 - 23:59 closed)
-    checkVotingStatus();
+    // Check if simulations are still open (until April 12, 2026 07:00)
+    checkSimulationStatus();
     
     // Initialize Firebase if not already ready
     if (!isFirebaseReady) {
@@ -122,7 +122,7 @@
     centerBallot();
     
     // Mostrar ayuda y animación solo si está abierto
-    if (votingStatus === 'open') {
+    if (canSimulate) {
       showInlineHint = true;
       
       autoHideHintTimeout = window.setTimeout(() => {
@@ -162,10 +162,10 @@
 </svelte:head>
 
 <div class="app-shell">
-  <!-- Closed Banner - cuando las simulaciones están cerradas (20:00 - 00:00) -->
-  {#if votingStatus === 'closed'}
+  <!-- Closed Banner - cuando las simulaciones están cerradas permanentemente -->
+  {#if !canSimulate}
     <div class="closed-banner" transition:fade={{ duration: 300 }}>
-      <p class="closed-text">Las simulaciones de hoy han cerrado. Vuelve desde las 00:00.</p>
+      <p class="closed-text">Las simulaciones ya cerraron. Ahora solo puedes revisar los resultados acumulados.</p>
     </div>
   {/if}
 
@@ -193,7 +193,7 @@
 
   <div 
     class="ballot-sheet" 
-    class:disabled={votingStatus === 'closed'}
+    class:disabled={!canSimulate}
     onpointerdown={markUserInteraction}
     onwheel={markUserInteraction}
     ontouchstart={markUserInteraction}

@@ -13,6 +13,20 @@ let googleProvider: GoogleAuthProvider | null = null;
 export let isFirebaseReady = false;
 
 /**
+ * Fecha objetivo final de la campaña de simulación
+ * 12 de abril de 2026 a las 07:00:00
+ */
+export const ELECTION_DAY_TARGET = new Date('2026-04-12T07:00:00');
+
+/**
+ * Verificar si aún se pueden hacer simulaciones
+ * Hasta el 12 de abril a las 07:00 a. m.
+ */
+export function canStillSimulate(now: Date = new Date()): boolean {
+  return now.getTime() < ELECTION_DAY_TARGET.getTime();
+}
+
+/**
  * Inicializa Firebase con la configuración proporcionada
  * Llamar a esta función después de que el usuario proporcione la configuración
  */
@@ -82,24 +96,54 @@ export function checkFirebaseReady(): boolean {
 }
 
 /**
- * Obtener estado de votación basado en hora actual
- * Ciclo diario: 00:00 - 20:00 (abierto), 20:00 - 23:59 (cerrado)
+ * Obtener estado de votación basado en fecha actual
+ * Ya no hay cierre diario a las 20:00
+ * Las simulaciones están abiertas continuamente hasta el 12 de abril a las 07:00
+ * Después de esa fecha, se cierran permanentemente
  */
 export function getVotingStatus(currentDate: Date = new Date()): 'open' | 'closed' {
-  const hours = currentDate.getHours();
-  
-  if (hours < 20) {
+  // Verificar si estamos antes del 12 de abril a las 07:00
+  if (canStillSimulate(currentDate)) {
     return 'open';
   }
   
+  // Después del 12 de abril a las 07:00, las simulaciones están cerradas permanentemente
   return 'closed';
 }
 
 /**
  * Verificar si se permite votar en este momento
+ * Solo se puede votar hasta el 12 de abril a las 07:00 a. m.
  */
 export function canVoteNow(): boolean {
-  return getVotingStatus() === 'open';
+  return canStillSimulate();
+}
+
+/**
+ * Calcular tiempo restante hasta el día de la elección
+ * Retorna objeto con días, horas, minutos, segundos
+ */
+export function getCountdownToElection(currentDate: Date = new Date()) {
+  const diff = ELECTION_DAY_TARGET.getTime() - currentDate.getTime();
+  
+  if (diff <= 0) {
+    return { days: 0, hours: 0, minutes: 0, seconds: 0, isExpired: true };
+  }
+  
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+  
+  return { days, hours, minutes, seconds, isExpired: false };
+}
+
+/**
+ * Formatear countdown para mostrar en UI
+ * Formato: "14d 03h 22m 18s"
+ */
+export function formatCountdown(countdown: { days: number; hours: number; minutes: number; seconds: number }): string {
+  return `${countdown.days}d ${countdown.hours.toString().padStart(2, '0')}h ${countdown.minutes.toString().padStart(2, '0')}m ${countdown.seconds.toString().padStart(2, '0')}s`;
 }
 
 /**
@@ -111,6 +155,8 @@ export function getFirebaseStatus() {
     hasConfig: firebaseConfig.apiKey !== "YOUR_API_KEY_HERE",
     appInitialized: app !== null,
     dbInitialized: db !== null,
-    authInitialized: auth !== null
+    authInitialized: auth !== null,
+    canStillSimulate: canStillSimulate(),
+    electionDate: ELECTION_DAY_TARGET.toISOString()
   };
 }

@@ -12,7 +12,7 @@ import {
   onSnapshot,
   type Unsubscribe
 } from 'firebase/firestore';
-import { getDb, isFirebaseReady, getVotingStatus } from './index';
+import { getDb, isFirebaseReady, canStillSimulate } from './index';
 import { COLLECTIONS, type GlobalStats } from './config';
 import { BALLOT_COLUMNS } from '$lib/data/mock';
 
@@ -123,7 +123,7 @@ export async function addVoteToGlobalStats(
 /**
  * Incrementar contador de simulaciones completadas
  * Se llama una vez por cada simulación completa (no por cada voto)
- * Solo permite incrementar entre 00:00 y 20:00
+ * Permite incrementar continuamente hasta el 12 de abril a las 07:00
  */
 export async function incrementSimulationCount(date: string): Promise<boolean> {
   console.log(`🔢 incrementSimulationCount llamado para fecha: ${date}`);
@@ -133,9 +133,9 @@ export async function incrementSimulationCount(date: string): Promise<boolean> {
     return false;
   }
   
-  // Verificar si está dentro del horario de votación (00:00 - 20:00)
-  if (getVotingStatus() === 'closed') {
-    console.warn('🚫 No se pueden registrar nuevas simulaciones después de las 20:00');
+  // Verificar si aún se pueden hacer simulaciones (hasta el 12 de abril a las 07:00)
+  if (!canStillSimulate()) {
+    console.warn('🚫 Las simulaciones ya cerraron. Solo se pueden revisar resultados.');
     return false;
   }
   
@@ -253,8 +253,119 @@ export async function getGlobalResultsWithPercentages(
 }
 
 /**
- * Obtener historial de estadísticas de los últimos N días
+ * Guardar snapshot histórico a medianoche
+ * Crea una copia del estado acumulado hasta ese momento para el historial
+ * No reinicia ni borra el acumulado general
  */
+export async function saveDailySnapshot(date: string): Promise<boolean> {
+  if (!isFirebaseReady) {
+    console.warn('Firebase no disponible para guardar snapshot');
+    return false;
+  }
+  
+  try {
+    const db = getDb();
+    const statsRef = doc(db, COLLECTIONS.GLOBAL_STATS, date);
+    const snapshotRef = doc(db, 'daily_snapshots', date);
+    
+    const docSnap = await getDoc(statsRef);
+    
+    if (!docSnap.exists()) {
+      console.log(`⚠️ No hay datos para guardar snapshot del ${date}`);
+      return false;
+    }
+    
+    const data = docSnap.data() as GlobalStats;
+    const { setDoc } = await import('firebase/firestore');
+    
+    // Guardar snapshot con timestamp de cuándo se guardó
+    await setDoc(snapshotRef, {
+      date,
+      snapshotSavedAt: serverTimestamp(),
+      totalVotes: data.totalVotes,
+      totalSimulations: data.totalSimulations,
+      categories: data.categories,
+      metadata: data.metadata
+    });
+    
+    console.log(`📸 Snapshot guardado para ${date}`);
+    return true;
+  } catch (error: any) {
+    console.error('❌ Error guardando snapshot:', error.message);
+    return false;
+  }
+}
+
+/**
+ * Obtener historial de snapshots diarios
+ */
+export async function getDailySnapshots(days: number = 30): Promise<Array<{
+  date: string;
+  totalVotes: number;
+  totalSimulations: number;
+  snapshotSavedAt: any;
+  winners: {
+    president?: { partyName: string; partyColor: string; partySymbolUrl: string; percentage: number };
+    senatorsNational?: { partyName: string; partyColor: string; partySymbolUrl: string; percentage: number };
+    senatorsRegional?: { partyName: string; partyColor: string; partySymbolUrl: string; percentage: number };
+    deputies?: { partyName: string; partyColor: string; partySymbolUrl: string; percentage: number };
+    andeanParliament?: { partyName: string; partyColor: string; partySymbolUrl: string; percentage: number };
+  };
+}> | null> {
+  if (!isFirebaseReady) return null;
+  
+  try {
+    const db = getDb();
+    const snapshotsCollection = collection(db, 'daily_snapshots');
+    
+    // Query last N days, ordered by date descending
+    const q = query(snapshotsCollection, orderBy('date', 'desc'), limit(days));
+    const querySnapshot = await getDocs(q);
+    
+    const snapshotData: Array<any> = [];
+    
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      const winners: any = {};
+      
+      // Calculate winner for each category
+      const categories = ['president', 'senatorsNational', 'senatorsRegional', 'deputies', 'andeanParliament'];
+      categories.forEach(cat => {
+        const catStats = data.categories?.[cat] || {};
+        const catMetadata = data.metadata?.[cat] || {};
+        
+        if (Object.keys(catStats).length > 0) {
+          // Find party with most votes
+          const entries = Object.entries(catStats);
+          entries.sort((a, b) => (b[1] as number) - (a[1] as number));
+          const [winningPartyId, winningCount] = entries[0];
+          const totalCatVotes = entries.reduce((sum, [, count]) => sum + (count as number), 0);
+          
+          const metadata = catMetadata[winningPartyId] || {};
+          winners[cat] = {
+            partyName: metadata.partyName || winningPartyId,
+            partyColor: metadata.partyColor || '#666',
+            partySymbolUrl: metadata.partySymbolUrl || '',
+            percentage: totalCatVotes > 0 ? ((winningCount as number) / totalCatVotes) * 100 : 0
+          };
+        }
+      });
+      
+      snapshotData.push({
+        date: data.date,
+        totalVotes: data.totalVotes,
+        totalSimulations: data.totalSimulations,
+        snapshotSavedAt: data.snapshotSavedAt,
+        winners
+      });
+    });
+    
+    return snapshotData;
+  } catch (error: any) {
+    console.error('❌ Error cargando snapshots:', error.message);
+    return null;
+  }
+}
 export async function getHistoricalStats(days: number = 30): Promise<Array<{
   date: string;
   totalVotes: number;
