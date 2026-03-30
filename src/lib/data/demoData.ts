@@ -1,5 +1,5 @@
 // Demo Data - Fictional parties and candidates for demo mode
-// Uses emojis for symbols and candidate photos to avoid real political content
+// Uses emojis for symbols and candidate faces to avoid real political content
 
 // Generate 37 fictional parties with unique emojis
 // Customized: 🏔️ for Coalición Marrón (mountain), 🥩 for Renovación Medieval (pork chop)
@@ -22,10 +22,10 @@ const PARTY_NAMES = [
 ];
 
 const CANDIDATE_EMOJIS = [
-  '👨‍💼', '👩‍💼', '👨‍💻', '👩‍🦰', '👨‍⚖️', '👩‍⚕️', '👨‍🎓', '👩‍🏫', '👨‍🌾', '👩‍🍳',
-  '👨‍🔧', '👩‍🏭', '👨‍💼', '👩‍🔬', '👨‍🚀', '👩‍⚖️', '👨‍⚕️', '👩‍✈️', '👨‍🚒', '👩‍🎨',
-  '👨‍🎤', '👩‍🎭', '👨‍🎪', '👩‍🚒', '👨‍🚂', '👩‍🚀', '👨‍⚖️', '👩‍⚕️', '👨‍🌾', '👩‍🍳',
-  '👨‍🔧', '👩‍🏭', '👨‍💼', '👩‍💻', '👨‍🎓', '👩‍🏫', '👨‍🔬'
+  '👨', '👩', '👱‍♂️', '👩‍🦰', '👨‍🦱', '👩‍🦱', '👨‍🦲', '👩‍🦲', '👴', '👵',
+  '🧔', '🧔‍♀️', '👨‍🦳', '👩‍🦳', '👱‍♀️', '👳‍♂️', '👳‍♀️', '🧕', '👲', '🧑',
+  '👦', '👧', '👨‍🦰', '👩‍🦱', '👨‍🦲', '👩‍🦲', '👴', '👵', '👱‍♂️', '👱‍♀️',
+  '👳‍♂️', '👳‍♀️', '👲', '🧕', '👨', '👩', '👱‍♂️'
 ];
 
 // Generate 37 fictional parties
