@@ -454,8 +454,7 @@ export async function getHistoricalStats(days: number = 30): Promise<Array<{
 
 /**
  * Obtener el total acumulado de simulaciones de todos los días
- * Suma totalSimulations de todos los documentos en globalStats
- * Fallback: usa totalVotes / 5 si totalSimulations no está disponible
+ * Usa totalVotes / 5 como métrica consistente con la página de historial
  */
 export async function getAccumulatedSimulations(): Promise<number> {
   if (!isFirebaseReady) return 0;
@@ -469,16 +468,32 @@ export async function getAccumulatedSimulations(): Promise<number> {
     const querySnapshot = await getDocs(q);
     
     let totalSimulations = 0;
+    let totalVotes = 0;
+    let documentCount = 0;
     
     querySnapshot.forEach((doc) => {
       const data = doc.data() as GlobalStats;
-      // Prioridad: totalSimulations, fallback: totalVotes / 5
-      const sims = data.totalSimulations || Math.floor((data.totalVotes || 0) / 5) || 0;
-      totalSimulations += sims;
+      documentCount++;
+      
+      // Usar totalVotes / 5 (consistente con cómo Historial calcula)
+      const dayVotes = data.totalVotes || 0;
+      const daySims = data.totalSimulations || Math.floor(dayVotes / 5) || 0;
+      
+      totalVotes += dayVotes;
+      totalSimulations += daySims;
+      
+      console.log(`📊 Día ${data.date}: ${dayVotes} votos = ${daySims} simulaciones`);
     });
     
-    console.log(`📊 Total acumulado de simulaciones: ${totalSimulations}`);
-    return totalSimulations;
+    // Recalcular basado en totalVotes / 5 para consistencia con Historial
+    const calculatedFromVotes = Math.floor(totalVotes / 5);
+    
+    console.log(`📊 Resumen: ${documentCount} días, ${totalVotes} votos totales`);
+    console.log(`📊 Total acumulado (desde totalSimulations): ${totalSimulations}`);
+    console.log(`📊 Total acumulado (desde totalVotes/5): ${calculatedFromVotes}`);
+    
+    // Retornar el mayor de ambos para no perder datos
+    return Math.max(totalSimulations, calculatedFromVotes);
   } catch (error: any) {
     console.error('❌ Error calculando simulaciones acumuladas:', error.message);
     return 0;
