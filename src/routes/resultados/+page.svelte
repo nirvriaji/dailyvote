@@ -553,7 +553,25 @@
       const userPartyName = userVoteForCategory ? userVoteForCategory[1].partyName : null;
       
       // Get ACCUMULATED results for this category from Firestore (all days)
-      const realResults = accumulatedResults?.[cat.id] || resultsWithPercentages?.[cat.id] || [];
+      const accumulatedCatResults = accumulatedResults?.[cat.id];
+      
+      // Convert object format {partyId: count} to array format [{partyId, count, percentage}]
+      let realResults: Array<{partyId: string; count: number; percentage?: number}> = [];
+      
+      if (accumulatedCatResults && typeof accumulatedCatResults === 'object' && !Array.isArray(accumulatedCatResults)) {
+        // Convert object to array and calculate percentages
+        const entries = Object.entries(accumulatedCatResults);
+        const totalCatVotes = entries.reduce((sum, [, count]) => sum + (count as number), 0);
+        
+        realResults = entries.map(([partyId, count]) => ({
+          partyId,
+          count: count as number,
+          percentage: totalCatVotes > 0 ? ((count as number) / totalCatVotes) * 100 : 0
+        })).sort((a, b) => b.count - a.count); // Sort by count descending
+      } else if (resultsWithPercentages?.[cat.id]) {
+        // Use the array format from resultsWithPercentages
+        realResults = resultsWithPercentages[cat.id];
+      }
       
       // Map real results to ElectionResult format
       let parties: ElectionResult[];
