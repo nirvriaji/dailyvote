@@ -141,9 +141,9 @@
     return `Hace ${Math.floor(diffDays / 30)} meses`;
   }
   
-  // Calculate total votes across all days
-  let totalHistoricalVotes = $derived(
-    history.reduce((sum, day) => sum + (day.totalVotes || 0), 0)
+  // Calculate total simulations across all days (totalVotes / 5)
+  let totalHistoricalSimulations = $derived(
+    history.reduce((sum, day) => sum + Math.floor((day.totalVotes || 0) / 5), 0)
   );
 </script>
 
@@ -208,7 +208,7 @@
         <span class="stat-label">Días registrados</span>
       </div>
       <div class="stat-item">
-        <span class="stat-number">{totalHistoricalVotes.toLocaleString()}</span>
+        <span class="stat-number">{totalHistoricalSimulations.toLocaleString()}</span>
         <span class="stat-label">Simulaciones totales históricas</span>
       </div>
       <div class="stat-item">
