@@ -8,7 +8,7 @@
   import ParliamentHemicycle from '$lib/components/ParliamentHemicycle.svelte';
   import ShareResults from '$lib/components/ShareResults.svelte';
   import HelpPanel from '$lib/components/HelpPanel.svelte';
-  import { getGlobalResultsWithPercentages, getGlobalStats, subscribeToGlobalStats } from '$lib/firebase/stats';
+  import { getAccumulatedResultsWithPercentages, getAccumulatedSimulations, getAccumulatedResults, subscribeToGlobalStats } from '$lib/firebase/stats';
   import { initializeFirebase, isFirebaseReady, getVotingStatus, ELECTION_DAY_TARGET, getCountdownToElection, formatCountdown, canStillSimulate } from '$lib/firebase';
   import type { GlobalStats } from '$lib/firebase/config';
   import type { Unsubscribe } from 'firebase/firestore';
@@ -520,18 +520,17 @@
     }, 1000);
   }
   
-  // Load real results from Firestore
+  // Load real results from Firestore (HISTÓRICO ACUMULADO)
   async function loadRealResults(): Promise<CategoryResults[]> {
-    const today = new Date().toISOString().split('T')[0];
-    
     // Initialize Firebase if not ready
     if (!isFirebaseReady) {
       initializeFirebase();
     }
     
-    // Get global stats from Firestore
-    const globalStats = await getGlobalStats(today);
-    const resultsWithPercentages = await getGlobalResultsWithPercentages(today);
+    // Get ACCUMULATED stats from Firestore (all days, not just today)
+    const accumulatedSimulations = await getAccumulatedSimulations();
+    const accumulatedResults = await getAccumulatedResults();
+    const resultsWithPercentages = await getAccumulatedResultsWithPercentages(); // Todas las fechas acumuladas
     
     // Get user's votes from store
     const userVotes = Array.from(vote.votes.entries());
@@ -544,17 +543,17 @@
       { id: 'andeanParliament', name: 'Parlamento', subtitle: 'Andino', totalSeats: 5, colId: 'col4' }
     ];
     
-    // Set total simulations from global stats (cada simulación completa = 1, no 5 votos)
-    totalVoters = globalStats?.totalSimulations || Math.floor((globalStats?.totalVotes || 0) / 5) || 0;
-    const totalVoteCount = totalVoters; // Total de simulaciones para decidir qué mostrar
+    // Set total simulations from ACCUMULATED global stats (all days)
+    totalVoters = accumulatedSimulations || 0;
+    const totalVoteCount = totalVoters; // Total de simulaciones acumuladas
     
     return categories.map(cat => {
       // Find user's vote for this category
       const userVoteForCategory = userVotes.find(([colId]) => colId === cat.colId);
       const userPartyName = userVoteForCategory ? userVoteForCategory[1].partyName : null;
       
-      // Get real results for this category from Firestore
-      const realResults = resultsWithPercentages?.[cat.id] || [];
+      // Get ACCUMULATED results for this category from Firestore (all days)
+      const realResults = accumulatedResults?.[cat.id] || resultsWithPercentages?.[cat.id] || [];
       
       // Map real results to ElectionResult format
       let parties: ElectionResult[];
@@ -752,24 +751,28 @@
       isLoading = false;
     }
     
-    // Subscribe to live voter count updates
+    // Subscribe to live voter count updates (TODAY - para actualizaciones en tiempo real)
+    // Pero recargamos TODO el histórico acumulado cuando hay cambios
     if (isFirebaseReady) {
       const today = new Date().toISOString().split('T')[0];
-      unsubscribe = subscribeToGlobalStats(today, (stats: GlobalStats | null) => {
-      if (stats) {
-        // Usar totalSimulations si existe, sino calcular aproximado (totalVotes / 5)
-        liveVoterCount = stats.totalSimulations || Math.floor((stats.totalVotes || 0) / 5) || 0;
-        lastUpdateTime = new Date();
-        
-        // If results changed significantly, reload them
-        if (Math.abs(liveVoterCount - totalVoters) > 0) {
-          totalVoters = liveVoterCount;
-            // Refresh results to show new data
-            loadRealResults().then(newResults => {
+      unsubscribe = subscribeToGlobalStats(today, async (stats: GlobalStats | null) => {
+        if (stats) {
+          // Detectamos si hay votos nuevos hoy
+          const todaySimulations = stats.totalSimulations || Math.floor((stats.totalVotes || 0) / 5) || 0;
+          liveVoterCount = todaySimulations;
+          lastUpdateTime = new Date();
+          
+          // Si hay cambios, recargamos TODO el acumulado histórico
+          if (todaySimulations > 0) {
+            // Recargar resultados acumulados completos
+            const accumulatedSimulations = await getAccumulatedSimulations();
+            if (accumulatedSimulations > 0) {
+              totalVoters = accumulatedSimulations;
+              
+              // Refresh results to show updated data
+              const newResults = await loadRealResults();
               allResults = newResults;
-            }).catch(err => {
-              console.error('Error refreshing results:', err);
-            });
+            }
           }
         }
       });

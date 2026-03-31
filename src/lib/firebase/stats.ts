@@ -253,6 +253,24 @@ export async function getGlobalResultsWithPercentages(
 }
 
 /**
+ * Obtener resumen ACUMULADO histórico de todas las categorías con porcentajes
+ * Usa datos de TODOS los días, no solo de uno
+ */
+export async function getAccumulatedResultsWithPercentages(): Promise<Record<string, Array<{ partyId: string; count: number; percentage: number }>> | null> {
+  const accumulatedResults = await getAccumulatedResults();
+  if (!accumulatedResults) return null;
+  
+  // Calculate percentages for each category
+  const result: Record<string, Array<{ partyId: string; count: number; percentage: number }>> = {};
+  
+  Object.entries(accumulatedResults).forEach(([category, partyVotes]) => {
+    result[category] = calculatePercentages(partyVotes);
+  });
+  
+  return result;
+}
+
+/**
  * Guardar snapshot histórico a medianoche
  * Crea una copia del estado acumulado hasta ese momento para el historial
  * No reinicia ni borra el acumulado general
@@ -430,6 +448,88 @@ export async function getHistoricalStats(days: number = 30): Promise<Array<{
     return historicalData;
   } catch (error: any) {
     console.error('❌ Error cargando historial:', error.message);
+    return null;
+  }
+}
+
+/**
+ * Obtener el total acumulado de simulaciones de todos los días
+ * Suma totalSimulations de todos los documentos en globalStats
+ * Fallback: usa totalVotes / 5 si totalSimulations no está disponible
+ */
+export async function getAccumulatedSimulations(): Promise<number> {
+  if (!isFirebaseReady) return 0;
+  
+  try {
+    const db = getDb();
+    const statsCollection = collection(db, COLLECTIONS.GLOBAL_STATS);
+    
+    // Query all documents (no limit)
+    const q = query(statsCollection, orderBy('date', 'desc'));
+    const querySnapshot = await getDocs(q);
+    
+    let totalSimulations = 0;
+    
+    querySnapshot.forEach((doc) => {
+      const data = doc.data() as GlobalStats;
+      // Prioridad: totalSimulations, fallback: totalVotes / 5
+      const sims = data.totalSimulations || Math.floor((data.totalVotes || 0) / 5) || 0;
+      totalSimulations += sims;
+    });
+    
+    console.log(`📊 Total acumulado de simulaciones: ${totalSimulations}`);
+    return totalSimulations;
+  } catch (error: any) {
+    console.error('❌ Error calculando simulaciones acumuladas:', error.message);
+    return 0;
+  }
+}
+
+/**
+ * Obtener estadísticas acumuladas de votos por categoría (histórico total)
+ * Agrega los votos de todos los días para cada partido
+ */
+export async function getAccumulatedResults(): Promise<Record<string, Record<string, number>> | null> {
+  if (!isFirebaseReady) return null;
+  
+  try {
+    const db = getDb();
+    const statsCollection = collection(db, COLLECTIONS.GLOBAL_STATS);
+    
+    // Query all documents
+    const q = query(statsCollection, orderBy('date', 'desc'));
+    const querySnapshot = await getDocs(q);
+    
+    const accumulatedResults: Record<string, Record<string, number>> = {};
+    
+    querySnapshot.forEach((doc) => {
+      const data = doc.data() as GlobalStats;
+      console.log(`📄 Procesando documento: ${data.date}, categorías:`, Object.keys(data.categories || {}));
+      
+      // Accumulate votes per category
+      const categories = ['president', 'senatorsNational', 'senatorsRegional', 'deputies', 'andeanParliament'];
+      categories.forEach(cat => {
+        const catStats = data.categories?.[cat as keyof typeof data.categories];
+        console.log(`   Categoría ${cat}:`, catStats ? Object.keys(catStats).length : 0, 'partidos');
+        
+        if (catStats && typeof catStats === 'object') {
+          if (!accumulatedResults[cat]) {
+            accumulatedResults[cat] = {};
+          }
+          
+          // Sum votes for each party
+          Object.entries(catStats).forEach(([partyId, votes]) => {
+            const voteCount = typeof votes === 'number' ? votes : 0;
+            accumulatedResults[cat][partyId] = (accumulatedResults[cat][partyId] || 0) + voteCount;
+          });
+        }
+      });
+    });
+    
+    console.log('📊 Resultados acumulados:', accumulatedResults);
+    return accumulatedResults;
+  } catch (error: any) {
+    console.error('❌ Error calculando resultados acumulados:', error.message);
     return null;
   }
 }
