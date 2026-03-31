@@ -1109,7 +1109,7 @@
         <div class="widget-body">
           <div class="widget-icon">🗳️</div>
           <div class="widget-data">
-            <span class="widget-number">{liveVoterCount.toLocaleString()}</span>
+            <span class="widget-number">{totalVoters.toLocaleString()}</span>
             <span class="widget-unit">Simulaciones</span>
           </div>
         </div>
