@@ -4,22 +4,22 @@
   import { goto } from '$app/navigation';
   import { ELECTION_DAY_TARGET } from '$lib/firebase';
   import HelpPanel from '$lib/components/HelpPanel.svelte';
-  
+
   // Animation state
   let isLoaded = $state(false);
   let countdownData = $state({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   let countdownInterval: ReturnType<typeof setInterval> | null = null;
   let showHelpPanel = $state(false);
-  
+
   function updateCountdown() {
     const now = new Date();
     const diff = ELECTION_DAY_TARGET.getTime() - now.getTime();
-    
+
     if (diff <= 0) {
       countdownData = { days: 0, hours: 0, minutes: 0, seconds: 0 };
       return;
     }
-    
+
     const totalSeconds = Math.floor(diff / 1000);
     countdownData = {
       days: Math.floor(totalSeconds / 86400),
@@ -28,19 +28,19 @@
       seconds: totalSeconds % 60
     };
   }
-  
+
   onMount(() => {
     isLoaded = true;
     updateCountdown();
     countdownInterval = setInterval(updateCountdown, 1000);
-    
+
     return () => {
       if (countdownInterval) {
         clearInterval(countdownInterval);
       }
     };
   });
-  
+
   function goToSimulation() {
     goto('/simular');
   }
@@ -53,10 +53,10 @@
   <meta name="keywords" content="simulador voto Perú 2026, cédula electoral, elecciones Perú, cómo votar, practicar voto, voto preferencial, simulador electoral, fecha elecciones 2026" />
   <meta name="author" content="Irvin Pereyra" />
   <meta name="robots" content="index, follow" />
-  
+
   <!-- Canonical URL -->
   <link rel="canonical" href="https://lafechamasimportante.com/" />
-  
+
   <!-- Open Graph / Facebook / LinkedIn -->
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://lafechamasimportante.com/" />
@@ -66,7 +66,7 @@
   <meta property="og:image" content="https://lafechamasimportante.com/favicon.svg" />
   <meta property="og:image:type" content="image/svg+xml" />
   <meta property="og:locale" content="es_PE" />
-  
+
   <!-- Twitter -->
   <meta property="twitter:card" content="summary" />
   <meta property="twitter:url" content="https://lafechamasimportante.com/" />
@@ -74,7 +74,7 @@
   <meta property="twitter:description" content="Practica tu voto para las Elecciones Generales Perú 2026. Simulador interactivo de la cédula electoral." />
   <meta property="twitter:image" content="https://lafechamasimportante.com/favicon.svg" />
   <meta property="twitter:creator" content="@nirvriaji" />
-  
+
   <!-- Schema.org JSON-LD -->
   {@html `<script type="application/ld+json">${JSON.stringify({
     "@context": "https://schema.org",
@@ -102,73 +102,123 @@
 
 {#if isLoaded}
   <main class="landing">
-    <!-- Content -->
     <div class="landing-inner" in:fly={{ y: 30, duration: 600 }}>
-      <!-- Top Pill -->
-      <div class="pill-wrapper" in:fade={{ duration: 400, delay: 200 }}>
-        <span class="top-pill">PE · ELECCIONES GENERALES 2026</span>
-      </div>
 
-      <!-- Help Panel (used by footer) -->
+      <!-- Help Panel -->
       <HelpPanel isOpen={showHelpPanel} onClose={() => showHelpPanel = false} />
 
-      <!-- Headline -->
-      <h1 class="headline" in:fly={{ y: 20, duration: 500, delay: 300 }}>
-        <span class="headline-line1">SIMULA TU VOTO</span>
-        <span class="headline-line2">ANTES DEL 12 DE ABRIL</span>
-      </h1>
+      <!-- ─── HERO ─── -->
+      <section class="hero">
+        <div class="pill-wrapper" in:fade={{ duration: 400, delay: 100 }}>
+          <span class="top-pill">PE · ELECCIONES GENERALES 2026</span>
+        </div>
 
-      <!-- Countdown -->
-      <div class="countdown-wrapper" in:fade={{ duration: 400, delay: 400 }}>
-        <div class="countdown-box">
-          <div class="countdown-item">
-            <span class="countdown-number">{countdownData.days}</span>
-            <span class="countdown-label">días</span>
+        <h1 class="headline" in:fly={{ y: 20, duration: 500, delay: 200 }}>
+          <span class="headline-line1">PRACTICA TU VOTO</span>
+          <span class="headline-line2">ENTIENDE TU IMPACTO</span>
+        </h1>
+
+        <div class="countdown-wrapper" in:fade={{ duration: 400, delay: 300 }}>
+          <div class="countdown-box">
+            <div class="countdown-item">
+              <span class="countdown-number">{countdownData.days}</span>
+              <span class="countdown-label">días</span>
+            </div>
+            <span class="countdown-separator">:</span>
+            <div class="countdown-item">
+              <span class="countdown-number">{countdownData.hours.toString().padStart(2, '0')}</span>
+              <span class="countdown-label">horas</span>
+            </div>
+            <span class="countdown-separator">:</span>
+            <div class="countdown-item">
+              <span class="countdown-number">{countdownData.minutes.toString().padStart(2, '0')}</span>
+              <span class="countdown-label">min</span>
+            </div>
+            <span class="countdown-separator">:</span>
+            <div class="countdown-item">
+              <span class="countdown-number">{countdownData.seconds.toString().padStart(2, '0')}</span>
+              <span class="countdown-label">seg</span>
+            </div>
           </div>
-          <span class="countdown-separator">:</span>
-          <div class="countdown-item">
-            <span class="countdown-number">{countdownData.hours.toString().padStart(2, '0')}</span>
-            <span class="countdown-label">horas</span>
+          <span class="countdown-caption">Para el 12 de abril</span>
+        </div>
+
+        <p class="subline" in:fade={{ duration: 400, delay: 400 }}>
+          La cédula real, en tu pantalla. Practica cómo marcar, descubre todo lo que eliges y ve cómo tu voto se traduce en resultados.
+        </p>
+
+        <div class="cta-wrapper" in:fly={{ y: 20, duration: 400, delay: 500 }}>
+          <button class="cta-btn" onclick={goToSimulation}>
+            <span class="cta-icon">🗳️</span>
+            <span class="cta-text">Simular mi voto</span>
+          </button>
+          <span class="cta-note">Gratis · Sin registro · 100% educativo</span>
+        </div>
+      </section>
+
+      <!-- ─── WHAT YOU WILL LEARN ─── -->
+      <section class="benefits-section" in:fade={{ duration: 400, delay: 600 }}>
+        <h2 class="section-title">¿Qué vas a aprender?</h2>
+        <div class="benefits-grid">
+          <div class="benefit-card">
+            <span class="benefit-icon">✓</span>
+            <p class="benefit-title">Vota sin errores</p>
+            <p class="benefit-text">Entiende cómo marcar la cédula correctamente y evita que tu voto sea nulo.</p>
           </div>
-          <span class="countdown-separator">:</span>
-          <div class="countdown-item">
-            <span class="countdown-number">{countdownData.minutes.toString().padStart(2, '0')}</span>
-            <span class="countdown-label">min</span>
+          <div class="benefit-card">
+            <span class="benefit-icon">✓</span>
+            <p class="benefit-title">Más que el presidente</p>
+            <p class="benefit-text">Descubre todo lo que se decide en esta elección: Senado, Diputados y Parlamento Andino.</p>
           </div>
-          <span class="countdown-separator">:</span>
-          <div class="countdown-item">
-            <span class="countdown-number">{countdownData.seconds.toString().padStart(2, '0')}</span>
-            <span class="countdown-label">seg</span>
+          <div class="benefit-card">
+            <span class="benefit-icon">✓</span>
+            <p class="benefit-title">Tu voto, en números</p>
+            <p class="benefit-text">Ve cómo tu decisión impacta la distribución del poder en el Congreso.</p>
           </div>
         </div>
-        <span class="countdown-caption">Para votar</span>
-      </div>
+      </section>
 
-      <!-- Description -->
-      <p class="subline" in:fade={{ duration: 400, delay: 500 }}>
-        Explora la cédula electoral real, practica cómo votar correctamente por foto, símbolo o voto preferencial y evita errores que puedan convertir tu voto en nulo o viciado.
-      </p>
+      <!-- ─── HOW IT WORKS ─── -->
+      <section class="how-section" in:fade={{ duration: 400, delay: 700 }}>
+        <h2 class="section-title">Así funciona</h2>
+        <div class="steps">
+          <div class="step">
+            <span class="step-number">1</span>
+            <div class="step-content">
+              <p class="step-title">Practica con la cédula real</p>
+              <p class="step-desc">Explora los partidos y candidatos como si estuvieras en la cabina de votación.</p>
+            </div>
+          </div>
+          <div class="step-divider"></div>
+          <div class="step">
+            <span class="step-number">2</span>
+            <div class="step-content">
+              <p class="step-title">Marca tus decisiones</p>
+              <p class="step-desc">Elige presidente, Senado, Diputados y Parlamento Andino en una sola sesión.</p>
+            </div>
+          </div>
+          <div class="step-divider"></div>
+          <div class="step">
+            <span class="step-number">3</span>
+            <div class="step-content">
+              <p class="step-title">Mira cómo se procesa tu voto</p>
+              <p class="step-desc">Accede a los resultados acumulados y entiende el impacto real de tu elección.</p>
+            </div>
+          </div>
+        </div>
+      </section>
 
-      <!-- Primary CTA -->
-      <div class="cta-wrapper" in:fly={{ y: 20, duration: 400, delay: 600 }}>
-        <button class="cta-btn" onclick={goToSimulation}>
-          <span class="cta-icon">🗳️</span>
-          <span class="cta-text">Simular mi voto</span>
-        </button>
-        <span class="cta-note">Gratis · Sin registro · 100% educativo</span>
-      </div>
-
-      <!-- Video Demo Section -->
-      <div class="video-section" in:fade={{ duration: 400, delay: 800 }}>
-        <div class="video-title">Mira cómo usar la cédula en menos de 30 segundos</div>
-        <div class="video-subtitle">Aprende a recorrerla, marcar correctamente y practicar antes del día de la elección.</div>
+      <!-- ─── VIDEO ─── -->
+      <section class="video-section" in:fade={{ duration: 400, delay: 800 }}>
+        <h2 class="section-title">Mira cómo votar en menos de 30 segundos</h2>
+        <p class="video-subtitle">La cédula puede parecer complicada. Este video te muestra cómo recorrerla paso a paso.</p>
         <div class="video-frame">
-          <video 
+          <video
             class="video-player"
             id="demo-video"
-            autoplay 
-            muted 
-            loop 
+            autoplay
+            muted
+            loop
             playsinline
             preload="auto"
             onended={() => {
@@ -182,41 +232,30 @@
             <source src="/videos/demo.mp4" type="video/mp4" />
           </video>
         </div>
-      </div>
+      </section>
 
-      <!-- Educational Block 1 - Primera Vuelta -->
-      <div class="educational-block" in:fade={{ duration: 400, delay: 1000 }}>
-        <h2 class="block-title">Esta es la única vuelta donde eliges todo</h2>
-        <p class="block-text">En esta primera vuelta no solo votas por presidente. También eliges senadores, diputados y representantes al Parlamento Andino. Estas decisiones se toman ahora y definen cómo se verá el Congreso en los próximos años.</p>
-      </div>
+      <!-- ─── CONTEXT ─── -->
+      <section class="context-section" in:fade={{ duration: 400, delay: 900 }}>
+        <h2 class="context-title">Esta es la única vuelta donde eliges todo</h2>
+        <p class="context-text">En la primera vuelta no solo votas por presidente. También defines quiénes tendrán poder en el Congreso durante los próximos años.</p>
+        <ul class="vote-list">
+          <li>Presidente de la República</li>
+          <li>Senado de la República</li>
+          <li>Cámara de Diputados</li>
+          <li>Parlamento Andino</li>
+        </ul>
+        <p class="context-note">Estas decisiones no se repiten en segunda vuelta.</p>
+      </section>
 
-      <!-- Educational Block 2 - No es solo presidencial -->
-      <div class="educational-block" in:fade={{ duration: 400, delay: 1200 }}>
-        <h2 class="block-title">Tu voto no es solo presidencial</h2>
-        <p class="block-text">En la cédula también eliges quiénes tendrán poder en el Congreso. Esas decisiones influyen en qué tan fácil o difícil será gobernar después.</p>
-      </div>
-
-      <!-- Educational Block 3 - Evitar errores -->
-      <div class="educational-block" in:fade={{ duration: 400, delay: 1400 }}>
-        <h2 class="block-title">Votar bien también importa</h2>
-        <p class="block-text">Un error al marcar la cédula puede hacer que tu voto sea nulo o viciado. Practicar antes te ayuda a entender las opciones y evitar equivocaciones.</p>
-      </div>
-
-      <!-- Educational Block 4 - Decisiones múltiples -->
-      <div class="educational-block" in:fade={{ duration: 400, delay: 1600 }}>
-        <h2 class="block-title">La cédula tiene varias decisiones</h2>
-        <p class="block-text">Puedes votar en distintas columnas y, en algunos casos, usar voto preferencial. Practicar antes te ayuda a llegar con más claridad el día de la elección.</p>
-      </div>
-
-      <!-- Secondary CTA -->
-      <div class="cta-wrapper secondary" in:fly={{ y: 20, duration: 400, delay: 1800 }}>
+      <!-- ─── SECONDARY CTA ─── -->
+      <div class="cta-wrapper" in:fly={{ y: 20, duration: 400, delay: 1000 }}>
         <button class="cta-btn cta-secondary" onclick={goToSimulation}>
           Practicar ahora
         </button>
       </div>
 
-      <!-- Trust Bar -->
-      <div class="trust-bar" in:fade={{ duration: 400, delay: 2000 }}>
+      <!-- ─── TRUST BAR ─── -->
+      <div class="trust-bar" in:fade={{ duration: 400, delay: 1100 }}>
         <span class="trust-item">
           <span class="trust-icon">✓</span>
           36 partidos reales
@@ -224,7 +263,7 @@
         <span class="trust-dot">·</span>
         <span class="trust-item">
           <span class="trust-icon">✓</span>
-          Resultados en vivo
+          Resultados acumulados
         </span>
         <span class="trust-dot">·</span>
         <span class="trust-item">
@@ -233,10 +272,10 @@
         </span>
       </div>
 
-      <!-- Footer -->
-      <footer class="footer-section" in:fade={{ duration: 400, delay: 1900 }}>
+      <!-- ─── FOOTER ─── -->
+      <footer class="footer-section" in:fade={{ duration: 400, delay: 1200 }}>
         <div class="footer-links">
-          <button 
+          <button
             class="footer-link"
             onclick={() => showHelpPanel = true}
           >
@@ -248,10 +287,11 @@
         </div>
       </footer>
 
-      <!-- Disclaimer -->
-      <p class="disclaimer" in:fade={{ duration: 400, delay: 2000 }}>
-        <strong>Nota:</strong> Este es un simulador educativo. Los resultados son generados por simulaciones acumuladas y no representan resultados oficiales.
+      <!-- ─── DISCLAIMER ─── -->
+      <p class="disclaimer" in:fade={{ duration: 400, delay: 1200 }}>
+        Simulador educativo. Los resultados son generados por simulaciones acumuladas y no representan resultados oficiales.
       </p>
+
     </div>
   </main>
 {/if}
@@ -266,7 +306,6 @@
     padding: 20px 16px;
   }
 
-  /* Content */
   .landing-inner {
     max-width: 600px;
     width: 100%;
@@ -274,12 +313,20 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 28px;
+    gap: 48px;
   }
 
-  /* Top Pill */
+  /* ── HERO ── */
+  .hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    width: 100%;
+  }
+
   .pill-wrapper {
-    margin-bottom: 8px;
+    margin-bottom: 0;
   }
 
   .top-pill {
@@ -297,60 +344,11 @@
     backdrop-filter: blur(8px);
   }
 
-  /* Footer Section */
-  .footer-section {
-    margin-top: 8px;
-    padding-top: 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  .footer-links {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    font-size: 13px;
-    color: rgba(255, 255, 255, 0.6);
-  }
-
-  .footer-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: transparent;
-    border: none;
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 13px;
-    cursor: pointer;
-    text-decoration: underline;
-    text-underline-offset: 3px;
-    transition: color 0.2s ease;
-    padding: 4px;
-  }
-
-  .footer-link:hover {
-    color: rgba(255, 255, 255, 0.95);
-  }
-
-  .footer-icon {
-    flex-shrink: 0;
-  }
-
-  /* Mobile: Footer adjustments */
-  @media (max-width: 480px) {
-    .footer-links {
-      flex-direction: column;
-      gap: 8px;
-    }
-  }
-
-  /* Headline */
   .headline {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    margin-bottom: 8px;
+    margin: 0;
   }
 
   .headline-line1 {
@@ -371,9 +369,7 @@
     text-transform: uppercase;
   }
 
-  /* Countdown - Apple Style */
   .countdown-wrapper {
-    margin-bottom: 8px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -430,24 +426,19 @@
     font-weight: 500;
   }
 
-  /* Subline */
   .subline {
     font-size: clamp(16px, 2.5vw, 20px);
     color: rgba(255, 255, 255, 0.85);
     line-height: 1.6;
-    max-width: 550px;
+    max-width: 500px;
+    margin: 0;
   }
 
-  /* CTA */
   .cta-wrapper {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 12px;
-  }
-
-  .cta-wrapper.secondary {
-    margin-top: 12px;
   }
 
   .cta-btn {
@@ -500,7 +491,135 @@
     letter-spacing: 0.3px;
   }
 
-  /* Video Section - Phone Mockup */
+  /* ── SECTION TITLE (shared) ── */
+  .section-title {
+    font-size: clamp(18px, 3vw, 22px);
+    font-weight: 700;
+    color: white;
+    margin: 0 0 24px 0;
+    line-height: 1.4;
+  }
+
+  /* ── BENEFITS ── */
+  .benefits-section {
+    width: 100%;
+  }
+
+  .benefits-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    width: 100%;
+  }
+
+  .benefit-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    gap: 8px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .benefit-icon {
+    width: 24px;
+    height: 24px;
+    background: #22c55e;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: white;
+    font-weight: bold;
+    flex-shrink: 0;
+  }
+
+  .benefit-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: white;
+    margin: 0;
+    line-height: 1.3;
+  }
+
+  .benefit-text {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.65);
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  /* ── HOW IT WORKS ── */
+  .how-section {
+    width: 100%;
+  }
+
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    text-align: left;
+  }
+
+  .step {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px 0;
+  }
+
+  .step-number {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    background: #C8102E;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-weight: 800;
+    color: white;
+    line-height: 1;
+  }
+
+  .step-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-top: 4px;
+  }
+
+  .step-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: white;
+    margin: 0;
+    line-height: 1.3;
+  }
+
+  .step-desc {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.65);
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  .step-divider {
+    width: 1px;
+    height: 16px;
+    background: rgba(255, 255, 255, 0.12);
+    margin-left: 17px;
+  }
+
+  /* ── VIDEO ── */
   .video-section {
     width: 100%;
     max-width: 420px;
@@ -510,18 +629,12 @@
     gap: 12px;
   }
 
-  .video-title {
-    font-size: 18px;
-    font-weight: 700;
-    color: white;
-    line-height: 1.4;
-  }
-
   .video-subtitle {
     font-size: 14px;
     color: rgba(255, 255, 255, 0.7);
     line-height: 1.5;
     max-width: 360px;
+    margin: 0;
   }
 
   .video-frame {
@@ -529,7 +642,7 @@
     background: #1a1a1a;
     border-radius: 24px;
     padding: 8px;
-    box-shadow: 
+    box-shadow:
       0 0 0 2px #333,
       0 20px 60px rgba(0, 0, 0, 0.6),
       inset 0 2px 4px rgba(255, 255, 255, 0.1);
@@ -560,32 +673,67 @@
     background: #000;
   }
 
-  /* Educational Blocks */
-  .educational-block {
-    max-width: 520px;
-    text-align: center;
-    padding: 24px;
+  /* ── CONTEXT ── */
+  .context-section {
+    width: 100%;
+    max-width: 480px;
+    padding: 28px;
     background: rgba(255, 255, 255, 0.05);
     border-radius: 16px;
     border: 1px solid rgba(255, 255, 255, 0.1);
   }
 
-  .block-title {
-    font-size: 20px;
+  .context-title {
+    font-size: clamp(17px, 3vw, 20px);
     font-weight: 700;
     color: white;
     margin: 0 0 12px 0;
     line-height: 1.4;
   }
 
-  .block-text {
+  .context-text {
     font-size: 15px;
     color: rgba(255, 255, 255, 0.75);
     line-height: 1.6;
-    margin: 0;
+    margin: 0 0 16px 0;
   }
 
-  /* Trust Bar - Minimal */
+  .vote-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 16px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    text-align: left;
+  }
+
+  .vote-list li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .vote-list li::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    min-width: 6px;
+    background: #C8102E;
+    border-radius: 50%;
+  }
+
+  .context-note {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.5);
+    margin: 0;
+    font-style: italic;
+  }
+
+  /* ── TRUST BAR ── */
   .trust-bar {
     display: flex;
     align-items: center;
@@ -626,40 +774,69 @@
     font-size: 14px;
   }
 
-  /* Disclaimer */
+  /* ── FOOTER ── */
+  .footer-section {
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    width: 100%;
+  }
+
+  .footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .footer-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 13px;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    transition: color 0.2s ease;
+    padding: 4px;
+  }
+
+  .footer-link:hover {
+    color: rgba(255, 255, 255, 0.95);
+  }
+
+  .footer-icon {
+    flex-shrink: 0;
+  }
+
+  /* ── DISCLAIMER ── */
   .disclaimer {
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.4);
     line-height: 1.5;
     max-width: 450px;
     text-align: center;
+    margin: 0;
   }
 
-  .disclaimer strong {
-    color: rgba(255, 255, 255, 0.7);
-  }
-
-  /* Mobile Responsive */
+  /* ── MOBILE ── */
   @media (max-width: 640px) {
     .landing {
       padding: 16px;
     }
 
     .landing-inner {
-      gap: 24px;
-    }
-
-    .pill-wrapper {
-      margin-bottom: 4px;
+      gap: 36px;
     }
 
     .top-pill {
       font-size: 10px;
       padding: 6px 12px;
-    }
-
-    .headline {
-      margin-bottom: 4px;
     }
 
     .headline-line1,
@@ -679,6 +856,10 @@
       font-size: 9px;
     }
 
+    .countdown-item {
+      min-width: 40px;
+    }
+
     .subline {
       font-size: 15px;
     }
@@ -688,28 +869,27 @@
       font-size: 16px;
     }
 
-    .video-title {
-      font-size: 16px;
+    .benefits-grid {
+      grid-template-columns: 1fr;
     }
 
-    .video-subtitle {
-      font-size: 13px;
+    .benefit-card {
+      flex-direction: row;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .benefit-card > div,
+    .benefit-card > p {
+      text-align: left;
     }
 
     .video-frame {
       max-width: 280px;
     }
 
-    .educational-block {
+    .context-section {
       padding: 20px;
-    }
-
-    .block-title {
-      font-size: 18px;
-    }
-
-    .block-text {
-      font-size: 14px;
     }
 
     .trust-bar {
@@ -727,6 +907,11 @@
       font-size: 13px;
     }
 
+    .footer-links {
+      flex-direction: column;
+      gap: 8px;
+    }
+
     .disclaimer {
       font-size: 11px;
       max-width: 100%;
@@ -742,10 +927,6 @@
 
     .countdown-number {
       font-size: 20px;
-    }
-
-    .countdown-item {
-      min-width: 40px;
     }
   }
 </style>
