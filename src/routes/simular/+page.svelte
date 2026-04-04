@@ -9,6 +9,8 @@
     isColumnValid,
     isBallotReady,
     getValidColumnCount,
+    loadPreferencesFromStorage,
+    resetAllSelections,
   } from '$lib/stores/preferencePicker.svelte';
   import type { ColumnKey } from '$lib/stores/preferencePicker.svelte';
   import { initializeFirebase, isFirebaseReady, canStillSimulate } from '$lib/firebase';
@@ -123,8 +125,10 @@
     if (entryMode === 'new_simulation') {
       sessionStorage.removeItem('entry_mode');
       vote.resetForNewSimulation();
+      resetAllSelections(); // sync preferencePicker in-memory state
     } else if (saved && vote.count === 0) {
       vote.hydrate(saved);
+      loadPreferencesFromStorage(); // sync preferencePicker visual state from localStorage
     }
 
     centerBallot();
