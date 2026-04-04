@@ -609,10 +609,7 @@
 
     <!-- 4A — Presidencia -->
     <div class="proc-card pres-proc-card">
-      <div class="proc-card-head">
-        <h3 class="proc-card-title">Presidencia</h3>
-        <span class="proc-type-badge direct">Voto directo</span>
-      </div>
+      <h3 class="proc-card-title">Presidencia</h3>
       <p class="proc-card-desc">Tu voto fue directo a esta candidatura presidencial.</p>
       {#if userBallot[0]?.selection}
         <div class="pres-selection-row">
@@ -629,11 +626,7 @@
     {#if userBallot[1]}
       {@const senadoNac = userBallot[1]}
     <div class="proc-card leg-proc-card" data-protagonist-flow>
-      <div class="proc-card-head">
-        <h3 class="proc-card-title">{senadoNac.label}</h3>
-        <span class="proc-type-badge preferential">Voto de lista</span>
-      </div>
-      <p class="proc-steps-label">Así se procesó esta decisión</p>
+      <h3 class="proc-card-title">{senadoNac.label}</h3>
 
       {#if senadoNac.selection}
         <div class="flow-track-animated">
@@ -706,10 +699,7 @@
     <!-- 4C — Secciones colapsadas: misma lógica, sin repetir explicación -->
     {#each userBallot.slice(2) as col}
       <div class="bloque-resumen">
-        <div class="proc-card-head">
-          <h3 class="proc-card-title">{col.label}</h3>
-          <span class="proc-type-badge preferential">Voto de lista</span>
-        </div>
+        <h3 class="proc-card-title">{col.label}</h3>
         {#if col.selection}
           <div class="resumen-partido" style="--party-color: {col.selection.partyColor}">
             <div class="resumen-dot"></div>
@@ -781,19 +771,12 @@
         </div>
       {/if}
 
-      <!-- Legislative categories -->
-      {#each displayResults.filter(r => r.categoryId !== 'president') as cat}
+      <!-- Senado nacional: detalle completo -->
+      {#each displayResults.filter(r => r.categoryId === 'senatorsNational') as cat}
         {@const catDef = BALLOT_DEF.find(d => d.catId === cat.categoryId)}
-        {@const gov = analyzeSeatConcentration(cat.seatDistribution, cat.totalSeats)}
         {@const userVoteForCat = catDef ? userBallot.find(b => b.colId === catDef.colId) : null}
         <div class="result-block">
-          <div class="result-block-head">
-            <h3 class="result-block-title">{catDef?.label ?? cat.category}</h3>
-            {#if cat.seatDistribution.length > 0}
-              <span class="gov-badge" style="color: {gov.color}; border-color: {gov.color}40; background: {gov.color}0f">{gov.label}</span>
-            {/if}
-          </div>
-
+          <h3 class="result-block-title">{catDef?.label ?? cat.category}</h3>
           <div class="party-results">
             {#each cat.results.filter(r => r.votes > 0).slice(0, 5) as r}
               {@const isUserVote = userVoteForCat?.selection?.partyName === r.partyName}
@@ -809,9 +792,28 @@
               </div>
             {/each}
           </div>
-
           {#if cat.seatDistribution.length === 0 && cat.totalVotes < cat.totalSeats * 10}
             <p class="seats-pending-note">Los puestos se calcularán cuando haya más simulaciones.</p>
+          {/if}
+        </div>
+      {/each}
+
+      <!-- Resto de categorías legislativas: versión resumida -->
+      {#each displayResults.filter(r => r.categoryId !== 'president' && r.categoryId !== 'senatorsNational') as cat}
+        {@const catDef = BALLOT_DEF.find(d => d.catId === cat.categoryId)}
+        {@const userVoteForCat = catDef ? userBallot.find(b => b.colId === catDef.colId) : null}
+        {@const userResult = userVoteForCat?.selection ? cat.results.find(r => r.partyName === userVoteForCat.selection?.partyName) : null}
+        <div class="result-block-mini">
+          <h3 class="result-mini-title">{catDef?.label ?? cat.category}</h3>
+          {#if userVoteForCat?.selection}
+            <div class="result-mini-row">
+              <div class="party-color-dot" style="background: {userVoteForCat.selection.partyColor}"></div>
+              <span class="result-mini-party">{userVoteForCat.selection.partyName}</span>
+              {#if userResult?.seats}<span class="party-seats">{userResult.seats} pt.</span>{/if}
+              <span class="your-vote-badge">Tu voto</span>
+            </div>
+          {:else}
+            <p class="proc-no-vote">Sin selección.</p>
           {/if}
         </div>
       {/each}
@@ -823,15 +825,8 @@
     <section class="scenario-sect" in:fade={{ duration: 400 }}>
       <h2 class="section-label">Qué significa este escenario</h2>
       <div class="scenario-card" style="--sc-color: {globalScenario.color}">
-        <div class="scenario-badge-row">
-          <span class="scenario-badge" style="color: {globalScenario.color}; border-color: {globalScenario.color}40; background: {globalScenario.color}0f">{globalScenario.label}</span>
-        </div>
         <h3 class="scenario-title">{globalScenario.title}</h3>
         <p class="scenario-desc">{globalScenario.description}</p>
-        <div class="scenario-insight">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-          <p>No solo importa quién gana la presidencia. La distribución de puestos en el Congreso define qué tan fácil o difícil es gobernar en los próximos años.</p>
-        </div>
       </div>
     </section>
   {/if}
@@ -871,29 +866,16 @@
         <h3 class="restart-title">Probar otra combinación</h3>
         <p class="restart-desc">Vuelve a la cédula y mira cómo cambian los resultados según tus decisiones.</p>
       </div>
-      <div class="restart-actions">
-        <button
-          class="restart-btn"
-          onclick={startNewSimulation}
-          disabled={restarting}
-        >
-          {restarting ? 'Preparando...' : 'Volver a simular'}
-        </button>
-        <button class="share-btn" onclick={() => showShareModal = true}>
-          Compartir resultados
-        </button>
-      </div>
+      <button
+        class="restart-btn"
+        onclick={startNewSimulation}
+        disabled={restarting}
+      >
+        {restarting ? 'Preparando...' : 'Probar otra combinación'}
+      </button>
     </div>
   </section>
 
-  <!-- ── Modals ──────────────────────────────────────────────────────────── -->
-  {#if showShareModal}
-    <ShareResults
-      results={shareData}
-      totalVoters={totalVoters}
-      onClose={() => showShareModal = false}
-    />
-  {/if}
   <HelpPanel isOpen={showHelpPanel} onClose={() => showHelpPanel = false} />
 
 </div>
@@ -1620,6 +1602,39 @@
     margin: 0;
     text-align: center;
     padding: 8px 0;
+  }
+
+  /* Mini result blocks (Senado regional, Diputados, Parlamento Andino) */
+  .result-block-mini {
+    background: #0f172a;
+    border: 1px solid #1e293b;
+    border-radius: 10px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .result-mini-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #64748b;
+    margin: 0;
+    min-width: 120px;
+  }
+
+  .result-mini-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+  }
+
+  .result-mini-party {
+    font-size: 13px;
+    font-weight: 600;
+    color: #e2e8f0;
   }
 
   /* ─────────────────────────────────────────────────────────────────────────
