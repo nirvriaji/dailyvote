@@ -219,12 +219,12 @@
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 </div>
                 <p class="fn-label">Candidatos</p>
-                <p class="fn-desc">Si marcaste números preferenciales, esos números ayudan a definir qué candidatos entran dentro del partido.</p>
+                <p class="fn-desc">Si marcaste números preferenciales, esos números ayudan a definir qué candidatos del partido entran al congreso.</p>
                 {#if senadoNac.prefs.length > 0}
                   <div class="fn-prefs-row">
                     {#each senadoNac.prefs as num}<span class="fn-pref-num">N° {num}</span>{/each}
                   </div>
-                  <p class="fn-pref-note">Este número cuenta si el partido pasa la valla y obtiene puestos. Define qué candidatos entran dentro del partido.</p>
+                  <p class="fn-pref-note">Este número cuenta si el partido pasa la valla y obtiene puestos. Define qué candidatos del partido entran al congreso.</p>
                 {:else}
                   <span class="fn-no-pref">Sin voto preferencial</span>
                 {/if}
@@ -252,7 +252,7 @@
               </div>
             {/if}
           </div>
-          <p class="resumen-logic">Tu voto sigue la misma lógica: suma al partido y, si hay preferenciales, define qué candidatos entran.</p>
+          <p class="resumen-logic">Tu voto sigue la misma lógica: suma al partido y, si hay preferenciales, define qué candidatos del partido entran al congreso.</p>
         {:else}
           <p class="proc-no-vote">No realizaste una selección en esta sección.</p>
         {/if}
@@ -265,7 +265,7 @@
     <h2 class="section-label">Qué debes recordar</h2>
     <div class="takeaway-card">
       <p class="takeaway-line">Tu voto primero suma al partido.</p>
-      <p class="takeaway-line">Si el partido pasa la valla y obtiene puestos, el voto preferencial ayuda a definir qué candidatos entran dentro del partido.</p>
+      <p class="takeaway-line">Si el partido pasa la valla y obtiene puestos, el voto preferencial ayuda a definir qué candidatos del partido entran al congreso.</p>
       <p class="takeaway-footer">Los resultados finales dependen de millones de votos como este.</p>
     </div>
   </section>
