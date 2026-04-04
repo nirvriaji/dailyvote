@@ -9,6 +9,8 @@
     resetAllSelections,
   } from '$lib/stores/preferencePicker.svelte';
   import type { ColumnKey } from '$lib/stores/preferencePicker.svelte';
+  import HelpPanel from '$lib/components/HelpPanel.svelte';
+  import ShareModal from '$lib/components/ShareModal.svelte';
   // ─── Ballot definition ───────────────────────────────────────────────────────
   const BALLOT_DEF = [
     { colId: 'col0', key: 'presidente'       as ColumnKey, label: 'Presidencia',       hasPreferential: false },
@@ -51,8 +53,9 @@
   );
 
   // ─── Actions ─────────────────────────────────────────────────────────────────
-  let shareStatus  = $state<'idle' | 'copied'>('idle');
-  let restarting   = $state(false);
+  let showHelpPanel  = $state(false);
+  let showShareModal = $state(false);
+  let restarting     = $state(false);
 
   async function handleRestart() {
     if (restarting) return;
@@ -62,24 +65,6 @@
     await goto('/simular');
   }
 
-  async function handleShare() {
-    const shareData = {
-      title: 'Simulación electoral Perú 2026',
-      text: 'Así se procesó mi voto en la simulación electoral Perú 2026.',
-      url: window.location.href,
-    };
-    if (navigator.share) {
-      try { await navigator.share(shareData); } catch {}
-    } else {
-      await navigator.clipboard.writeText(window.location.href);
-      shareStatus = 'copied';
-      setTimeout(() => { shareStatus = 'idle'; }, 2000);
-    }
-  }
-
-  function handleSuggest() {
-    window.location.href = 'mailto:irvin@lafechamasimportante.com?subject=Sugerencia%20simulador%20de%20voto';
-  }
 
   // ─── Lifecycle ───────────────────────────────────────────────────────────────
   onMount(() => {
@@ -136,6 +121,15 @@
     </div>
   </div>
 {/if}
+
+<!-- ── Modales ────────────────────────────────────────────────────────────── -->
+<HelpPanel isOpen={showHelpPanel} onClose={() => showHelpPanel = false} />
+<ShareModal
+  isOpen={showShareModal}
+  onClose={() => showShareModal = false}
+  url="https://lafechamasimportante.com/resultados"
+  text="Simulé mi voto en las elecciones Perú 2026 — pruébalo tú también."
+/>
 
 <!-- ── Page ───────────────────────────────────────────────────────────────── -->
 <div class="res-page">
@@ -353,10 +347,8 @@
       <p class="feedback-title">¿Te ayudó esta herramienta?</p>
       <p class="feedback-sub">Tu opinión ayuda a mejorar esta herramienta educativa.</p>
       <div class="feedback-actions">
-        <button class="btn-ghost" onclick={handleSuggest}>Enviar sugerencia</button>
-        <button class="btn-ghost" onclick={handleShare}>
-          {shareStatus === 'copied' ? 'URL copiada' : 'Compartir'}
-        </button>
+        <button class="btn-ghost" onclick={() => showHelpPanel = true}>Enviar sugerencia</button>
+        <button class="btn-ghost" onclick={() => showShareModal = true}>Compartir</button>
       </div>
     </div>
   </section>

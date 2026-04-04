@@ -1,7 +1,6 @@
 <script lang="ts">
   import {
     isColumnValid,
-    isBallotReady,
     getValidColumnCount,
     getColumnPreferenceNumbers,
   } from '$lib/stores/preferencePicker.svelte';
@@ -109,6 +108,20 @@
 
   // Is the current step done?
   let currentStepDone = $derived(isColumnValid(currentStep.key));
+
+  // Derived strings to avoid {#if} inside <p> tags (causes hydration HierarchyRequestError)
+  let bsbTitle = $derived(
+    ballotStatus === 'complete' ? 'Tu cédula está completa.' :
+    ballotStatus === 'partial'  ? 'Tu cédula está parcial.' :
+                                  'Tu cédula está en blanco.'
+  );
+  let bsbDesc = $derived(
+    ballotStatus === 'complete'
+      ? 'Has marcado las 5 decisiones de esta cédula. Ahora puedes ver cómo se procesa todo tu voto.'
+      : ballotStatus === 'partial'
+        ? `Has marcado ${validCount} de 5 decisiones. Si la entregas así, solo se tomarán en cuenta las elecciones que sí marcaste.`
+        : 'Si la entregas así, no habrás marcado ninguna de las elecciones de esta cédula.'
+  );
 </script>
 
 <div class="panel">
@@ -198,16 +211,8 @@
 
     <!-- Estado global de la cédula -->
     <div class="ballot-state-block" class:bsb-complete={ballotStatus === 'complete'} class:bsb-partial={ballotStatus === 'partial'} class:bsb-blank={ballotStatus === 'blank'}>
-      <p class="bsb-title">
-        {#if ballotStatus === 'complete'}Tu cédula está completa.
-        {:else if ballotStatus === 'partial'}Tu cédula está parcial.
-        {:else}Tu cédula está en blanco.{/if}
-      </p>
-      <p class="bsb-desc">
-        {#if ballotStatus === 'complete'}Has marcado las 5 decisiones de esta cédula. Ahora puedes ver cómo se procesa todo tu voto.
-        {:else if ballotStatus === 'partial'}Has marcado {validCount} de 5 decisiones. Si la entregas así, solo se tomarán en cuenta las elecciones que sí marcaste.
-        {:else}Si la entregas así, no habrás marcado ninguna de las elecciones de esta cédula.{/if}
-      </p>
+      <p class="bsb-title">{bsbTitle}</p>
+      <p class="bsb-desc">{bsbDesc}</p>
 
       <!-- Resumen por sección -->
       <div class="section-summary">

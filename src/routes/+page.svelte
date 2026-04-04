@@ -4,11 +4,13 @@
   import { goto } from '$app/navigation';
   import { ELECTION_DAY_TARGET } from '$lib/firebase';
   import HelpPanel from '$lib/components/HelpPanel.svelte';
+  import ShareModal from '$lib/components/ShareModal.svelte';
 
   let isLoaded = $state(false);
   let countdownData = $state({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   let countdownInterval: ReturnType<typeof setInterval> | null = null;
   let showHelpPanel = $state(false);
+  let showShareModal = $state(false);
 
   function updateCountdown() {
     const now = new Date();
@@ -85,6 +87,12 @@
     <div class="landing-inner" in:fly={{ y: 30, duration: 600 }}>
 
       <HelpPanel isOpen={showHelpPanel} onClose={() => showHelpPanel = false} />
+      <ShareModal
+        isOpen={showShareModal}
+        onClose={() => showShareModal = false}
+        url="https://lafechamasimportante.com/"
+        text="Practica tu voto para las elecciones Perú 2026 con la cédula real."
+      />
 
       <!-- ━━━ S1 · HERO ━━━
            Layout: pill → headline (2 lines) → countdown → subtitle → CTA + trust note -->
@@ -255,13 +263,11 @@
 
       <!-- Footer -->
       <footer class="footer-section" in:fade={{ duration: 400, delay: 1100 }}>
-        <div class="footer-links">
-          <button class="footer-link" onclick={() => showHelpPanel = true}>
-            <svg class="footer-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
-            </svg>
-            <span>¿Dudas o sugerencias?</span>
-          </button>
+        <p class="footer-title">¿Te ayudó esta herramienta?</p>
+        <p class="footer-sub">Tu opinión ayuda a mejorar este simulador educativo.</p>
+        <div class="footer-actions">
+          <button class="footer-link" onclick={() => showHelpPanel = true}>Enviar sugerencia</button>
+          <button class="footer-link" onclick={() => showShareModal = true}>Compartir</button>
         </div>
       </footer>
 
@@ -761,35 +767,47 @@
     padding-top: 20px;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
     width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
   }
 
-  .footer-links {
+  .footer-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+  }
+
+  .footer-sub {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.35);
+    margin: 0 0 6px;
+  }
+
+  .footer-actions {
     display: flex;
+    gap: 8px;
     align-items: center;
-    justify-content: center;
   }
 
   .footer-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
     background: transparent;
-    border: none;
-    color: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.55);
     font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
     cursor: pointer;
-    text-decoration: underline;
-    text-underline-offset: 3px;
-    transition: color 0.2s ease;
-    padding: 4px;
+    padding: 8px 14px;
+    transition: border-color 0.2s ease, color 0.2s ease;
   }
 
   .footer-link:hover {
-    color: rgba(255, 255, 255, 0.9);
-  }
-
-  .footer-icon {
-    flex-shrink: 0;
+    border-color: rgba(255, 255, 255, 0.28);
+    color: rgba(255, 255, 255, 0.85);
   }
 
   /* ── MOBILE ── */
