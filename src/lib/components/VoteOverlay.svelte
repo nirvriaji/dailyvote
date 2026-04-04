@@ -276,8 +276,9 @@
     transform: translateY(100%);
     transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
     box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15);
+    pointer-events: none;
   }
-  .sheet.visible { transform: translateY(0); }
+  .sheet.visible { transform: translateY(0); pointer-events: auto; }
 
   /* ─── Handle ───────────────────────────────────────────────────────────────── */
   .handle {

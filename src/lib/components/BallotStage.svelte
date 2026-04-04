@@ -119,6 +119,13 @@
     }
   }
 
+  /* Mobile: bottom clearance so last ballot row isn't hidden behind the fixed panel */
+  @media (max-width: 900px) {
+    .spacer-bottom {
+      height: var(--mobile-panel-h, 120px);
+    }
+  }
+
   .spacer-left,
   .spacer-right {
     width: 24px;

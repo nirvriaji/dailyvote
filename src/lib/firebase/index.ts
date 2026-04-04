@@ -49,7 +49,6 @@ export function initializeFirebase() {
     });
     
     isFirebaseReady = true;
-    console.log('✅ Firebase inicializado correctamente');
     return true;
   } catch (error) {
     console.error('❌ Error inicializando Firebase:', error);

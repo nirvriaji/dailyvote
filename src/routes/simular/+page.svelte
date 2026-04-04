@@ -301,7 +301,7 @@
   </div>
 
   <!-- ── Mobile bottom panel ──────────────────────────────────────────────── -->
-  <div class="context-panel-mobile panel-mobile" aria-label="Guía de votación">
+  <div class="context-panel-mobile" aria-label="Guía de votación">
     <!-- Toggle bar -->
     <button
       class="mobile-panel-toggle"
@@ -439,18 +439,15 @@
 
     .context-panel-mobile {
       display: block;
-      position: relative;
-      z-index: 900;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 50;
       background: #0f172a;
       border-top: 1px solid #1e293b;
-      flex-shrink: 0;
       max-height: 60dvh;
       overflow-y: auto;
-    }
-
-    /* Extra scroll room for ballot so content isn't hidden behind panel */
-    .ballot-area {
-      /* BallotStage internally handles scroll, no extra needed */
     }
   }
 
@@ -486,6 +483,20 @@
 
   .mobile-chevron.up {
     transform: rotate(-90deg);
+  }
+
+  /* ── Mobile expanded panel content ─────────────────────────────────────── */
+  .mobile-panel-content :global(.panel) {
+    height: auto;
+    min-height: 0;
+    border-left: none;
+    border-top: 1px solid #1e293b;
+  }
+
+  .mobile-panel-content :global(.cta-area) {
+    position: static;
+    margin-top: 0;
+    border-top: 1px solid #1e293b;
   }
 
   /* ── Mobile compact CTA ─────────────────────────────────────────────────── */

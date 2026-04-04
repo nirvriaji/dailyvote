@@ -1,0 +1,32 @@
+[debug] [2026-04-04T22:23:38.007Z] ----------------------------------------------------------------------
+[debug] [2026-04-04T22:23:38.010Z] Command:       /home/saturnino/.nvm/versions/node/v24.2.0/bin/node /home/saturnino/.nvm/versions/node/v24.2.0/bin/firebase deploy --only hosting,firestore:rules --project exitpollsimulator
+[debug] [2026-04-04T22:23:38.010Z] CLI Version:   15.12.0
+[debug] [2026-04-04T22:23:38.010Z] Platform:      linux
+[debug] [2026-04-04T22:23:38.011Z] Node Version:  v24.2.0
+[debug] [2026-04-04T22:23:38.011Z] Time:          Sat Apr 04 2026 17:23:38 GMT-0500 (Peru Standard Time)
+[debug] [2026-04-04T22:23:38.011Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-04-04T22:23:39.251Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-04-04T22:23:39.251Z] > authorizing via signed-in user (irvin.jair.pg@gmail.com)
+[debug] [2026-04-04T22:23:39.252Z] [iam] checking project exitpollsimulator for permissions ["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2026-04-04T22:23:39.254Z] Checked if tokens are valid: true, expires at: 1775345015740
+[debug] [2026-04-04T22:23:39.254Z] Checked if tokens are valid: true, expires at: 1775345015740
+[debug] [2026-04-04T22:23:39.255Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/exitpollsimulator:testIamPermissions [none]
+[debug] [2026-04-04T22:23:39.256Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/exitpollsimulator:testIamPermissions  x-goog-user-project=exitpollsimulator
+[debug] [2026-04-04T22:23:39.256Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/exitpollsimulator:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2026-04-04T22:23:42.427Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/exitpollsimulator:testIamPermissions 200
+[debug] [2026-04-04T22:23:42.427Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/exitpollsimulator:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2026-04-04T22:23:42.428Z] Checked if tokens are valid: true, expires at: 1775345015740
+[debug] [2026-04-04T22:23:42.428Z] Checked if tokens are valid: true, expires at: 1775345015740
+[debug] [2026-04-04T22:23:42.428Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/exitpollsimulator [none]
+[debug] [2026-04-04T22:23:42.893Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/exitpollsimulator 200
+[debug] [2026-04-04T22:23:42.893Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/exitpollsimulator {"projectId":"exitpollsimulator","projectNumber":"306550697165","displayName":"exit poll simulator","name":"projects/exitpollsimulator","resources":{"hostingSite":"exitpollsimulator"},"state":"ACTIVE","etag":"1_fcbed27b-f9d2-4f64-9532-d2d612b8a562"}
+[info] 
+[info] === Deploying to 'exitpollsimulator'...
+[info] 
+[info] i  deploying firestore, hosting 
+[info] i  firestore: ensuring required API firestore.googleapis.com is enabled... 
+[info] i  firestore: ensuring required API firestore.googleapis.com is enabled... 
+[debug] [2026-04-04T22:23:42.899Z] Checked if tokens are valid: true, expires at: 1775345015740
+[debug] [2026-04-04T22:23:42.900Z] Checked if tokens are valid: true, expires at: 1775345015740
+[debug] [2026-04-04T22:23:42.900Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/exitpollsimulator/databases/(default) [none]
