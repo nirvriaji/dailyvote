@@ -85,8 +85,12 @@
   ];
 
   // ─── Reactive state ───────────────────────────────────────────────────────────
-  let isReady    = $derived(isBallotReady());
   let validCount = $derived(getValidColumnCount());
+
+  type BallotStatus = 'blank' | 'partial' | 'complete';
+  let ballotStatus = $derived<BallotStatus>(
+    validCount === 5 ? 'complete' : validCount === 0 ? 'blank' : 'partial'
+  );
 
   let activeIdx = $derived(
     activeIdxProp !== undefined
@@ -178,7 +182,7 @@
       </div>
 
       <!-- Block E: Advance button — shown for all steps once the column is valid -->
-      {#if currentStepDone && !isReady && onNextStep}
+      {#if currentStepDone && ballotStatus !== 'complete' && onNextStep}
         <button class="next-step-btn" onclick={onNextStep}>
           {currentStep.hasPreferential && preferenceNums.length === 0
             ? 'Continuar sin preferencial'
@@ -190,34 +194,56 @@
   {/key}
 
   <!-- ── CTA area ───────────────────────────────────────────────────────────── -->
-  <div class="cta-area" class:ready={isReady}>
-    {#if isReady}
-      <div class="cta-confirmation" transition:fly={{ y: 8, duration: 300 }}>
-        <p class="cta-confirm-title">Tu cédula está lista.</p>
-        <p class="cta-confirm-sub">Ahora verás cómo tu voto se procesa y cómo impacta en los resultados.</p>
-      </div>
-    {/if}
+  <div class="cta-area" class:state-complete={ballotStatus === 'complete'}>
 
+    <!-- Estado global de la cédula -->
+    <div class="ballot-state-block" class:bsb-complete={ballotStatus === 'complete'} class:bsb-partial={ballotStatus === 'partial'} class:bsb-blank={ballotStatus === 'blank'}>
+      <p class="bsb-title">
+        {#if ballotStatus === 'complete'}Tu cédula está completa.
+        {:else if ballotStatus === 'partial'}Tu cédula está parcial.
+        {:else}Tu cédula está en blanco.{/if}
+      </p>
+      <p class="bsb-desc">
+        {#if ballotStatus === 'complete'}Has marcado las 5 decisiones de esta cédula. Ahora puedes ver cómo se procesa todo tu voto.
+        {:else if ballotStatus === 'partial'}Has marcado {validCount} de 5 decisiones. Si la entregas así, solo se tomarán en cuenta las elecciones que sí marcaste.
+        {:else}Si la entregas así, no habrás marcado ninguna de las elecciones de esta cédula.{/if}
+      </p>
+
+      <!-- Resumen por sección -->
+      <div class="section-summary">
+        <p class="summary-hd">Resumen de tu cédula</p>
+        {#each STEPS as step}
+          {@const marked = isColumnValid(step.key)}
+          <div class="summary-row">
+            <span class="summary-col-name">{step.title}</span>
+            <span class="summary-col-status" class:s-marked={marked} class:s-blank={!marked}>
+              {marked ? 'Marcado' : 'En blanco'}
+            </span>
+          </div>
+        {/each}
+      </div>
+    </div>
+
+    <!-- Microcopy educativo -->
+    <p class="deliver-microcopy">Puedes entregar la cédula aunque no hayas marcado todas las decisiones. El simulador te mostrará qué ocurre en cada caso.</p>
+
+    <!-- CTA — siempre habilitado -->
     <button
-      class="deliver-btn"
-      class:active={isReady}
+      class="deliver-btn active"
       class:busy={isSubmitting}
-      disabled={!isReady || isSubmitting}
+      disabled={isSubmitting}
       onclick={onDeliver}
-      aria-disabled={!isReady}
     >
       {#if isSubmitting}
         Procesando...
-      {:else if isReady}
+      {:else if ballotStatus === 'complete'}
         Entregar cédula y ver cómo se procesa mi voto
+      {:else if ballotStatus === 'partial'}
+        Entregar cédula parcial y ver qué pasa
       {:else}
-        Completa tus 5 decisiones para continuar
+        Entregar cédula en blanco y ver qué pasa
       {/if}
     </button>
-
-    {#if !isReady}
-      <p class="remaining-hint">{5 - validCount} sección{5 - validCount !== 1 ? 'es' : ''} por completar</p>
-    {/if}
   </div>
 
 </div>
@@ -473,32 +499,89 @@
     background: #0f172a;
   }
 
-  .cta-area.ready {
+  .cta-area.state-complete {
     border-top-color: rgba(34, 197, 94, 0.25);
   }
 
-  .cta-confirmation {
-    text-align: center;
-    padding: 10px 8px;
-    background: rgba(34, 197, 94, 0.08);
+  /* ── Ballot state block ──────────────────────────────────────────────────── */
+  .ballot-state-block {
     border-radius: 8px;
-    border: 1px solid rgba(34, 197, 94, 0.2);
+    padding: 12px;
+    border: 1px solid #1e293b;
+    background: rgba(255,255,255,0.03);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
   }
 
-  .cta-confirm-title {
+  .bsb-complete { border-color: rgba(34,197,94,0.25); background: rgba(34,197,94,0.05); }
+  .bsb-partial  { border-color: rgba(245,158,11,0.2); background: rgba(245,158,11,0.04); }
+  .bsb-blank    { border-color: #1e293b; background: rgba(255,255,255,0.02); }
+
+  .bsb-title {
     font-size: 13px;
     font-weight: 700;
-    color: #4ade80;
+    margin: 0;
+  }
+  .bsb-complete .bsb-title { color: #4ade80; }
+  .bsb-partial  .bsb-title { color: #fbbf24; }
+  .bsb-blank    .bsb-title { color: #94a3b8; }
+
+  .bsb-desc {
+    font-size: 11px;
+    color: #64748b;
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  /* Section summary */
+  .section-summary {
+    margin-top: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .summary-hd {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #334155;
     margin: 0 0 2px;
   }
 
-  .cta-confirm-sub {
-    font-size: 11px;
-    color: #64748b;
-    margin: 0;
-    line-height: 1.5;
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
   }
 
+  .summary-col-name {
+    font-size: 11px;
+    color: #64748b;
+  }
+
+  .summary-col-status {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  .s-marked { color: #4ade80; }
+  .s-blank  { color: #334155; }
+
+  /* Microcopy */
+  .deliver-microcopy {
+    font-size: 11px;
+    color: #334155;
+    line-height: 1.55;
+    margin: 0;
+    text-align: center;
+  }
+
+  /* Deliver button — always active */
   .deliver-btn {
     width: 100%;
     padding: 14px 16px;
@@ -510,36 +593,23 @@
     line-height: 1.4;
     text-align: center;
     transition: all 0.25s ease;
-    background: #1e293b;
-    color: #475569;
-  }
-
-  .deliver-btn.active {
+    font-family: inherit;
     background: linear-gradient(135deg, #C8102E 0%, #a00d25 100%);
     color: white;
     box-shadow: 0 4px 20px rgba(200, 16, 46, 0.35);
   }
 
-  .deliver-btn.active:hover {
+  .deliver-btn:hover:not(:disabled) {
     transform: translateY(-1px);
     box-shadow: 0 6px 24px rgba(200, 16, 46, 0.45);
   }
 
-  .deliver-btn.busy {
-    background: #1e293b;
-    color: #64748b;
+  .deliver-btn.busy,
+  .deliver-btn:disabled {
+    opacity: 0.6;
     cursor: wait;
-  }
-
-  .deliver-btn:disabled:not(.active) {
-    cursor: not-allowed;
-  }
-
-  .remaining-hint {
-    font-size: 11px;
-    color: #334155;
-    text-align: center;
-    margin: 0;
+    transform: none;
+    box-shadow: none;
   }
 
   /* ── Mobile panel (when used as bottom bar) ─────────────────────────────── */
@@ -563,15 +633,8 @@
     padding: 12px 16px;
   }
 
-  :global(.panel-mobile) .cta-confirmation {
-    padding: 8px;
-  }
-
-  :global(.panel-mobile) .cta-confirm-title {
-    font-size: 12px;
-  }
-
-  :global(.panel-mobile) .cta-confirm-sub {
+  :global(.panel-mobile) .ballot-state-block,
+  :global(.panel-mobile) .deliver-microcopy {
     display: none;
   }
 </style>

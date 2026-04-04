@@ -85,7 +85,10 @@
   let completedColumnIds = $derived(
     STEP_KEYS.map((k, i) => isColumnValid(k) ? STEP_COL_IDS[i] : null).filter(Boolean) as string[]
   );
-  let isReady = $derived(isBallotReady());
+  let isReady      = $derived(isBallotReady());
+  let ballotStatus = $derived(
+    getValidColumnCount() === 5 ? 'complete' : getValidColumnCount() === 0 ? 'blank' : 'partial'
+  );
 
   // ─── Simulation status ───────────────────────────────────────────────────────
   let canSimulate = $state(true);
@@ -167,7 +170,7 @@
 
   // Deliver ballot → transition → navigate
   async function handleDeliver() {
-    if (!isReady || isSubmitting || isTransitioning) return;
+    if (isSubmitting || isTransitioning) return;
     isTransitioning = true;
 
     // Fire-and-forget to Firebase
@@ -324,15 +327,18 @@
       <!-- Compact CTA always visible -->
       <div class="mobile-cta-compact">
         <button
-          class="deliver-btn-mobile"
-          class:active={isReady}
-          disabled={!isReady || isSubmitting}
+          class="deliver-btn-mobile active"
+          disabled={isSubmitting}
           onclick={handleDeliver}
         >
-          {#if isReady}
+          {#if isSubmitting}
+            Procesando...
+          {:else if ballotStatus === 'complete'}
             Entregar cédula y ver cómo se procesa mi voto
+          {:else if ballotStatus === 'partial'}
+            Entregar cédula parcial y ver qué pasa
           {:else}
-            Completa tus 5 decisiones para continuar
+            Entregar cédula en blanco y ver qué pasa
           {/if}
         </button>
       </div>
