@@ -95,7 +95,7 @@
 
         <h1 class="headline" in:fly={{ y: 20, duration: 500, delay: 200 }}>
           <span class="headline-line1">SIMULA TU VOTO.</span>
-          <span class="headline-line2">VE QUÉ CAMBIA.</span>
+          <span class="headline-line2">CAMBIA LOS RESULTADOS.</span>
         </h1>
 
         <div class="countdown-wrapper" in:fade={{ duration: 400, delay: 300 }}>
@@ -124,7 +124,7 @@
         </div>
 
         <p class="subline" in:fade={{ duration: 400, delay: 400 }}>
-          Usa la cédula electoral real. Aprende a marcar cada sección correctamente y entiende cómo tu voto influye en los resultados.
+          Usa la cédula electoral real. Aprende a marcar sin errores, ve cómo tu voto suma al partido y comprueba cómo eso cambia los resultados.
         </p>
 
         <div class="cta-wrapper" in:fly={{ y: 20, duration: 400, delay: 500 }}>
@@ -145,7 +145,7 @@
           <div class="benefit-card">
             <span class="benefit-icon">✓</span>
             <p class="benefit-title">Sin votos nulos ni viciados</p>
-            <p class="benefit-text">Aprende las reglas para marcar correctamente y llega el 12 de abril con total seguridad.</p>
+            <p class="benefit-text">Aprende a marcar correctamente y evita que tu voto sea nulo o viciado.</p>
           </div>
           <div class="benefit-card">
             <span class="benefit-icon">✓</span>
@@ -155,7 +155,7 @@
           <div class="benefit-card">
             <span class="benefit-icon">✓</span>
             <p class="benefit-title">Tu voto suma al partido, no solo al candidato</p>
-            <p class="benefit-text">Entiende cómo tu voto fortalece a un partido y cómo el voto preferencial define qué candidatos entran al Congreso.</p>
+            <p class="benefit-text">Tu voto suma al partido que eliges. El voto preferencial define cuáles de sus candidatos entran al Congreso.</p>
           </div>
         </div>
       </section>
@@ -177,7 +177,7 @@
             <span class="step-number">2</span>
             <div class="step-content">
               <p class="step-title">Marca tus decisiones</p>
-              <p class="step-desc">Selecciona en cada sección: presidente, Senado, Cámara de Diputados y Parlamento Andino.</p>
+              <p class="step-desc">Elige tus opciones en cada sección de la cédula: presidente, Senado, Diputados y Parlamento Andino.</p>
             </div>
           </div>
           <div class="step-divider"></div>
@@ -185,7 +185,7 @@
             <span class="step-number">3</span>
             <div class="step-content">
               <p class="step-title">Descubre qué pasa con tu voto</p>
-              <p class="step-desc">Ve cómo tu voto suma al partido elegido y cómo el voto preferencial decide qué candidatos ingresan al Congreso.</p>
+              <p class="step-desc">Tu voto suma al partido que marcaste. El voto preferencial decide qué candidatos de ese partido entran al Congreso.</p>
             </div>
           </div>
         </div>
@@ -195,7 +195,7 @@
            Layout: section title → description → phone-framed video centered -->
       <section class="video-section" in:fade={{ duration: 400, delay: 800 }}>
         <h2 class="section-title">Mira cómo votar en menos de 30 segundos</h2>
-        <p class="video-subtitle">Es más simple de lo que parece. Ve cómo recorrer la cédula, dónde marcar cada cargo y qué hace válido o nulo un voto.</p>
+        <p class="video-subtitle">Es más simple de lo que parece. Mira cómo se recorre la cédula, cómo se marca correctamente cada sección y qué convierte un voto en nulo.</p>
         <div class="video-frame">
           <video
             class="video-player"
