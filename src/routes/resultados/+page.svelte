@@ -43,7 +43,12 @@
       prefs: def.hasPreferential ? getColumnPreferenceNumbers(def.key) : [] as number[],
     }))
   );
-  let hasUserVote = $derived(vote.count > 0);
+  let hasUserVote  = $derived(vote.count > 0);
+  let markedCount  = $derived(vote.count);
+  type BallotStatus = 'blank' | 'partial' | 'complete';
+  let ballotStatus = $derived<BallotStatus>(
+    markedCount === 5 ? 'complete' : markedCount === 0 ? 'blank' : 'partial'
+  );
 
   // ─── Actions ─────────────────────────────────────────────────────────────────
   let shareStatus  = $state<'idle' | 'copied'>('idle');
@@ -138,42 +143,67 @@
   <!-- ═══ HERO ════════════════════════════════════════════════════════════ -->
   <section class="hero-sect" in:fly={{ y: 28, duration: 700, delay: 500 }}>
     <p class="hero-eyebrow">Simulación electoral · Perú 2026</p>
-    <h1 class="hero-title">Así se procesó tu voto</h1>
-    <p class="hero-subtitle">Tu elección impactó en presidencia, partido y voto preferencial. Mira qué pasó paso a paso.</p>
+    <h1 class="hero-title">
+      {#if ballotStatus === 'complete'}Así se procesó tu voto
+      {:else if ballotStatus === 'partial'}Así se procesó tu cédula parcial
+      {:else}Entregaste una cédula en blanco{/if}
+    </h1>
+    <p class="hero-subtitle">
+      {#if ballotStatus === 'complete'}Marcaste las 5 decisiones de la cédula. Mira cómo tu elección impactó en presidencia, partido y voto preferencial.
+      {:else if ballotStatus === 'partial'}Solo se procesaron las decisiones que sí marcaste. Mira qué pasó con esas elecciones y cuáles quedaron en blanco.
+      {:else}No marcaste ninguna de las elecciones de esta cédula. Por eso no hubo votos que procesar en presidencia ni en el congreso.{/if}
+    </p>
   </section>
 
-  <!-- ═══ TU SELECCIÓN ════════════════════════════════════════════════════ -->
-  {#if hasUserVote}
-    <section class="ballot-summary-sect" in:fly={{ y: 20, duration: 600, delay: 700 }}>
-      <h2 class="section-label">Tu selección</h2>
-      <div class="ballot-summary-grid">
-        {#each userBallot as row}
-          <div
-            class="ballot-card"
-            class:has-vote={!!row.selection}
-            style="--party-color: {row.selection?.partyColor ?? '#334155'}"
-          >
+  <!-- ═══ RESUMEN DE LA CÉDULA ════════════════════════════════════════════ -->
+  <section class="ballot-summary-sect" in:fly={{ y: 20, duration: 600, delay: 700 }}>
+    <h2 class="section-label">Resumen de tu cédula</h2>
+    <div class="ballot-summary-grid">
+      {#each userBallot as row}
+        <div
+          class="ballot-card"
+          class:has-vote={!!row.selection}
+          style="--party-color: {row.selection?.partyColor ?? '#334155'}"
+        >
+          <div class="bc-top-row">
             <span class="bc-col-label">{row.label}</span>
-            {#if row.selection}
-              <div class="bc-party-row">
-                <div class="bc-party-dot"></div>
-                <span class="bc-party-name">{row.selection.partyName}</span>
-              </div>
-              {#if row.prefs.length > 0}
-                <div class="bc-prefs">
-                  {#each row.prefs as num}
-                    <span class="pref-chip">N° {num}</span>
-                  {/each}
-                </div>
-              {/if}
-            {:else}
-              <span class="bc-empty">Sin marcar</span>
-            {/if}
+            <span class="bc-status-chip" class:chip-marked={!!row.selection} class:chip-blank={!row.selection}>
+              {row.selection ? 'Marcado' : 'En blanco'}
+            </span>
           </div>
-        {/each}
-      </div>
-    </section>
-  {/if}
+          {#if row.selection}
+            <div class="bc-party-row">
+              <div class="bc-party-dot"></div>
+              <span class="bc-party-name">{row.selection.partyName}</span>
+            </div>
+            {#if row.prefs.length > 0}
+              <div class="bc-prefs">
+                {#each row.prefs as num}
+                  <span class="pref-chip">N° {num}</span>
+                {/each}
+              </div>
+            {/if}
+          {/if}
+        </div>
+      {/each}
+    </div>
+  </section>
+
+  <!-- ═══ ESTADO GLOBAL DE LA CÉDULA ══════════════════════════════════════ -->
+  <section class="global-state-sect">
+    <div class="gsb" class:gsb-complete={ballotStatus === 'complete'} class:gsb-partial={ballotStatus === 'partial'} class:gsb-blank={ballotStatus === 'blank'}>
+      <p class="gsb-title">
+        {#if ballotStatus === 'complete'}Tu cédula fue procesada como una cédula completa.
+        {:else if ballotStatus === 'partial'}Tu cédula fue procesada como una cédula parcial.
+        {:else}Tu cédula fue procesada como una cédula en blanco.{/if}
+      </p>
+      <p class="gsb-desc">
+        {#if ballotStatus === 'complete'}Las 5 decisiones que marcaste entraron a la simulación de resultados.
+        {:else if ballotStatus === 'partial'}Se tomaron en cuenta solo las decisiones que marcaste. Las demás quedaron en blanco.
+        {:else}Como no hubo selecciones marcadas, esta simulación no suma votos en ninguna de las elecciones de la cédula.{/if}
+      </p>
+    </div>
+  </section>
 
   <!-- ═══ QUÉ PASÓ CON TU VOTO ════════════════════════════════════════════ -->
   <section class="processing-sect">
@@ -182,15 +212,15 @@
     <!-- Presidencia -->
     <div class="proc-card">
       <h3 class="proc-card-title">Presidencia</h3>
-      <p class="proc-card-desc">Tu voto fue directo a esta candidatura presidencial.</p>
       {#if userBallot[0]?.selection}
+        <p class="proc-card-desc">Tu voto fue directo a esta candidatura presidencial.</p>
         <div class="pres-selection-row">
           <div class="pres-dot" style="background: {userBallot[0].selection.partyColor}"></div>
           <span class="pres-party">{userBallot[0].selection.partyName}</span>
           <span class="direct-impact">+1 voto presidencial</span>
         </div>
       {:else}
-        <p class="proc-no-vote">No realizaste una selección en esta sección.</p>
+        <p class="proc-blank-text">Esta elección quedó en blanco. No se sumó ningún voto presidencial en esta parte de la cédula.</p>
       {/if}
     </div>
 
@@ -263,12 +293,12 @@
 
           </div>
         {:else}
-          <p class="proc-no-vote">No realizaste una selección en esta sección.</p>
+          <p class="proc-blank-text">Esta sección quedó en blanco. No se sumó ningún voto en esta elección de la cédula.</p>
         {/if}
       </div>
     {/if}
 
-    <!-- Secciones restantes: resumen simple -->
+    <!-- Secciones restantes -->
     {#each userBallot.slice(2) as col}
       <div class="bloque-resumen">
         <h3 class="proc-card-title">{col.label}</h3>
@@ -284,7 +314,7 @@
           </div>
           <p class="resumen-logic">Tu voto sigue la misma lógica: suma al partido y, si hay preferenciales, define qué candidatos del partido entran al congreso.</p>
         {:else}
-          <p class="proc-no-vote">No realizaste una selección en esta sección.</p>
+          <p class="proc-blank-text">Esta sección quedó en blanco. No se sumó ningún voto en esta elección de la cédula.</p>
         {/if}
       </div>
     {/each}
@@ -294,16 +324,29 @@
   <section class="takeaway-sect" in:fly={{ y: 16, duration: 500 }}>
     <h2 class="section-label">Qué debes recordar</h2>
     <div class="takeaway-card">
-      <p class="takeaway-line">Tu voto primero suma al partido.</p>
-      <p class="takeaway-line">Si el partido pasa la valla y obtiene puestos, el voto preferencial ayuda a definir qué candidatos del partido entran al congreso.</p>
-      <p class="takeaway-footer">Los resultados finales dependen de millones de votos como este.</p>
+      {#if ballotStatus === 'complete'}
+        <p class="takeaway-line">Tu voto primero suma al partido.</p>
+        <p class="takeaway-line">Si el partido pasa la valla y obtiene puestos, el voto preferencial ayuda a definir qué candidatos del partido entran al congreso.</p>
+        <p class="takeaway-footer">Los resultados finales dependen de millones de votos como este.</p>
+      {:else if ballotStatus === 'partial'}
+        <p class="takeaway-line">Solo las decisiones que marcaste entraron a la simulación.</p>
+        <p class="takeaway-line">Las secciones en blanco no suman votos en esas elecciones.</p>
+        <p class="takeaway-footer">Si el partido pasa la valla y obtiene puestos, el voto preferencial ayuda a definir qué candidatos del partido entran al congreso.</p>
+      {:else}
+        <p class="takeaway-line">Una cédula en blanco no suma votos en ninguna de las elecciones que contiene.</p>
+        <p class="takeaway-line">Por eso esta simulación no muestra impacto en presidencia ni en el congreso.</p>
+        <p class="takeaway-footer">Marcar la cédula es lo que activa el procesamiento del voto.</p>
+      {/if}
     </div>
   </section>
 
   <!-- ═══ SIMULAR DE NUEVO + FEEDBACK ══════════════════════════════════════ -->
   <section class="closing-sect">
     <button class="btn-primary" onclick={handleRestart} disabled={restarting}>
-      {restarting ? 'Preparando...' : 'Simular de nuevo'}
+      {#if restarting}Preparando...
+      {:else if ballotStatus === 'complete'}Simular de nuevo
+      {:else if ballotStatus === 'partial'}Probar una cédula completa
+      {:else}Volver y marcar la cédula{/if}
     </button>
 
     <div class="feedback-block">
@@ -453,12 +496,42 @@
     border-color: color-mix(in srgb, var(--party-color) 35%, transparent);
   }
 
+  .bc-top-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+  }
+
   .bc-col-label {
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: #475569;
+  }
+
+  .bc-status-chip {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding: 2px 7px;
+    border-radius: 99px;
+    border: 1px solid;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .chip-marked {
+    color: #4ade80;
+    border-color: rgba(74, 222, 128, 0.3);
+    background: rgba(74, 222, 128, 0.07);
+  }
+
+  .chip-blank {
+    color: #475569;
+    border-color: #1e293b;
+    background: transparent;
   }
 
   .bc-party-row {
@@ -497,12 +570,6 @@
     border: 1px solid rgba(200, 16, 46, 0.25);
     border-radius: 99px;
     color: #f87171;
-  }
-
-  .bc-empty {
-    font-size: 12px;
-    color: #334155;
-    font-style: italic;
   }
 
   /* ─────────────────────────────────────────────────────────────────────────
@@ -566,10 +633,59 @@
     font-weight: 600;
   }
 
-  .proc-no-vote {
-    font-size: 13px;
-    color: #334155;
-    font-style: italic;
+  .proc-blank-text {
+    font-size: 14px;
+    color: #475569;
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  /* ─────────────────────────────────────────────────────────────────────────
+     Global state block
+  ───────────────────────────────────────────────────────────────────────── */
+  .global-state-sect {
+    margin: 0;
+  }
+
+  .gsb {
+    border-radius: 12px;
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border: 1px solid;
+  }
+
+  .gsb-complete {
+    background: rgba(34, 197, 94, 0.05);
+    border-color: rgba(34, 197, 94, 0.2);
+  }
+
+  .gsb-partial {
+    background: rgba(245, 158, 11, 0.04);
+    border-color: rgba(245, 158, 11, 0.18);
+  }
+
+  .gsb-blank {
+    background: rgba(255,255,255,0.02);
+    border-color: #1e293b;
+  }
+
+  .gsb-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0;
+    line-height: 1.3;
+  }
+
+  .gsb-complete .gsb-title { color: #4ade80; }
+  .gsb-partial  .gsb-title { color: #fbbf24; }
+  .gsb-blank    .gsb-title { color: #94a3b8; }
+
+  .gsb-desc {
+    font-size: 14px;
+    color: #64748b;
+    line-height: 1.6;
     margin: 0;
   }
 
