@@ -626,7 +626,8 @@
     </div>
 
     <!-- 4B — Senado nacional: PROTAGONISTA con flujo animado secuencial -->
-    {@const senadoNac = userBallot[1]}
+    {#if userBallot[1]}
+      {@const senadoNac = userBallot[1]}
     <div class="proc-card leg-proc-card" data-protagonist-flow>
       <div class="proc-card-head">
         <h3 class="proc-card-title">{senadoNac.label}</h3>
@@ -700,6 +701,7 @@
         <p class="proc-no-vote">No realizaste una selección en esta sección.</p>
       {/if}
     </div>
+    {/if}
 
     <!-- 4C — Secciones colapsadas: misma lógica, sin repetir explicación -->
     {#each userBallot.slice(2) as col}
