@@ -43,6 +43,28 @@
   );
   let hasUserVote = $derived(vote.count > 0);
 
+  // ─── Actions ─────────────────────────────────────────────────────────────────
+  let shareStatus = $state<'idle' | 'copied'>('idle');
+
+  async function handleShare() {
+    const shareData = {
+      title: 'Simulación electoral Perú 2026',
+      text: 'Así se procesó mi voto en la simulación electoral Perú 2026.',
+      url: window.location.href,
+    };
+    if (navigator.share) {
+      try { await navigator.share(shareData); } catch {}
+    } else {
+      await navigator.clipboard.writeText(window.location.href);
+      shareStatus = 'copied';
+      setTimeout(() => { shareStatus = 'idle'; }, 2000);
+    }
+  }
+
+  function handleSuggest() {
+    window.location.href = 'mailto:irvin@lafechamasimportante.com?subject=Sugerencia%20simulador%20de%20voto';
+  }
+
   // ─── Lifecycle ───────────────────────────────────────────────────────────────
   onMount(() => {
     const savedVotes = sessionStorage.getItem('dailyvote');
@@ -267,6 +289,21 @@
     </div>
   </section>
 
+  <!-- ═══ SIMULAR DE NUEVO + FEEDBACK ══════════════════════════════════════ -->
+  <section class="closing-sect">
+    <a class="btn-primary" href="/simular">Simular de nuevo</a>
+
+    <div class="feedback-block">
+      <p class="feedback-title">¿Te ayudó esta herramienta?</p>
+      <p class="feedback-sub">Tu opinión ayuda a mejorar esta herramienta educativa.</p>
+      <div class="feedback-actions">
+        <button class="btn-ghost" onclick={handleSuggest}>Enviar sugerencia</button>
+        <button class="btn-ghost" onclick={handleShare}>
+          {shareStatus === 'copied' ? 'URL copiada' : 'Compartir'}
+        </button>
+      </div>
+    </div>
+  </section>
 
 </div>
 
@@ -703,6 +740,81 @@
     margin: 0;
     padding-top: 6px;
     border-top: 1px solid #1e293b;
+  }
+
+  /* ─────────────────────────────────────────────────────────────────────────
+     Closing section
+  ───────────────────────────────────────────────────────────────────────── */
+  .closing-sect {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 32px;
+    padding-bottom: 16px;
+  }
+
+  .btn-primary {
+    display: inline-block;
+    padding: 14px 32px;
+    background: #C8102E;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: background 0.15s;
+    font-family: inherit;
+  }
+
+  .btn-primary:hover {
+    background: #a50d26;
+  }
+
+  .feedback-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    text-align: center;
+  }
+
+  .feedback-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #94a3b8;
+    margin: 0;
+  }
+
+  .feedback-sub {
+    font-size: 13px;
+    color: #475569;
+    margin: 0;
+  }
+
+  .feedback-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 4px;
+  }
+
+  .btn-ghost {
+    padding: 9px 20px;
+    background: transparent;
+    border: 1px solid #334155;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+    font-family: inherit;
+  }
+
+  .btn-ghost:hover {
+    border-color: #475569;
+    color: #94a3b8;
   }
 
   /* ─────────────────────────────────────────────────────────────────────────
