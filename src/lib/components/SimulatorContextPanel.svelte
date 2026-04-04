@@ -46,7 +46,7 @@
       colId: 'col1',
       title: 'Senado nacional',
       instruction: 'Elige un partido. Si quieres, también puedes marcar hasta 2 números preferenciales.',
-      education: 'Tu voto primero suma al partido que elegiste. Si este partido obtiene escaños, el voto preferencial ayuda a definir qué candidatos entran.',
+      education: 'Este número cuenta si el partido pasa la valla y obtiene puestos. Define qué candidatos entran dentro del partido.',
       hasPreferential: true,
       maxPreferences: 2,
     },
@@ -55,7 +55,7 @@
       colId: 'col2',
       title: 'Senado regional',
       instruction: 'Elige un partido. Si quieres, también puedes marcar hasta 2 números preferenciales.',
-      education: 'Tu voto primero suma al partido que elegiste. Si este partido obtiene escaños, el voto preferencial ayuda a definir qué candidatos entran.',
+      education: 'Este número cuenta si el partido pasa la valla y obtiene puestos. Define qué candidatos entran dentro del partido.',
       hasPreferential: true,
       maxPreferences: 2,
     },
@@ -64,7 +64,7 @@
       colId: 'col3',
       title: 'Diputados',
       instruction: 'Elige un partido. Si quieres, también puedes marcar hasta 2 números preferenciales.',
-      education: 'Tu voto primero suma al partido que elegiste. Si este partido obtiene escaños, el voto preferencial ayuda a definir qué candidatos entran.',
+      education: 'Este número cuenta si el partido pasa la valla y obtiene puestos. Define qué candidatos entran dentro del partido.',
       hasPreferential: true,
       maxPreferences: 2,
     },
@@ -73,7 +73,7 @@
       colId: 'col4',
       title: 'Parlamento Andino',
       instruction: 'Elige un partido. Si quieres, también puedes marcar hasta 2 números preferenciales.',
-      education: 'Tu voto primero suma al partido que elegiste. Si este partido obtiene escaños, el voto preferencial ayuda a definir qué candidatos entran.',
+      education: 'Este número cuenta si el partido pasa la valla y obtiene puestos. Define qué candidatos entran dentro del partido.',
       hasPreferential: true,
       maxPreferences: 2,
     },
@@ -134,7 +134,7 @@
   <!-- ── Persistent microcopy ──────────────────────────────────────────────── -->
   <div class="microcopy">
     <span class="microcopy-icon" aria-hidden="true">ℹ</span>
-    <p>Primero eliges un partido. Después, si marcas voto preferencial, ayudas a definir qué candidatos entran dentro de ese partido.</p>
+    <p>Primero eliges un partido. Este número cuenta si el partido pasa la valla y obtiene puestos. Define qué candidatos entran dentro del partido.</p>
   </div>
 
   <!-- ── Step context ───────────────────────────────────────────────────────── -->

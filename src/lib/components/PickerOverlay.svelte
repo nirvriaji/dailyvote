@@ -167,7 +167,8 @@
     tabindex="-1"
     transition:scale={{ duration: 150, start: 0.95 }}
   >
-    <div 
+    <p class="picker-help">Este número cuenta si el partido pasa la valla y obtiene puestos. Define qué candidatos entran dentro del partido.</p>
+    <div
       class="picker-grid"
       style="grid-template-columns: repeat({config.columns}, 1fr);"
       role="grid"
@@ -214,6 +215,15 @@
       0 10px 40px rgba(0, 0, 0, 0.25),
       0 2px 8px rgba(0, 0, 0, 0.15);
     border: 2px solid #e9ecef;
+  }
+
+  .picker-help {
+    font-size: 11px;
+    color: #6b7280;
+    line-height: 1.5;
+    margin: 0 0 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #f0f0f0;
   }
 
   .picker-grid {
