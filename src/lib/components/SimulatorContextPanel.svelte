@@ -3,6 +3,7 @@
     isColumnValid,
     isBallotReady,
     getValidColumnCount,
+    getColumnPreferenceNumbers,
   } from '$lib/stores/preferencePicker.svelte';
   import type { ColumnKey } from '$lib/stores/preferencePicker.svelte';
   import { vote } from '$lib/stores/vote.svelte';
@@ -13,12 +14,16 @@
     isSubmitting?: boolean;
     showVideo?: boolean;
     onToggleVideo?: () => void;
+    activeIdx?: number;
+    onNextStep?: () => void;
   }
   let {
     onDeliver,
     isSubmitting = false,
     showVideo = false,
     onToggleVideo,
+    activeIdx: activeIdxProp = undefined,
+    onNextStep,
   }: Props = $props();
 
   // ─── Step config ─────────────────────────────────────────────────────────────
@@ -46,7 +51,7 @@
       colId: 'col1',
       title: 'Senado nacional',
       instruction: 'Elige un partido. Si quieres, también puedes marcar hasta 2 números preferenciales.',
-      education: 'Este número cuenta si el partido pasa la valla y obtiene puestos. Define qué candidatos entran dentro del partido.',
+      education: 'Este número cuenta si el partido pasa la valla y obtiene puestos. Define qué candidatos del partido finalmente entran al congreso.',
       hasPreferential: true,
       maxPreferences: 2,
     },
@@ -55,7 +60,7 @@
       colId: 'col2',
       title: 'Senado regional',
       instruction: 'Elige un partido. Si quieres, también puedes marcar hasta 2 números preferenciales.',
-      education: 'Este número cuenta si el partido pasa la valla y obtiene puestos. Define qué candidatos entran dentro del partido.',
+      education: 'Este número cuenta si el partido pasa la valla y obtiene puestos. Define qué candidatos del partido finalmente entran al congreso.',
       hasPreferential: true,
       maxPreferences: 2,
     },
@@ -64,7 +69,7 @@
       colId: 'col3',
       title: 'Diputados',
       instruction: 'Elige un partido. Si quieres, también puedes marcar hasta 2 números preferenciales.',
-      education: 'Este número cuenta si el partido pasa la valla y obtiene puestos. Define qué candidatos entran dentro del partido.',
+      education: 'Este número cuenta si el partido pasa la valla y obtiene puestos. Define qué candidatos del partido finalmente entran al congreso.',
       hasPreferential: true,
       maxPreferences: 2,
     },
@@ -73,7 +78,7 @@
       colId: 'col4',
       title: 'Parlamento Andino',
       instruction: 'Elige un partido. Si quieres, también puedes marcar hasta 2 números preferenciales.',
-      education: 'Este número cuenta si el partido pasa la valla y obtiene puestos. Define qué candidatos entran dentro del partido.',
+      education: 'Este número cuenta si el partido pasa la valla y obtiene puestos. Define qué candidatos del partido finalmente entran al congreso.',
       hasPreferential: true,
       maxPreferences: 2,
     },
@@ -84,19 +89,19 @@
   let validCount = $derived(getValidColumnCount());
 
   let activeIdx = $derived(
-    (() => {
-      const i = STEPS.findIndex(s => !isColumnValid(s.key));
-      return i === -1 ? STEPS.length - 1 : i;
-    })()
+    activeIdxProp !== undefined
+      ? activeIdxProp
+      : (() => {
+          const i = STEPS.findIndex(s => !isColumnValid(s.key));
+          return i === -1 ? STEPS.length - 1 : i;
+        })()
   );
 
   let currentStep = $derived(STEPS[activeIdx]);
   let currentVote = $derived(vote.getVote(currentStep.colId));
 
-  // Preference numbers for current step
-  let preferenceNums = $derived(
-    currentVote?.preferenceNumbers?.filter(n => n !== null) ?? []
-  );
+  // Preference numbers for current step — read directly from preferencePicker store
+  let preferenceNums = $derived(getColumnPreferenceNumbers(currentStep.key));
 
   // Is the current step done?
   let currentStepDone = $derived(isColumnValid(currentStep.key));
@@ -134,7 +139,7 @@
   <!-- ── Persistent microcopy ──────────────────────────────────────────────── -->
   <div class="microcopy">
     <span class="microcopy-icon" aria-hidden="true">ℹ</span>
-    <p>Primero eliges un partido. Este número cuenta si el partido pasa la valla y obtiene puestos. Define qué candidatos entran dentro del partido.</p>
+    <p>Primero eliges un partido. Este número cuenta si el partido pasa la valla y obtiene puestos. Define qué candidatos del partido finalmente entran al congreso.</p>
   </div>
 
   <!-- ── Step context ───────────────────────────────────────────────────────── -->
@@ -167,15 +172,18 @@
         {/if}
       </div>
 
-      <!-- Block D: Educational explanation (only for legislative steps) -->
-      {#if currentStep.hasPreferential}
-        <div class="ctx-education">
-          <p>{currentStep.education}</p>
-        </div>
-      {:else}
-        <div class="ctx-education">
-          <p>{currentStep.education}</p>
-        </div>
+      <!-- Block D: Educational explanation -->
+      <div class="ctx-education">
+        <p>{currentStep.education}</p>
+      </div>
+
+      <!-- Block E: Advance button — shown for all steps once the column is valid -->
+      {#if currentStepDone && !isReady && onNextStep}
+        <button class="next-step-btn" onclick={onNextStep}>
+          {currentStep.hasPreferential && preferenceNums.length === 0
+            ? 'Continuar sin preferencial'
+            : 'Continuar'}
+        </button>
       {/if}
 
     </div>
@@ -427,6 +435,29 @@
     color: #94a3b8;
     line-height: 1.6;
     margin: 0;
+  }
+
+  /* ── Next step button ───────────────────────────────────────────────────── */
+  .next-step-btn {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #475569;
+    border-radius: 6px;
+    background: #1e293b;
+    font-size: 12px;
+    font-weight: 700;
+    color: #e2e8f0;
+    cursor: pointer;
+    text-align: center;
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+    font-family: inherit;
+    letter-spacing: 0.01em;
+  }
+
+  .next-step-btn:hover {
+    border-color: #64748b;
+    color: #f1f5f9;
+    background: #263548;
   }
 
   /* ── CTA area ────────────────────────────────────────────────────────────── */

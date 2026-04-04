@@ -9,8 +9,9 @@
     scroller?: HTMLDivElement | null;
     activeColumnId?: string | null;
     completedColumnIds?: string[];
+    onColumnFocus?: (colId: string) => void;
   }
-  let { columns, scroller = $bindable(), activeColumnId = null, completedColumnIds = [] }: Props = $props();
+  let { columns, scroller = $bindable(), activeColumnId = null, completedColumnIds = [], onColumnFocus }: Props = $props();
 
   // ─── Layout Constants ─────────────────────────────────────────────────────────
   const BASE_COL_WIDTH = 320;
@@ -44,12 +45,16 @@
           {@const isActive = activeColumnId === column.id}
           {@const isCompleted = completedColumnIds.includes(column.id)}
           {@const isDimmed = activeColumnId !== null && !isActive}
+          <!-- svelte-ignore a11y_click_events_have_key_events -->
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
           <div
             class="col-wrapper"
             class:col-active={isActive}
             class:col-completed={isCompleted}
             class:col-dimmed={isDimmed && !isCompleted}
             class:col-done={isCompleted && !isActive}
+            data-col-id={column.id}
+            onclick={() => onColumnFocus?.(column.id)}
           >
             <BallotColumn {column} width={BASE_COL_WIDTH} />
           </div>

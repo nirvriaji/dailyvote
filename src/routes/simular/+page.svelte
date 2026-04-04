@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import { fade } from 'svelte/transition';
   import { goto } from '$app/navigation';
   import { BALLOT_COLUMNS } from '$lib/data/mock';
@@ -26,12 +26,60 @@
   ];
   const STEP_COL_IDS = ['col0', 'col1', 'col2', 'col3', 'col4'];
 
-  let activeIdx = $derived(
+  // activeIdx is managed state — NOT derived — so we can control focus per column type.
+  // Presidential (idx 0): auto-advance to next incomplete when done.
+  // Legislative (idx 1–4): stay on the column so user can optionally add preference numbers.
+  let activeIdx = $state(
     (() => {
       const i = STEP_KEYS.findIndex(k => !isColumnValid(k));
       return i === -1 ? STEP_KEYS.length - 1 : i;
     })()
   );
+
+  // Track previous validity per column to detect transitions
+  let _prevValids: boolean[] = STEP_KEYS.map(k => isColumnValid(k));
+  let _effectFirstRun = true;
+
+  $effect(() => {
+    const currValids = STEP_KEYS.map(k => isColumnValid(k));
+
+    if (_effectFirstRun) {
+      _effectFirstRun = false;
+      _prevValids = currValids;
+      return;
+    }
+
+    const changes: { idx: number; became: boolean }[] = [];
+    for (let i = 0; i < STEP_KEYS.length; i++) {
+      if (currValids[i] !== _prevValids[i]) {
+        changes.push({ idx: i, became: currValids[i] });
+      }
+    }
+
+    _prevValids = currValids;
+
+    if (changes.length === 0) return;
+
+    if (changes.length > 1) {
+      // Batch change (reset / storage load): recalculate normally
+      untrack(() => {
+        const i = currValids.findIndex(v => !v);
+        activeIdx = i === -1 ? STEP_KEYS.length - 1 : i;
+      });
+      return;
+    }
+
+    const { idx, became } = changes[0];
+
+    if (!became) {
+      // Column deselected: bring focus back to it
+      untrack(() => { activeIdx = idx; });
+      return;
+    }
+
+    // All columns: stay so user can review and explicitly click "Continuar"
+    untrack(() => { activeIdx = idx; });
+  });
 
   let activeColumnId    = $derived(STEP_COL_IDS[activeIdx]);
   let completedColumnIds = $derived(
@@ -67,6 +115,21 @@
   const MOBILE_PANEL_EXPANDED_H  = 260;
   let mobilePanelH = $derived(mobilePanelExpanded ? MOBILE_PANEL_EXPANDED_H : MOBILE_PANEL_COLLAPSED_H);
 
+  // ─── Scroll active column into view ─────────────────────────────────────────
+  let _scrollEffectFirstRun = true;
+
+  $effect(() => {
+    const idx = activeIdx; // reactive dependency
+    if (_scrollEffectFirstRun) { _scrollEffectFirstRun = false; return; }
+    if (!ballotScroller) return;
+
+    const colEl = ballotScroller.querySelector<HTMLElement>(`[data-col-id="${STEP_COL_IDS[idx]}"]`);
+    if (!colEl) return;
+
+    // Use scrollIntoView on the column — inline:center keeps it in the middle horizontally
+    colEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  });
+
   // ─── Helpers ─────────────────────────────────────────────────────────────────
   function markUserInteraction() { userHasInteracted = true; }
 
@@ -87,6 +150,19 @@
     y = (ballotScroller.scrollHeight - ballotScroller.clientHeight) / 2 - 40;
 
     ballotScroller.scrollTo({ left: x, top: y, behavior: 'auto' });
+  }
+
+  // Focus a specific column when user taps it on the ballot
+  function handleColumnFocus(colId: string) {
+    const idx = STEP_COL_IDS.indexOf(colId);
+    if (idx !== -1) activeIdx = idx;
+  }
+
+  // Go to the leftmost incomplete column globally
+  function handleNextStep() {
+    const valids = STEP_KEYS.map(k => isColumnValid(k));
+    const next = valids.findIndex(v => !v);
+    if (next !== -1) activeIdx = next;
   }
 
   // Deliver ballot → transition → navigate
@@ -176,7 +252,7 @@
 
   <!-- ── Fixed header with stepper ───────────────────────────────────────── -->
   <div class="header-anchor" bind:this={headerEl}>
-    <BallotProgressHeader />
+    <BallotProgressHeader {activeIdx} />
 
     {#if !canSimulate}
       <div class="closed-bar" transition:fade={{ duration: 300 }}>
@@ -203,6 +279,7 @@
         bind:scroller={ballotScroller}
         {activeColumnId}
         {completedColumnIds}
+        onColumnFocus={handleColumnFocus}
       />
     </div>
 
@@ -212,6 +289,8 @@
         onDeliver={handleDeliver}
         {isSubmitting}
         {showVideo}
+        {activeIdx}
+        onNextStep={handleNextStep}
         onToggleVideo={() => showVideo = !showVideo}
       />
     </aside>

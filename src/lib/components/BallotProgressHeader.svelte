@@ -6,6 +6,11 @@
   } from '$lib/stores/preferencePicker.svelte';
   import type { ColumnKey } from '$lib/stores/preferencePicker.svelte';
 
+  interface Props {
+    activeIdx?: number;
+  }
+  let { activeIdx: activeIdxProp = undefined }: Props = $props();
+
   const STEPS: { key: ColumnKey; label: string }[] = [
     { key: 'presidente',      label: 'Presidencia' },
     { key: 'senadoNacional',  label: 'Senado nacional' },
@@ -17,10 +22,12 @@
   let validCount    = $derived(getValidColumnCount());
   let isReady       = $derived(isBallotReady());
   let activeIdx     = $derived(
-    (() => {
-      const i = STEPS.findIndex(s => !isColumnValid(s.key));
-      return i === -1 ? STEPS.length - 1 : i;
-    })()
+    activeIdxProp !== undefined
+      ? activeIdxProp
+      : (() => {
+          const i = STEPS.findIndex(s => !isColumnValid(s.key));
+          return i === -1 ? STEPS.length - 1 : i;
+        })()
   );
 </script>
 
@@ -172,7 +179,7 @@
   }
 
   .stepper-item.is-pending {
-    opacity: 0.45;
+    opacity: 1;
   }
 
   /* Step dot */
@@ -190,9 +197,9 @@
   }
 
   .is-pending .step-dot {
-    background: rgba(255,255,255,0.08);
-    color: #64748b;
-    border: 1px solid #334155;
+    background: #1e293b;
+    color: #94a3b8;
+    border: 1px solid #475569;
   }
 
   .is-active .step-dot {
@@ -215,7 +222,7 @@
     transition: color 0.25s ease;
   }
 
-  .is-pending .step-label  { color: #475569; }
+  .is-pending .step-label  { color: #94a3b8; }
   .is-active .step-label   { color: #e2e8f0; }
   .is-completed .step-label { color: #4ade80; }
 

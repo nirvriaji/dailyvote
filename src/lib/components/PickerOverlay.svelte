@@ -167,7 +167,7 @@
     tabindex="-1"
     transition:scale={{ duration: 150, start: 0.95 }}
   >
-    <p class="picker-help">Este número cuenta si el partido pasa la valla y obtiene puestos. Define qué candidatos entran dentro del partido.</p>
+    <p class="picker-help">Este número cuenta si el partido pasa la valla y obtiene puestos. Define qué candidatos del partido finalmente entran al congreso.</p>
     <div
       class="picker-grid"
       style="grid-template-columns: repeat({config.columns}, 1fr);"

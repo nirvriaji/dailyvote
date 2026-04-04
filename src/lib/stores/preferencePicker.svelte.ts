@@ -470,6 +470,15 @@ export function getDisabledNumbers(
   return disabled;
 }
 
+// Obtener todos los números de preferencia no-nulos para la fila seleccionada en una columna
+export function getColumnPreferenceNumbers(columnKey: ColumnKey): number[] {
+  const rowId = selectedRowByColumn[columnKey];
+  if (!rowId) return [];
+  const values = preferenceState[rowId]?.[columnKey];
+  if (!values) return [];
+  return values.filter((v): v is number => v !== null);
+}
+
 // Limpiar número de preferencia
 export function clearPreferenceNumber(rowId: string, columnKey: ColumnKey, slotIndex: number) {
   setPreferenceNumber(rowId, columnKey, slotIndex, null);
