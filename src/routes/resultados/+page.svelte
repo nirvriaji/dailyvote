@@ -559,24 +559,6 @@
     <p class="hero-eyebrow">Simulación electoral · Perú 2026</p>
     <h1 class="hero-title">Así se procesó tu voto</h1>
     <p class="hero-subtitle">Tu elección impactó en presidencia, partido y voto preferencial. Mira qué pasó paso a paso.</p>
-
-    <div class="hero-meta">
-      <div class="hero-count">
-        <span class="hero-count-num">{totalVoters > 0 ? totalVoters.toLocaleString() : '—'}</span>
-        <span class="hero-count-label">simulaciones acumuladas</span>
-      </div>
-      {#if !electionCountdown.isExpired}
-        <div class="hero-countdown">
-          <span class="hero-cd-label">Faltan</span>
-          <span class="hero-cd-value">{electionCountdown.days}d {electionCountdown.hours.toString().padStart(2,'0')}h {electionCountdown.minutes.toString().padStart(2,'0')}m</span>
-          <span class="hero-cd-label">para el 12 de abril</span>
-        </div>
-      {:else}
-        <div class="hero-countdown">
-          <span class="hero-cd-label">La jornada de votación ya comenzó</span>
-        </div>
-      {/if}
-    </div>
   </section>
 
   <!-- ═══ SECCIÓN 3: TU SELECCIÓN ══════════════════════════════════════════ -->
@@ -1037,51 +1019,6 @@
     max-width: 560px;
   }
 
-  .hero-meta {
-    display: flex;
-    gap: 28px;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-
-  .hero-count {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .hero-count-num {
-    font-size: 22px;
-    font-weight: 800;
-    color: #f1f5f9;
-  }
-
-  .hero-count-label {
-    font-size: 11px;
-    color: #475569;
-    letter-spacing: 0.04em;
-  }
-
-  .hero-countdown {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 14px;
-    border: 1px solid #1e293b;
-    border-radius: 99px;
-  }
-
-  .hero-cd-label {
-    font-size: 11px;
-    color: #475569;
-  }
-
-  .hero-cd-value {
-    font-size: 13px;
-    font-weight: 700;
-    color: #cbd5e1;
-    font-variant-numeric: tabular-nums;
-  }
 
   /* ─────────────────────────────────────────────────────────────────────────
      Ballot summary
