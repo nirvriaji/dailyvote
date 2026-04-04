@@ -94,8 +94,8 @@
         </div>
 
         <h1 class="headline" in:fly={{ y: 20, duration: 500, delay: 200 }}>
-          <span class="headline-line1">VOTA CON CERTEZA,</span>
-          <span class="headline-line2">CONOCE TU IMPACTO</span>
+          <span class="headline-line1">SIMULA TU VOTO.</span>
+          <span class="headline-line2">VE QUÉ CAMBIA.</span>
         </h1>
 
         <div class="countdown-wrapper" in:fade={{ duration: 400, delay: 300 }}>
@@ -124,7 +124,7 @@
         </div>
 
         <p class="subline" in:fade={{ duration: 400, delay: 400 }}>
-          Simula la cédula electoral real. Aprende a marcar sin equivocarte y descubre cómo cada decisión modifica los resultados.
+          Usa la cédula electoral real. Aprende a marcar cada sección correctamente y entiende cómo tu voto influye en los resultados.
         </p>
 
         <div class="cta-wrapper" in:fly={{ y: 20, duration: 400, delay: 500 }}>
@@ -133,6 +133,7 @@
             <span class="cta-text">Simular mi voto</span>
           </button>
           <span class="cta-note">Gratis · Sin registro · 100% educativo</span>
+          <span class="cta-outcome">Después de votar, verás cómo tu decisión se transforma en resultados.</span>
         </div>
       </section>
 
@@ -153,8 +154,8 @@
           </div>
           <div class="benefit-card">
             <span class="benefit-icon">✓</span>
-            <p class="benefit-title">Cómo tu voto mueve el poder</p>
-            <p class="benefit-text">Observa en tiempo real cómo tu elección afecta la distribución de escaños en el Congreso.</p>
+            <p class="benefit-title">Tu voto suma al partido, no solo al candidato</p>
+            <p class="benefit-text">Entiende cómo tu voto fortalece a un partido y cómo el voto preferencial define qué candidatos entran al Congreso.</p>
           </div>
         </div>
       </section>
@@ -183,8 +184,8 @@
           <div class="step">
             <span class="step-number">3</span>
             <div class="step-content">
-              <p class="step-title">Mira cómo se procesa tu voto</p>
-              <p class="step-desc">Ve los resultados acumulados de todas las simulaciones y comprueba el peso de tu decisión.</p>
+              <p class="step-title">Descubre qué pasa con tu voto</p>
+              <p class="step-desc">Ve cómo tu voto suma al partido elegido y cómo el voto preferencial decide qué candidatos ingresan al Congreso.</p>
             </div>
           </div>
         </div>
@@ -194,7 +195,7 @@
            Layout: section title → description → phone-framed video centered -->
       <section class="video-section" in:fade={{ duration: 400, delay: 800 }}>
         <h2 class="section-title">Mira cómo votar en menos de 30 segundos</h2>
-        <p class="video-subtitle">Ve cómo recorrer la cédula, dónde marcar cada cargo y qué diferencia un voto válido de uno nulo.</p>
+        <p class="video-subtitle">Es más simple de lo que parece. Ve cómo recorrer la cédula, dónde marcar cada cargo y qué hace válido o nulo un voto.</p>
         <div class="video-frame">
           <video
             class="video-player"
@@ -218,14 +219,14 @@
            Layout: titled card with short text + bullet list + closing note -->
       <section class="context-section" in:fade={{ duration: 400, delay: 900 }}>
         <h2 class="context-title">Esta elección define más que la presidencia</h2>
-        <p class="context-text">El 12 de abril votas por cuatro cargos distintos en una sola cédula. Cada uno tiene reglas propias para marcar.</p>
+        <p class="context-text">El 12 de abril votas por cuatro cargos en una sola cédula. El Congreso se define en esta etapa, no en segunda vuelta.</p>
         <ul class="vote-list">
           <li>Presidente de la República</li>
           <li>Senado de la República</li>
           <li>Cámara de Diputados</li>
           <li>Parlamento Andino</li>
         </ul>
-        <p class="context-note">Lo que se decide aquí no vuelve a elegirse en segunda vuelta. El Congreso se define ahora.</p>
+        <p class="context-note">En segunda vuelta solo compiten dos candidatos presidenciales. Todo lo demás ya fue decidido.</p>
       </section>
 
       <!-- ━━━ S6 · TRUST / DISCLAIMER ━━━
@@ -445,6 +446,15 @@
     color: rgba(255, 255, 255, 0.65);
     font-weight: 500;
     letter-spacing: 0.3px;
+  }
+
+  .cta-outcome {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.5);
+    font-style: italic;
+    max-width: 380px;
+    line-height: 1.5;
+    text-align: center;
   }
 
   /* ── SHARED SECTION TITLE ── */
