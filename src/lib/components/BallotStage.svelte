@@ -115,7 +115,7 @@
   /* Mobile: extra top space to prevent headers being cut off by fixed header */
   @media (max-width: 768px) {
     .spacer-top {
-      height: 60px;
+      height: 30px;
     }
   }
 

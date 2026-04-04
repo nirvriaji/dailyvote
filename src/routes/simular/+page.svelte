@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, untrack } from 'svelte';
+  import { onMount, tick, untrack } from 'svelte';
   import { fade } from 'svelte/transition';
   import { goto } from '$app/navigation';
   import { BALLOT_COLUMNS } from '$lib/data/mock';
@@ -136,23 +136,12 @@
   // ─── Helpers ─────────────────────────────────────────────────────────────────
   function markUserInteraction() { userHasInteracted = true; }
 
-  function centerBallot() {
+  async function scrollToActive() {
+    await tick();
     if (!ballotScroller) return;
-    const isMobile = window.innerWidth <= 900;
-    let x: number, y: number;
-
-    if (isMobile) {
-      const colWidth = 320;
-      const gap = 16;
-      const leftSpacer = 24;
-      const centerOfCol2 = leftSpacer + (colWidth + gap) + (colWidth / 2);
-      x = centerOfCol2 - ballotScroller.clientWidth / 2;
-    } else {
-      x = (ballotScroller.scrollWidth - ballotScroller.clientWidth) / 2;
-    }
-    y = (ballotScroller.scrollHeight - ballotScroller.clientHeight) / 2 - 40;
-
-    ballotScroller.scrollTo({ left: x, top: y, behavior: 'auto' });
+    const colEl = ballotScroller.querySelector<HTMLElement>(`[data-col-id="${STEP_COL_IDS[activeIdx]}"]`);
+    if (!colEl) return;
+    colEl.scrollIntoView({ behavior: 'instant' as ScrollBehavior, inline: 'center', block: 'start' });
   }
 
   // Focus a specific column when user taps it on the ballot
@@ -189,7 +178,7 @@
     if (isDemoMode) {
       canSimulate = true;
       vote.resetForNewSimulation();
-      centerBallot();
+      scrollToActive();
       initDemoMode();
       return;
     }
@@ -210,7 +199,7 @@
       loadPreferencesFromStorage(); // sync preferencePicker visual state from localStorage
     }
 
-    centerBallot();
+    scrollToActive();
 
     // Measure header height dynamically
     if (headerEl) {
