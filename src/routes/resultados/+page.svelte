@@ -1,10 +1,12 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { fade, fly } from 'svelte/transition';
+  import { goto } from '$app/navigation';
   import { vote } from '$lib/stores/vote.svelte';
   import {
     getColumnPreferenceNumbers,
     loadPreferencesFromStorage,
+    resetAllSelections,
   } from '$lib/stores/preferencePicker.svelte';
   import type { ColumnKey } from '$lib/stores/preferencePicker.svelte';
   // ─── Ballot definition ───────────────────────────────────────────────────────
@@ -44,7 +46,16 @@
   let hasUserVote = $derived(vote.count > 0);
 
   // ─── Actions ─────────────────────────────────────────────────────────────────
-  let shareStatus = $state<'idle' | 'copied'>('idle');
+  let shareStatus  = $state<'idle' | 'copied'>('idle');
+  let restarting   = $state(false);
+
+  async function handleRestart() {
+    if (restarting) return;
+    restarting = true;
+    vote.resetForNewSimulation();
+    resetAllSelections();
+    await goto('/simular');
+  }
 
   async function handleShare() {
     const shareData = {
@@ -291,7 +302,9 @@
 
   <!-- ═══ SIMULAR DE NUEVO + FEEDBACK ══════════════════════════════════════ -->
   <section class="closing-sect">
-    <a class="btn-primary" href="/simular">Simular de nuevo</a>
+    <button class="btn-primary" onclick={handleRestart} disabled={restarting}>
+      {restarting ? 'Preparando...' : 'Simular de nuevo'}
+    </button>
 
     <div class="feedback-block">
       <p class="feedback-title">¿Te ayudó esta herramienta?</p>
@@ -761,13 +774,20 @@
     font-size: 15px;
     font-weight: 700;
     border-radius: 8px;
+    border: none;
     text-decoration: none;
+    cursor: pointer;
     transition: background 0.15s;
     font-family: inherit;
   }
 
-  .btn-primary:hover {
+  .btn-primary:hover:not(:disabled) {
     background: #a50d26;
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
   }
 
   .feedback-block {
