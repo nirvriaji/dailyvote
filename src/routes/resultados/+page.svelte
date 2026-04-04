@@ -821,39 +821,18 @@
     </div>
 
     {#if hasUserVote}
-      <div class="proj-controls">
-        <p class="proj-group-label">Modo de distribución</p>
-        <div class="proj-modes">
-          {#each projectionModes as mode}
-            <button
-              class="proj-mode-btn"
-              class:active={projectionMode === mode.id}
-              onclick={() => projectionMode = mode.id}
-            >
-              <span class="proj-mode-icon">{mode.icon}</span>
-              <span class="proj-mode-label">{mode.label}</span>
-              <span class="proj-mode-desc">{mode.description}</span>
-            </button>
-          {/each}
-        </div>
-
-        <p class="proj-group-label">Cuántas personas</p>
-        <div class="proj-scale">
-          {#each projectionOptions as opt}
-            <button
-              class="proj-scale-btn"
-              class:active={projectionMultiplier === opt.value}
-              onclick={() => projectionMultiplier = opt.value}
-            >
-              {opt.label}
-            </button>
-          {/each}
-        </div>
+      <div class="proj-modes">
+        {#each projectionModes as mode}
+          <button
+            class="proj-mode-btn"
+            class:active={projectionMode === mode.id}
+            onclick={() => projectionMode = mode.id}
+          >
+            <span class="proj-mode-icon">{mode.icon}</span>
+            <span class="proj-mode-label">{mode.label}</span>
+          </button>
+        {/each}
       </div>
-
-      {#if projectionMultiplier > 1}
-        <p class="proj-note">Los resultados de arriba ya muestran la proyección con {projectionMultiplier.toLocaleString()} personas en modo "{projectionModes.find(m => m.id === projectionMode)?.label}".</p>
-      {/if}
     {:else}
       <div class="proj-no-votes">
         <p>Completa una simulación para explorar cómo tu voto afectaría los resultados.</p>
@@ -1680,21 +1659,6 @@
     margin-bottom: 0;
   }
 
-  .proj-controls {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .proj-group-label {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: #475569;
-    margin: 0 0 8px;
-  }
-
   .proj-modes {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -1734,53 +1698,6 @@
     font-size: 12px;
     font-weight: 700;
     color: #e2e8f0;
-  }
-
-  .proj-mode-desc {
-    font-size: 11px;
-    color: #475569;
-    line-height: 1.4;
-  }
-
-  .proj-scale {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-
-  .proj-scale-btn {
-    padding: 8px 16px;
-    background: #111827;
-    border: 1px solid #1e293b;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    color: #64748b;
-    cursor: pointer;
-    transition: border-color 0.15s, color 0.15s;
-    font-family: inherit;
-  }
-
-  .proj-scale-btn:hover {
-    border-color: #334155;
-    color: #94a3b8;
-  }
-
-  .proj-scale-btn.active {
-    border-color: rgba(200, 16, 46, 0.4);
-    color: #f1f5f9;
-    background: rgba(200, 16, 46, 0.08);
-  }
-
-  .proj-note {
-    font-size: 12px;
-    color: #64748b;
-    padding: 10px 14px;
-    background: rgba(245, 158, 11, 0.06);
-    border: 1px solid rgba(245, 158, 11, 0.15);
-    border-radius: 8px;
-    margin: 0;
-    line-height: 1.5;
   }
 
   .proj-no-votes {
