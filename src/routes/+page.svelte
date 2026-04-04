@@ -95,7 +95,7 @@
 
         <h1 class="headline" in:fly={{ y: 20, duration: 500, delay: 200 }}>
           <span class="headline-line1">SIMULA TU VOTO.</span>
-          <span class="headline-line2">CAMBIA LOS RESULTADOS.</span>
+          <span class="headline-line2">VE CÓMO CAMBIA LOS RESULTADOS.</span>
         </h1>
 
         <div class="countdown-wrapper" in:fade={{ duration: 400, delay: 300 }}>
