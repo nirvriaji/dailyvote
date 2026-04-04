@@ -455,8 +455,8 @@
     if (savedMultiplier) projectionMultiplier = parseInt(savedMultiplier, 10);
     if (savedMode) projectionMode = savedMode as 'same' | 'random' | 'proportional';
 
-    // Lift entry veil after a brief beat
-    setTimeout(() => { arriving = false; }, 650);
+    // Lift entry veil — 1200ms to satisfy the 800-1500ms blocking requirement
+    setTimeout(() => { arriving = false; }, 1200);
 
     // Start countdown
     startCountdown();
@@ -706,13 +706,14 @@
               </svg>
             </div>
             <p class="fn-label">Candidatos</p>
-            <p class="fn-desc">Este número cuenta si el partido pasa la valla y obtiene puestos. Define qué candidatos del partido finalmente entran al congreso.</p>
+            <p class="fn-desc">Si marcaste números preferenciales, esos números ayudan a definir qué candidatos entran dentro del partido.</p>
             {#if col.prefs.length > 0}
               <div class="fn-prefs-row">
                 {#each col.prefs as num}
                   <span class="fn-pref-num">N° {num}</span>
                 {/each}
               </div>
+              <p class="fn-pref-note">Este número cuenta si el partido pasa la valla y obtiene puestos. Define qué candidatos entran dentro del partido.</p>
             {:else}
               <span class="fn-no-pref">Sin voto preferencial</span>
             {/if}
@@ -1384,6 +1385,17 @@
     color: #334155;
     font-style: italic;
     margin-top: 2px;
+  }
+
+  .fn-pref-note {
+    font-size: 10px;
+    color: #64748b;
+    line-height: 1.55;
+    margin: 4px 0 0;
+    padding: 6px 8px;
+    background: rgba(200, 16, 46, 0.06);
+    border-left: 2px solid rgba(200, 16, 46, 0.3);
+    border-radius: 0 4px 4px 0;
   }
 
   .fn-arrow {
