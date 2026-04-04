@@ -7,8 +7,10 @@
   interface Props {
     columns: BallotColumnData[];
     scroller?: HTMLDivElement | null;
+    activeColumnId?: string | null;
+    completedColumnIds?: string[];
   }
-  let { columns, scroller = $bindable() }: Props = $props();
+  let { columns, scroller = $bindable(), activeColumnId = null, completedColumnIds = [] }: Props = $props();
 
   // ─── Layout Constants ─────────────────────────────────────────────────────────
   const BASE_COL_WIDTH = 320;
@@ -39,10 +41,18 @@
       <!-- The ballot sheet -->
       <div class="ballot-content">
         {#each columns as column, i (column.id)}
-          <BallotColumn
-            {column}
-            width={BASE_COL_WIDTH}
-          />
+          {@const isActive = activeColumnId === column.id}
+          {@const isCompleted = completedColumnIds.includes(column.id)}
+          {@const isDimmed = activeColumnId !== null && !isActive}
+          <div
+            class="col-wrapper"
+            class:col-active={isActive}
+            class:col-completed={isCompleted}
+            class:col-dimmed={isDimmed && !isCompleted}
+            class:col-done={isCompleted && !isActive}
+          >
+            <BallotColumn {column} width={BASE_COL_WIDTH} />
+          </div>
         {/each}
       </div>
       
@@ -125,5 +135,38 @@
     height: auto;
     align-items: flex-start;
     background: var(--paper-white);
+  }
+
+  /* ─── Column focus states ─────────────────────────────────────────────────────── */
+  .col-wrapper {
+    position: relative;
+    transition: opacity 0.35s ease, filter 0.35s ease;
+    flex-shrink: 0;
+  }
+
+  .col-wrapper.col-dimmed {
+    opacity: 0.38;
+    filter: saturate(0.3) brightness(0.92);
+  }
+
+  .col-wrapper.col-done {
+    opacity: 0.65;
+    filter: saturate(0.7);
+  }
+
+  .col-wrapper.col-active {
+    opacity: 1;
+    filter: none;
+  }
+
+  .col-wrapper.col-active::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border: 2px solid rgba(200, 16, 46, 0.55);
+    border-radius: 4px;
+    pointer-events: none;
+    z-index: 10;
+    box-shadow: 0 0 0 4px rgba(200, 16, 46, 0.08);
   }
 </style>

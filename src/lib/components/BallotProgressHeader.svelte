@@ -1,197 +1,258 @@
 <script lang="ts">
-  import { 
+  import {
+    isColumnValid,
     getValidColumnCount,
-    getRemainingColumnCount,
-    isBallotReady
+    isBallotReady,
   } from '$lib/stores/preferencePicker.svelte';
-  import { vote } from '$lib/stores/vote.svelte';
-  import { goto } from '$app/navigation';
+  import type { ColumnKey } from '$lib/stores/preferencePicker.svelte';
 
-  let isSubmitting = $state(false);
+  const STEPS: { key: ColumnKey; label: string }[] = [
+    { key: 'presidente',      label: 'Presidencia' },
+    { key: 'senadoNacional',  label: 'Senado nacional' },
+    { key: 'senadoRegional',  label: 'Senado regional' },
+    { key: 'diputados',       label: 'Diputados' },
+    { key: 'parlamentoAndino',label: 'Parlamento Andino' },
+  ];
 
-  // Función para entregar cédula - ULTRA RÁPIDA (fire-and-forget)
-  async function deliverBallot() {
-    if (!isBallotReady() || isSubmitting) {
-      console.log('Botón bloqueado:', { isReady, isSubmitting });
-      return;
-    }
-    
-    isSubmitting = true;
-    console.log('🚀 Navegando inmediatamente...');
-    
-    // Navegar INMEDIATAMENTE sin esperar a Firebase
-    goto('/resultados');
-    
-    // Enviar a Firebase en background (fire-and-forget)
-    // No usamos await, el guardado continúa por detrás
-    vote.submitVotes().catch(err => {
-      console.warn('⚠️ Error al guardar votos (no crítico):', err);
-      // En modo demo o si falla, ya estamos en la página de resultados
-    });
-  }
-
-  // Estados derivados
-  let validCount = $derived(getValidColumnCount());
-  let remainingCount = $derived(getRemainingColumnCount());
-  let isReady = $derived(isBallotReady());
+  let validCount    = $derived(getValidColumnCount());
+  let isReady       = $derived(isBallotReady());
+  let activeIdx     = $derived(
+    (() => {
+      const i = STEPS.findIndex(s => !isColumnValid(s.key));
+      return i === -1 ? STEPS.length - 1 : i;
+    })()
+  );
 </script>
 
-<div class="progress-header" class:ready={isReady}>
-  <div class="progress-content">
-    <div class="progress-text">
-      <h2 class="progress-title">
+<header class="sim-header" class:all-done={isReady}>
+  <!-- Top row -->
+  <div class="header-top">
+    <div class="header-info">
+      <span class="header-eyebrow">Estás simulando tu voto real</span>
+      <span class="header-step-label">
         {#if isReady}
-          Tu cédula ya está lista para entregar
+          Tu cédula está completa
         {:else}
-          Completa tus 5 votos para entregar la cédula
+          Paso {activeIdx + 1} de 5 — {STEPS[activeIdx].label}
         {/if}
-      </h2>
-      <p class="progress-subtitle">
-        {#if isReady}
-          Revisa tus marcas y continúa
-        {:else}
-          Te faltan {remainingCount} columnas por marcar
-        {/if}
-      </p>
-      <span class="progress-counter">{validCount}/5 columnas completas</span>
+      </span>
     </div>
-    
-    <button 
-      class="deliver-button" 
-      class:disabled={!isReady}
-      class:submitting={isSubmitting}
-      disabled={!isReady || isSubmitting}
-      onclick={deliverBallot}
-    >
-      {#if isSubmitting}
-        Enviando...
-      {:else}
-        Entregar cédula
-      {/if}
-    </button>
+    <span class="header-counter" aria-label="{validCount} de 5 secciones completas">
+      {validCount}<span class="counter-total">/5</span>
+    </span>
   </div>
-</div>
+
+  <!-- Stepper -->
+  <nav class="stepper" aria-label="Progreso de votación">
+    {#each STEPS as step, i}
+      {@const completed = isColumnValid(step.key)}
+      {@const active    = i === activeIdx && !completed}
+      <div
+        class="stepper-item"
+        class:is-completed={completed}
+        class:is-active={active}
+        class:is-pending={!completed && !active}
+        role="listitem"
+        aria-current={active ? 'step' : undefined}
+        aria-label="{step.label}: {completed ? 'completo' : active ? 'en progreso' : 'pendiente'}"
+      >
+        <div class="step-dot" aria-hidden="true">
+          {#if completed}
+            <!-- Check icon -->
+            <svg width="9" height="9" viewBox="0 0 9 9" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M1 4.5L3.5 7L8 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          {:else}
+            {i + 1}
+          {/if}
+        </div>
+        <span class="step-label">{step.label}</span>
+      </div>
+    {/each}
+  </nav>
+</header>
 
 <style>
-  .progress-header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 1000;
+  .sim-header {
     background: #0f172a;
     border-bottom: 1px solid #1e293b;
-    padding: 12px 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    padding: 10px 16px 0;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.45);
+    transition: background 0.3s ease;
   }
 
-  .progress-content {
+  .sim-header.all-done {
+    background: #0a1a0a;
+    border-bottom-color: rgba(34, 197, 94, 0.3);
+  }
+
+  /* Top row */
+  .header-top {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    max-width: 1200px;
-    margin: 0 auto;
-    gap: 16px;
+    gap: 12px;
+    margin-bottom: 10px;
   }
 
-  .progress-text {
+  .header-info {
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    flex: 1;
+    gap: 1px;
+    min-width: 0;
   }
 
-  .progress-title {
-    font-family: 'Roboto Condensed', 'Inter', sans-serif;
+  .header-eyebrow {
+    font-size: 11px;
+    font-weight: 500;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    line-height: 1;
+  }
+
+  .header-step-label {
     font-size: 14px;
     font-weight: 700;
     color: #e2e8f0;
-    margin: 0;
     line-height: 1.3;
-    text-transform: uppercase;
-    letter-spacing: 0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
-  .progress-subtitle {
-    font-family: 'Roboto Condensed', 'Inter', sans-serif;
-    font-size: 12px;
-    color: #94a3b8;
-    margin: 0;
-    line-height: 1.3;
+  .header-counter {
+    font-size: 22px;
+    font-weight: 800;
+    color: white;
+    line-height: 1;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
-  .progress-counter {
-    font-family: 'Roboto Condensed', 'Inter', sans-serif;
-    font-size: 12px;
-    font-weight: 600;
-    color: #cbd5e1;
-    margin-top: 2px;
-  }
-
-  .deliver-button {
-    font-family: 'Roboto Condensed', 'Inter', sans-serif;
+  .counter-total {
     font-size: 13px;
-    font-weight: 700;
-    padding: 10px 20px;
-    background: linear-gradient(135deg, var(--accent), #a00d25);
+    font-weight: 500;
+    color: #475569;
+  }
+
+  /* Stepper */
+  .stepper {
+    display: flex;
+    gap: 0;
+    margin: 0 -16px; /* bleed to edges */
+    padding: 0 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .stepper::-webkit-scrollbar {
+    display: none;
+  }
+
+  .stepper-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    cursor: default;
+    transition: border-color 0.25s ease, opacity 0.25s ease;
+    flex-shrink: 0;
+  }
+
+  .stepper-item.is-active {
+    border-bottom-color: #C8102E;
+  }
+
+  .stepper-item.is-completed {
+    border-bottom-color: #22c55e;
+  }
+
+  .stepper-item.is-pending {
+    opacity: 0.45;
+  }
+
+  /* Step dot */
+  .step-dot {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 800;
+    flex-shrink: 0;
+    transition: background 0.25s ease, color 0.25s ease;
+  }
+
+  .is-pending .step-dot {
+    background: rgba(255,255,255,0.08);
+    color: #64748b;
+    border: 1px solid #334155;
+  }
+
+  .is-active .step-dot {
+    background: #C8102E;
     color: white;
     border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: all 0.2s ease;
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
-    min-width: 140px;
-    text-align: center;
   }
 
-  .deliver-button:hover:not(.disabled):not(.submitting) {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(200, 16, 46, 0.3);
+  .is-completed .step-dot {
+    background: #22c55e;
+    color: white;
+    border: none;
   }
 
-  .deliver-button.disabled {
-    background: var(--grid-border-light);
-    color: var(--text-muted);
-    cursor: not-allowed;
-    opacity: 0.6;
+  /* Step label */
+  .step-label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    transition: color 0.25s ease;
   }
 
-  .deliver-button.submitting {
-    background: linear-gradient(135deg, #666, #444);
-    cursor: wait;
-    opacity: 0.8;
-  }
+  .is-pending .step-label  { color: #475569; }
+  .is-active .step-label   { color: #e2e8f0; }
+  .is-completed .step-label { color: #4ade80; }
 
-  /* Responsive */
+  /* Mobile */
   @media (max-width: 768px) {
-    .progress-header {
-      padding: 10px 12px;
+    .sim-header {
+      padding: 8px 12px 0;
     }
 
-    .progress-content {
-      flex-direction: column;
-      align-items: stretch;
-      gap: 10px;
+    .header-top {
+      margin-bottom: 8px;
     }
 
-    .progress-title {
+    .header-eyebrow {
+      font-size: 10px;
+    }
+
+    .header-step-label {
       font-size: 13px;
     }
 
-    .progress-subtitle {
-      font-size: 11px;
+    .header-counter {
+      font-size: 18px;
     }
 
-    .progress-counter {
-      font-size: 11px;
+    .stepper-item {
+      padding: 6px 10px;
     }
 
-    .deliver-button {
-      width: 100%;
-      padding: 12px 16px;
-      font-size: 12px;
+    .step-dot {
+      width: 18px;
+      height: 18px;
+      font-size: 9px;
+    }
+
+    .step-label {
+      font-size: 11px;
     }
   }
 </style>
