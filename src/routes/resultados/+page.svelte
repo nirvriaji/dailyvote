@@ -10,7 +10,6 @@
   } from '$lib/stores/preferencePicker.svelte';
   import type { ColumnKey } from '$lib/stores/preferencePicker.svelte';
   import { BALLOT_COLUMNS } from '$lib/data/mock';
-  import ParliamentHemicycle from '$lib/components/ParliamentHemicycle.svelte';
   import ShareResults from '$lib/components/ShareResults.svelte';
   import HelpPanel from '$lib/components/HelpPanel.svelte';
   import {
@@ -772,12 +771,6 @@
             {/if}
           </div>
 
-          {#if cat.seatDistribution.length > 0}
-            <div class="hemicycle-wrap">
-              <ParliamentHemicycle seats={cat.seatDistribution} totalSeats={cat.totalSeats} />
-            </div>
-          {/if}
-
           <div class="party-results">
             {#each cat.results.filter(r => r.votes > 0).slice(0, 5) as r}
               {@const isUserVote = userVoteForCat?.selection?.partyName === r.partyName}
@@ -1519,13 +1512,6 @@
   }
 
   /* Party results (legislative) */
-  .hemicycle-wrap {
-    border-radius: 8px;
-    overflow: hidden;
-    background: #0f172a;
-    border: 1px solid #1e293b;
-  }
-
   .party-results {
     display: flex;
     flex-direction: column;
