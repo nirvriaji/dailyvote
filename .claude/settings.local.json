@@ -1,7 +1,19 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(y ver cómo se procesa mi voto\":*)",
+      "Bash(voto se procesa y cómo impacta en los resultados.\":*)",
+      "Bash(simulación de resultados...\" with 1400ms hold before goto\\(''/resultados''\\):*)",
+      "Bash(valla y obtiene puestos. Define qué candidatos entran dentro del partido.\":*)",
+      "Bash(eliges un partido.\" framing, appends new exact text\\):*)",
+      "Bash(git push:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx svelte-check:*)",
+      "Bash(grep:*)",
+      "Read(//tmp/**)"
     ]
   }
 }

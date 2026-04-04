@@ -7,8 +7,6 @@
     loadPreferencesFromStorage,
   } from '$lib/stores/preferencePicker.svelte';
   import type { ColumnKey } from '$lib/stores/preferencePicker.svelte';
-  import HelpPanel from '$lib/components/HelpPanel.svelte';
-
   // ─── Ballot definition ───────────────────────────────────────────────────────
   const BALLOT_DEF = [
     { colId: 'col0', key: 'presidente'       as ColumnKey, label: 'Presidencia',       hasPreferential: false },
@@ -19,8 +17,7 @@
   ] as const;
 
   // ─── State ───────────────────────────────────────────────────────────────────
-  let arriving      = $state(true);
-  let showHelpPanel = $state(false);
+  let arriving = $state(true);
 
   // ─── Protagonist flow (Senado nacional) ──────────────────────────────────────
   let protagonistStep    = $state(0);
@@ -270,7 +267,6 @@
     </div>
   </section>
 
-  <HelpPanel isOpen={showHelpPanel} onClose={() => showHelpPanel = false} />
 
 </div>
 
