@@ -112,10 +112,19 @@
   // ─── Entry veil ──────────────────────────────────────────────────────────────
   let arriving = $state(true);
 
-  // ─── Flow visibility (IntersectionObserver) ──────────────────────────────────
-  let flowVisibleSet = $state(new Set<string>());
-  function markFlowVisible(id: string) {
-    flowVisibleSet = new Set([...flowVisibleSet, id]);
+  // ─── Protagonist flow (Senado nacional only) ─────────────────────────────────
+  // Each step appears ONLY after the previous one has finished.
+  let protagonistStep = $state(0); // 0 = hidden, 1–4 = nodes visible sequentially
+  let protagonistStarted = false;
+
+  function startProtagonistFlow() {
+    if (protagonistStarted) return;
+    protagonistStarted = true;
+    const next = (step: number) => {
+      protagonistStep = step;
+      if (step < 4) setTimeout(() => next(step + 1), 620);
+    };
+    setTimeout(() => next(1), 250);
   }
 
   // ─── User ballot summary ─────────────────────────────────────────────────────
@@ -490,18 +499,16 @@
       });
     }
 
-    // IntersectionObserver for flow sections
+    // IntersectionObserver — only for the protagonist flow (Senado nacional)
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const id = (entry.target as HTMLElement).dataset.flowId;
-          if (id) markFlowVisible(id);
-        }
+        if (entry.isIntersecting) startProtagonistFlow();
       });
-    }, { threshold: 0.25 });
+    }, { threshold: 0.3 });
 
     setTimeout(() => {
-      document.querySelectorAll('[data-flow-id]').forEach(el => observer.observe(el));
+      const el = document.querySelector('[data-protagonist-flow]');
+      if (el) observer.observe(el);
     }, 800);
 
     return () => {
@@ -618,89 +625,103 @@
       {/if}
     </div>
 
-    <!-- 4B — Legislative columns -->
-    {#each userBallot.slice(1) as col}
-      <div class="proc-card leg-proc-card" data-flow-id={col.colId}>
+    <!-- 4B — Senado nacional: PROTAGONISTA con flujo animado secuencial -->
+    {@const senadoNac = userBallot[1]}
+    <div class="proc-card leg-proc-card" data-protagonist-flow>
+      <div class="proc-card-head">
+        <h3 class="proc-card-title">{senadoNac.label}</h3>
+        <span class="proc-type-badge preferential">Voto de lista</span>
+      </div>
+      <p class="proc-steps-label">Así se procesó esta decisión</p>
+
+      {#if senadoNac.selection}
+        <div class="flow-track-animated">
+
+          {#if protagonistStep >= 1}
+            <div class="fn" in:fly={{ y: 12, duration: 380 }}>
+              <div class="fn-icon-wrap" style="border-color: {senadoNac.selection.partyColor}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:{senadoNac.selection.partyColor}"><rect x="3" y="3" width="18" height="18" rx="2"/><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              </div>
+              <p class="fn-label">Tu voto</p>
+              <p class="fn-desc">Tu voto sumó al partido que elegiste.</p>
+              <span class="fn-tag" style="border-color:{senadoNac.selection.partyColor}25;background:{senadoNac.selection.partyColor}12;color:{senadoNac.selection.partyColor}">{senadoNac.selection.partyName}</span>
+            </div>
+          {/if}
+
+          {#if protagonistStep >= 2}
+            <div class="fn-arrow" in:fade={{ duration: 220 }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+            <div class="fn" in:fly={{ y: 12, duration: 380 }}>
+              <div class="fn-icon-wrap fi-partido">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
+              <p class="fn-label">Partido</p>
+              <p class="fn-desc">Si el partido pasa la valla y obtiene puestos, entra en la distribución.</p>
+            </div>
+          {/if}
+
+          {#if protagonistStep >= 3}
+            <div class="fn-arrow" in:fade={{ duration: 220 }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+            <div class="fn" in:fly={{ y: 12, duration: 380 }}>
+              <div class="fn-icon-wrap fi-puestos">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+              </div>
+              <p class="fn-label">Puestos</p>
+              <p class="fn-desc">Los puestos dependen de cuántos votos obtiene el partido.</p>
+            </div>
+          {/if}
+
+          {#if protagonistStep >= 4}
+            <div class="fn-arrow" in:fade={{ duration: 220 }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+            <div class="fn" in:fly={{ y: 12, duration: 380 }}>
+              <div class="fn-icon-wrap fi-candidatos">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </div>
+              <p class="fn-label">Candidatos</p>
+              <p class="fn-desc">Si marcaste números preferenciales, esos números ayudan a definir qué candidatos entran dentro del partido.</p>
+              {#if senadoNac.prefs.length > 0}
+                <div class="fn-prefs-row">
+                  {#each senadoNac.prefs as num}<span class="fn-pref-num">N° {num}</span>{/each}
+                </div>
+                <p class="fn-pref-note">Este número cuenta si el partido pasa la valla y obtiene puestos. Define qué candidatos entran dentro del partido.</p>
+              {:else}
+                <span class="fn-no-pref">Sin voto preferencial</span>
+              {/if}
+            </div>
+          {/if}
+
+        </div>
+      {:else}
+        <p class="proc-no-vote">No realizaste una selección en esta sección.</p>
+      {/if}
+    </div>
+
+    <!-- 4C — Secciones colapsadas: misma lógica, sin repetir explicación -->
+    {#each userBallot.slice(2) as col}
+      <div class="bloque-resumen">
         <div class="proc-card-head">
           <h3 class="proc-card-title">{col.label}</h3>
           <span class="proc-type-badge preferential">Voto de lista</span>
         </div>
-        <p class="proc-steps-label">Así se procesó esta decisión</p>
-
-        <div class="flow-track" class:flow-active={flowVisibleSet.has(col.colId)}>
-
-          <!-- Node 1: Tu voto -->
-          <div class="fn fn-1">
-            <div class="fn-icon-wrap" style="border-color: {col.selection?.partyColor ?? '#334155'}">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: {col.selection?.partyColor ?? '#64748b'}">
-                <rect x="3" y="3" width="18" height="18" rx="2"/><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-              </svg>
-            </div>
-            <p class="fn-label">Tu voto</p>
-            <p class="fn-desc">Tu voto sumó al partido que elegiste.</p>
-            {#if col.selection}
-              <span class="fn-tag" style="border-color: {col.selection.partyColor}20; background: {col.selection.partyColor}15; color: {col.selection.partyColor}">{col.selection.partyName}</span>
-            {:else}
-              <span class="fn-tag no-vote">Sin marcar</span>
-            {/if}
-          </div>
-
-          <div class="fn-arrow fa-1">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </div>
-
-          <!-- Node 2: Partido -->
-          <div class="fn fn-2">
-            <div class="fn-icon-wrap fi-partido">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-              </svg>
-            </div>
-            <p class="fn-label">Partido</p>
-            <p class="fn-desc">Si el partido pasa la valla y obtiene puestos, entra en la distribución.</p>
-          </div>
-
-          <div class="fn-arrow fa-2">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </div>
-
-          <!-- Node 3: Puestos -->
-          <div class="fn fn-3">
-            <div class="fn-icon-wrap fi-puestos">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
-              </svg>
-            </div>
-            <p class="fn-label">Puestos</p>
-            <p class="fn-desc">Los puestos se reparten según el porcentaje de votos del partido en toda la categoría.</p>
-          </div>
-
-          <div class="fn-arrow fa-3">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </div>
-
-          <!-- Node 4: Candidatos -->
-          <div class="fn fn-4">
-            <div class="fn-icon-wrap fi-candidatos">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-              </svg>
-            </div>
-            <p class="fn-label">Candidatos</p>
-            <p class="fn-desc">Si marcaste números preferenciales, esos números ayudan a definir qué candidatos entran dentro del partido.</p>
+        {#if col.selection}
+          <div class="resumen-partido" style="--party-color: {col.selection.partyColor}">
+            <div class="resumen-dot"></div>
+            <span class="resumen-name">{col.selection.partyName}</span>
             {#if col.prefs.length > 0}
-              <div class="fn-prefs-row">
-                {#each col.prefs as num}
-                  <span class="fn-pref-num">N° {num}</span>
-                {/each}
+              <div class="bc-prefs">
+                {#each col.prefs as num}<span class="pref-chip">N° {num}</span>{/each}
               </div>
-              <p class="fn-pref-note">Este número cuenta si el partido pasa la valla y obtiene puestos. Define qué candidatos entran dentro del partido.</p>
-            {:else}
-              <span class="fn-no-pref">Sin voto preferencial</span>
             {/if}
           </div>
-
-        </div>
+          <p class="resumen-logic">Tu voto sigue la misma lógica: suma al partido y, si hay preferenciales, define qué candidatos entran.</p>
+        {:else}
+          <p class="proc-no-vote">No realizaste una selección en esta sección.</p>
+        {/if}
       </div>
     {/each}
   </section>
@@ -1179,37 +1200,55 @@
   }
 
   /* ─────────────────────────────────────────────────────────────────────────
-     Flow track
+     Flow track (protagonist — Senado nacional)
   ───────────────────────────────────────────────────────────────────────── */
-  .flow-track {
-    display: grid;
-    grid-template-columns: 1fr 28px 1fr 28px 1fr 28px 1fr;
+  .flow-track-animated {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
     gap: 8px;
-    align-items: start;
   }
 
-  /* All nodes + arrows hidden until flow-active */
-  .fn, .fn-arrow {
-    opacity: 0;
+  /* ─────────────────────────────────────────────────────────────────────────
+     Collapsed summary blocks (other legislative columns)
+  ───────────────────────────────────────────────────────────────────────── */
+  .bloque-resumen {
+    background: #111827;
+    border: 1px solid #1e293b;
+    border-radius: 12px;
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
   }
 
-  @keyframes fn-enter {
-    from { opacity: 0; transform: translateX(-14px) scale(0.96); }
-    to   { opacity: 1; transform: translateX(0)  scale(1); }
+  .resumen-partido {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
   }
 
-  @keyframes arrow-enter {
-    from { opacity: 0; transform: scale(0.7); }
-    to   { opacity: 1; transform: scale(1); }
+  .resumen-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--party-color);
+    flex-shrink: 0;
   }
 
-  .flow-track.flow-active .fn-1 { animation: fn-enter   0.42s ease 0.10s forwards; }
-  .flow-track.flow-active .fa-1 { animation: arrow-enter 0.28s ease 0.48s forwards; }
-  .flow-track.flow-active .fn-2 { animation: fn-enter   0.42s ease 0.58s forwards; }
-  .flow-track.flow-active .fa-2 { animation: arrow-enter 0.28s ease 0.96s forwards; }
-  .flow-track.flow-active .fn-3 { animation: fn-enter   0.42s ease 1.06s forwards; }
-  .flow-track.flow-active .fa-3 { animation: arrow-enter 0.28s ease 1.44s forwards; }
-  .flow-track.flow-active .fn-4 { animation: fn-enter   0.42s ease 1.54s forwards; }
+  .resumen-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #e2e8f0;
+  }
+
+  .resumen-logic {
+    font-size: 12px;
+    color: #475569;
+    line-height: 1.55;
+    margin: 0;
+  }
 
   .fn {
     background: #0f172a;
@@ -1822,19 +1861,13 @@
       padding-top: 32px;
     }
 
-    .hero-meta {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 14px;
-    }
-
     .ballot-summary-grid {
       grid-template-columns: repeat(2, 1fr);
     }
 
     /* Flow: vertical on mobile */
-    .flow-track {
-      grid-template-columns: 1fr;
+    .flow-track-animated {
+      flex-direction: column;
       gap: 4px;
     }
 
