@@ -36,6 +36,20 @@
     setTimeout(() => next(1), 250);
   }
 
+  // ─── How-it-works flow ───────────────────────────────────────────────────────
+  let hiwStep    = $state(0);
+  let hiwStarted = false;
+
+  function startHiwFlow() {
+    if (hiwStarted) return;
+    hiwStarted = true;
+    const next = (step: number) => {
+      hiwStep = step;
+      if (step < 4) setTimeout(() => next(step + 1), 620);
+    };
+    setTimeout(() => next(1), 250);
+  }
+
   // ─── User ballot ─────────────────────────────────────────────────────────────
   let userBallot = $derived(
     BALLOT_DEF.map(def => {
@@ -83,12 +97,20 @@
       });
     }, { threshold: 0.3 });
 
+    const hiwObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) startHiwFlow();
+      });
+    }, { threshold: 0.3 });
+
     setTimeout(() => {
       const el = document.querySelector('[data-protagonist-flow]');
       if (el) observer.observe(el);
+      const hiw = document.querySelector('[data-hiw-flow]');
+      if (hiw) hiwObserver.observe(hiw);
     }, 800);
 
-    return () => observer.disconnect();
+    return () => { observer.disconnect(); hiwObserver.disconnect(); };
   });
 </script>
 
@@ -393,41 +415,62 @@
 
   <!-- ═══ CÓMO FUNCIONA EL CONTEO ═══════════════════════════════════════════ -->
   {#if ballotStatus !== 'blank'}
-  <section class="how-it-works-sect">
+  <section class="how-it-works-sect" data-hiw-flow>
     <h2 class="section-label">Cómo se decide quién entra al Congreso</h2>
-    <div class="hiw-chain">
-      <div class="hiw-step">
-        <span class="hiw-num">1</span>
-        <div class="hiw-body">
-          <strong class="hiw-term">Votos válidos</strong>
-          <p class="hiw-desc">Solo cuentan los votos válidos. Los votos en blanco o viciados reducen el total de votos válidos — y bajan la valla electoral.</p>
+
+    <div class="flow-track-animated">
+
+      {#if hiwStep >= 1}
+        <div class="fn" in:fly={{ y: 12, duration: 380 }}>
+          <div class="fn-icon-wrap">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          </div>
+          <p class="fn-label">Votos válidos</p>
+          <p class="fn-desc">Solo cuentan los votos marcados correctamente. Los nulos o viciados no suman a ningún partido — y reducen el total de votos válidos.</p>
         </div>
-      </div>
-      <div class="hiw-arrow">→</div>
-      <div class="hiw-step">
-        <span class="hiw-num">2</span>
-        <div class="hiw-body">
-          <strong class="hiw-term">Valla electoral</strong>
-          <p class="hiw-desc">Un partido necesita al menos el 5% de los votos válidos para entrar al reparto. Si no lo alcanza, ninguno de sus candidatos entra al Congreso.</p>
+      {/if}
+
+      {#if hiwStep >= 2}
+        <div class="fn-arrow" in:fade={{ duration: 220 }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </div>
-      </div>
-      <div class="hiw-arrow">→</div>
-      <div class="hiw-step">
-        <span class="hiw-num">3</span>
-        <div class="hiw-body">
-          <strong class="hiw-term">Escaños</strong>
-          <p class="hiw-desc">Los puestos del Congreso se reparten proporcionalmente entre los partidos que superaron la valla. Más votos válidos = más escaños.</p>
+        <div class="fn" in:fly={{ y: 12, duration: 380 }}>
+          <div class="fn-icon-wrap fi-partido">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+          </div>
+          <p class="fn-label">Valla electoral</p>
+          <p class="fn-desc">Un partido necesita al menos el 5% de los votos válidos. Si no lo alcanza, ninguno de sus candidatos entra al Congreso.</p>
         </div>
-      </div>
-      <div class="hiw-arrow">→</div>
-      <div class="hiw-step">
-        <span class="hiw-num">4</span>
-        <div class="hiw-body">
-          <strong class="hiw-term">Candidatos</strong>
-          <p class="hiw-desc">Dentro de cada partido, los escaños van a los candidatos con más votos preferenciales. Si nadie marcó un número, entra el orden de lista.</p>
+      {/if}
+
+      {#if hiwStep >= 3}
+        <div class="fn-arrow" in:fade={{ duration: 220 }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </div>
-      </div>
+        <div class="fn" in:fly={{ y: 12, duration: 380 }}>
+          <div class="fn-icon-wrap fi-puestos">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          </div>
+          <p class="fn-label">Escaños</p>
+          <p class="fn-desc">Los que superan la valla se reparten los escaños del Congreso proporcionalmente. Más votos válidos = más escaños.</p>
+        </div>
+      {/if}
+
+      {#if hiwStep >= 4}
+        <div class="fn-arrow" in:fade={{ duration: 220 }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </div>
+        <div class="fn" in:fly={{ y: 12, duration: 380 }}>
+          <div class="fn-icon-wrap fi-candidatos">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <p class="fn-label">Candidatos</p>
+          <p class="fn-desc">Dentro de cada partido, los escaños van a los candidatos con más votos preferenciales. Si nadie marcó un número, entra el orden de lista.</p>
+        </div>
+      {/if}
+
     </div>
+
     <div class="hiw-example">
       <span class="hiw-example-label">Ejemplo ilustrativo</span>
       <p class="hiw-example-text">Imagina 150 votos en total. Si 50 son nulos o viciados, quedan 100 votos válidos — y la valla electoral es de 5 votos (5% de votos válidos). Si los votos nulos o viciados aumentaran y dejaran solo 80 votos válidos, la valla bajaría a 4 votos. Más votos en blanco o viciados = valla más baja.</p>
