@@ -307,7 +307,7 @@
     </div>
     <div class="hiw-example">
       <span class="hiw-example-label">Ejemplo ilustrativo</span>
-      <p class="hiw-example-text">Imagina 1,000,000 votos válidos: la valla electoral es 50,000 votos. Un partido con 80,000 votos entra al reparto de escaños. Uno con 30,000 queda fuera y ninguno de sus candidatos entra al Congreso. Si los votos en blanco redujeran el total a 900,000, la valla bajaría a 45,000.</p>
+      <p class="hiw-example-text">Imagina 150 votos emitidos. Si 50 son nulos o viciados, quedan 100 votos válidos — y la valla electoral es de 5 votos (5%). Si los votos nulos o viciados aumentaran y dejaran solo 80 votos válidos, la valla bajaría a 4 votos. Menos votos válidos = valla más baja.</p>
     </div>
   </section>
   {/if}
