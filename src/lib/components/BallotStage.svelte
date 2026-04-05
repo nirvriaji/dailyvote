@@ -10,8 +10,10 @@
     activeColumnId?: string | null;
     completedColumnIds?: string[];
     onColumnFocus?: (colId: string) => void;
+    onColumnHover?: (colId: string | null) => void;
+    highlightColumnId?: string | null;
   }
-  let { columns, scroller = $bindable(), activeColumnId = null, completedColumnIds = [], onColumnFocus }: Props = $props();
+  let { columns, scroller = $bindable(), activeColumnId = null, completedColumnIds = [], onColumnFocus, onColumnHover, highlightColumnId = null }: Props = $props();
 
   // ─── Layout Constants ─────────────────────────────────────────────────────────
   const BASE_COL_WIDTH = 320;
@@ -42,9 +44,10 @@
       <!-- The ballot sheet -->
       <div class="ballot-content">
         {#each columns as column, i (column.id)}
-          {@const isActive = activeColumnId === column.id}
+          {@const effectiveActive = highlightColumnId ?? activeColumnId}
+          {@const isActive = effectiveActive === column.id}
           {@const isCompleted = completedColumnIds.includes(column.id)}
-          {@const isDimmed = activeColumnId !== null && !isActive}
+          {@const isDimmed = effectiveActive !== null && !isActive}
           <!-- svelte-ignore a11y_click_events_have_key_events -->
           <!-- svelte-ignore a11y_no_static_element_interactions -->
           <div
@@ -55,6 +58,8 @@
             class:col-done={isCompleted && !isActive}
             data-col-id={column.id}
             onclick={() => onColumnFocus?.(column.id)}
+            onmouseenter={() => onColumnHover?.(column.id)}
+            onmouseleave={() => onColumnHover?.(null)}
           >
             <BallotColumn {column} width={BASE_COL_WIDTH} />
           </div>
@@ -122,7 +127,7 @@
   /* Mobile: bottom clearance so last ballot row isn't hidden behind the fixed panel */
   @media (max-width: 900px) {
     .spacer-bottom {
-      height: var(--mobile-panel-h, 120px);
+      height: var(--panel-h, 48px);
     }
   }
 

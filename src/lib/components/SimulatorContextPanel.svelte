@@ -15,6 +15,8 @@
     onToggleVideo?: () => void;
     activeIdx?: number;
     onNextStep?: () => void;
+    /** 'peek' = step context only (no video, no delivery CTA) */
+    panelMode?: 'peek' | 'full';
   }
   let {
     onDeliver,
@@ -23,6 +25,7 @@
     onToggleVideo,
     activeIdx: activeIdxProp = undefined,
     onNextStep,
+    panelMode = 'full',
   }: Props = $props();
 
   // ─── Step config ─────────────────────────────────────────────────────────────
@@ -127,6 +130,7 @@
 <div class="panel">
 
   <!-- ── Video help ─────────────────────────────────────────────────────────── -->
+  {#if panelMode !== 'peek'}
   <div class="video-help">
     <button class="video-toggle" onclick={onToggleVideo} aria-expanded={showVideo}>
       <span class="video-toggle-icon" aria-hidden="true">▶</span>
@@ -152,12 +156,15 @@
       </div>
     {/if}
   </div>
+  {/if}
 
   <!-- ── Persistent microcopy ──────────────────────────────────────────────── -->
+  {#if panelMode !== 'peek'}
   <div class="microcopy">
     <span class="microcopy-icon" aria-hidden="true">ℹ</span>
     <p>Primero eliges un partido. Este número cuenta si el partido pasa la valla y obtiene puestos. Define qué candidatos del partido finalmente entran al congreso.</p>
   </div>
+  {/if}
 
   <!-- ── Step context ───────────────────────────────────────────────────────── -->
   {#key activeIdx}
@@ -194,19 +201,26 @@
         <p>{currentStep.education}</p>
       </div>
 
-      <!-- Block E: Advance button — shown for all steps once the column is valid -->
-      {#if currentStepDone && ballotStatus !== 'complete' && onNextStep}
-        <button class="next-step-btn" onclick={onNextStep}>
-          {currentStep.hasPreferential && preferenceNums.length === 0
-            ? 'Continuar sin preferencial'
-            : 'Continuar'}
-        </button>
+      <!-- Block E: Local action — advance or skip -->
+      {#if onNextStep && ballotStatus !== 'complete'}
+        {#if currentStepDone}
+          <button class="local-action-btn" onclick={onNextStep}>
+            {currentStep.hasPreferential && preferenceNums.length === 0
+              ? 'Continuar sin voto preferencial'
+              : 'Continuar'}
+          </button>
+        {:else}
+          <button class="local-action-btn local-action-skip" onclick={onNextStep}>
+            Dejar en blanco y continuar
+          </button>
+        {/if}
       {/if}
 
     </div>
   {/key}
 
   <!-- ── CTA area ───────────────────────────────────────────────────────────── -->
+  {#if panelMode !== 'peek'}
   <div class="cta-area" class:state-complete={ballotStatus === 'complete'}>
 
     <!-- Estado global de la cédula -->
@@ -250,6 +264,7 @@
       {/if}
     </button>
   </div>
+  {/if}
 
 </div>
 
@@ -468,27 +483,37 @@
     margin: 0;
   }
 
-  /* ── Next step button ───────────────────────────────────────────────────── */
-  .next-step-btn {
+  /* ── Local action button (Continuar / Dejar en blanco) ─────────────────── */
+  .local-action-btn {
     width: 100%;
-    padding: 10px 14px;
-    border: 1px solid #475569;
+    padding: 11px 14px;
+    border: none;
     border-radius: 6px;
-    background: #1e293b;
-    font-size: 12px;
+    background: #1e3a5f;
+    font-size: 13px;
     font-weight: 700;
-    color: #e2e8f0;
+    color: #60a5fa;
     cursor: pointer;
     text-align: center;
-    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+    transition: background 0.15s ease, color 0.15s ease;
     font-family: inherit;
     letter-spacing: 0.01em;
   }
 
-  .next-step-btn:hover {
-    border-color: #64748b;
-    color: #f1f5f9;
-    background: #263548;
+  .local-action-btn:hover {
+    background: #1e4080;
+    color: #93c5fd;
+  }
+
+  .local-action-btn.local-action-skip {
+    background: transparent;
+    color: #475569;
+    border: 1px dashed #334155;
+  }
+
+  .local-action-btn.local-action-skip:hover {
+    color: #64748b;
+    border-color: #475569;
   }
 
   /* ── CTA area ────────────────────────────────────────────────────────────── */
@@ -617,29 +642,4 @@
     box-shadow: none;
   }
 
-  /* ── Mobile panel (when used as bottom bar) ─────────────────────────────── */
-  :global(.panel-mobile) .panel {
-    border-left: none;
-    border-top: 1px solid #1e293b;
-    height: auto;
-    overflow: visible;
-  }
-
-  :global(.panel-mobile) .video-help,
-  :global(.panel-mobile) .microcopy,
-  :global(.panel-mobile) .step-context {
-    display: none;
-  }
-
-  :global(.panel-mobile) .cta-area {
-    position: static;
-    margin-top: 0;
-    border-top: none;
-    padding: 12px 16px;
-  }
-
-  :global(.panel-mobile) .ballot-state-block,
-  :global(.panel-mobile) .deliver-microcopy {
-    display: none;
-  }
 </style>

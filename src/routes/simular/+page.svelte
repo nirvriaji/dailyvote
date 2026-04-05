@@ -112,11 +112,29 @@
   let isSubmitting  = $state(false);
   let isTransitioning = $state(false);
 
-  // ─── Mobile context panel expand ─────────────────────────────────────────────
-  let mobilePanelExpanded = $state(false);
-  const MOBILE_PANEL_COLLAPSED_H = 110;
-  const MOBILE_PANEL_EXPANDED_H  = 260;
-  let mobilePanelH = $derived(mobilePanelExpanded ? MOBILE_PANEL_EXPANDED_H : MOBILE_PANEL_COLLAPSED_H);
+  // ─── Step labels ─────────────────────────────────────────────────────────────
+  const STEP_LABELS = ['Presidencia', 'Senado nacional', 'Senado regional', 'Diputados', 'Parlamento Andino'];
+
+  // ─── Mobile bottom sheet state ───────────────────────────────────────────────
+  let mobilePanelState = $state<'hidden' | 'peek' | 'full'>('peek');
+
+  // ─── Desktop hover lock ──────────────────────────────────────────────────────
+  let lockedIdx = $state<number | null>(null);
+  let _hoverTimer: ReturnType<typeof setTimeout> | null = null;
+  let _lockTimer: ReturnType<typeof setTimeout> | null = null;
+  let _edgeTimer: ReturnType<typeof setTimeout> | null = null;
+  const EDGE_ZONE_RATIO = 0.20; // 20% of ballot-area width on each side
+
+  let highlightColumnId = $derived(lockedIdx !== null ? STEP_COL_IDS[lockedIdx] : null);
+
+  // Panel height CSS var based on mobile state
+  let panelH = $derived(
+    mobilePanelState === 'hidden' ? '48px' :
+    mobilePanelState === 'peek'   ? '45dvh' : '65dvh'
+  );
+
+  // ─── Suppress IntersectionObserver during programmatic scroll ────────────────
+  let _suppressObserver = false;
 
   // ─── Scroll active column into view ─────────────────────────────────────────
   let _scrollEffectFirstRun = true;
@@ -129,8 +147,16 @@
     const colEl = ballotScroller.querySelector<HTMLElement>(`[data-col-id="${STEP_COL_IDS[idx]}"]`);
     if (!colEl) return;
 
-    // Use scrollIntoView on the column — inline:center keeps it in the middle horizontally
-    colEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    // Only scroll if the column isn't already fully visible — hovering a centered
+    // column should update the panel context without moving the viewport.
+    const rootRect = ballotScroller.getBoundingClientRect();
+    const colRect  = colEl.getBoundingClientRect();
+    const fullyVisible = colRect.left >= rootRect.left - 2 && colRect.right <= rootRect.right + 2;
+    if (fullyVisible) return;
+
+    _suppressObserver = true;
+    colEl.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
+    setTimeout(() => { _suppressObserver = false; }, 700);
   });
 
   // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -144,17 +170,81 @@
     colEl.scrollIntoView({ behavior: 'instant' as ScrollBehavior, inline: 'center', block: 'start' });
   }
 
-  // Focus a specific column when user taps it on the ballot
-  function handleColumnFocus(colId: string) {
+  // Desktop hover — update active step with debounce; locked columns use longer delay
+  function handleColumnHover(colId: string | null) {
+    if (_hoverTimer) { clearTimeout(_hoverTimer); _hoverTimer = null; }
+    if (colId === null) return;
     const idx = STEP_COL_IDS.indexOf(colId);
-    if (idx !== -1) activeIdx = idx;
+    if (idx === -1 || idx === activeIdx) return;
+    const delay = lockedIdx !== null ? 300 : 200;
+    _hoverTimer = setTimeout(() => { activeIdx = idx; }, delay);
   }
 
-  // Go to the leftmost incomplete column globally
+  // Edge-proximity scroll: when mouse is near left/right edge of ballot area,
+  // advance to the adjacent column after a short delay.
+  function handleBallotMouseMove(e: MouseEvent) {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const zone = rect.width * EDGE_ZONE_RATIO;
+    const inLeft  = x < zone;
+    const inRight = x > rect.width - zone;
+
+    if (inLeft || inRight) {
+      if (_edgeTimer) return; // already counting down
+      const dir = inLeft ? -1 : 1;
+      _edgeTimer = setTimeout(() => {
+        _edgeTimer = null;
+        const next = activeIdx + dir;
+        if (next >= 0 && next < STEP_KEYS.length) {
+          activeIdx = next;
+          lockedIdx = next;
+          if (_lockTimer) clearTimeout(_lockTimer);
+          _lockTimer = setTimeout(() => { lockedIdx = null; }, 800);
+        }
+      }, 350);
+    } else {
+      if (_edgeTimer) { clearTimeout(_edgeTimer); _edgeTimer = null; }
+    }
+  }
+
+  function handleBallotMouseLeave() {
+    if (_edgeTimer) { clearTimeout(_edgeTimer); _edgeTimer = null; }
+  }
+
+  // Focus a specific column when user taps/clicks it on the ballot
+  function handleColumnFocus(colId: string) {
+    const idx = STEP_COL_IDS.indexOf(colId);
+    if (idx === -1) return;
+    activeIdx = idx;
+    lockedIdx = idx;
+    if (_lockTimer) clearTimeout(_lockTimer);
+    _lockTimer = setTimeout(() => { lockedIdx = null; }, 1500);
+    if (typeof window !== 'undefined' && window.innerWidth <= 900) mobilePanelState = 'peek';
+  }
+
+  // Advance to the next step in sequence (both "Continuar" and "Dejar en blanco")
   function handleNextStep() {
-    const valids = STEP_KEYS.map(k => isColumnValid(k));
-    const next = valids.findIndex(v => !v);
-    if (next !== -1) activeIdx = next;
+    const next = Math.min(activeIdx + 1, STEP_KEYS.length - 1);
+    activeIdx = next;
+    lockedIdx = next;
+    if (_lockTimer) clearTimeout(_lockTimer);
+    _lockTimer = setTimeout(() => { lockedIdx = null; }, 1500);
+    if (typeof window !== 'undefined' && window.innerWidth <= 900) mobilePanelState = 'peek';
+  }
+
+  // Mobile handle touch — swipe up/down to change sheet state, tap to toggle
+  let _touchStartY = 0;
+  function handleTouchStart(e: TouchEvent) { _touchStartY = e.touches[0].clientY; }
+  function handleTouchEnd(e: TouchEvent) {
+    const dy = _touchStartY - e.changedTouches[0].clientY;
+    if (Math.abs(dy) < 10) {
+      // tap: cycle peek↔full, or hidden→peek
+      mobilePanelState = mobilePanelState === 'full' ? 'peek' : 'full';
+    } else if (dy > 30) {
+      mobilePanelState = mobilePanelState === 'hidden' ? 'peek' : 'full';
+    } else if (dy < -30) {
+      mobilePanelState = mobilePanelState === 'full' ? 'peek' : 'hidden';
+    }
   }
 
   // Deliver ballot → transition → navigate
@@ -180,34 +270,71 @@
       vote.resetForNewSimulation();
       scrollToActive();
       initDemoMode();
-      return;
+    } else {
+      canSimulate = canStillSimulate();
+      if (!isFirebaseReady) initializeFirebase();
+
+      const entryMode = sessionStorage.getItem('entry_mode');
+      const saved     = sessionStorage.getItem('dailyvote');
+
+      if (entryMode === 'new_simulation') {
+        sessionStorage.removeItem('entry_mode');
+        vote.resetForNewSimulation();
+        resetAllSelections();
+      } else if (saved && vote.count === 0) {
+        vote.hydrate(saved);
+        loadPreferencesFromStorage();
+      }
+
+      scrollToActive();
     }
 
-    canSimulate = canStillSimulate();
+    const cleanups: (() => void)[] = [];
 
-    if (!isFirebaseReady) initializeFirebase();
+    // Scroll-based column tracking for mobile:
+    // Uses horizontal center distance rather than IntersectionObserver area ratio,
+    // which fails for tall columns (ratio = vertical-clip/total-height < 0.5).
+    if (window.innerWidth <= 900 && ballotScroller) {
+      let _scrollDebounce: ReturnType<typeof setTimeout> | null = null;
 
-    const entryMode = sessionStorage.getItem('entry_mode');
-    const saved     = sessionStorage.getItem('dailyvote');
+      function onBallotScroll() {
+        if (_suppressObserver) return;
+        // Debounce: reset on every event, fire only after scrolling settles
+        if (_scrollDebounce) clearTimeout(_scrollDebounce);
+        _scrollDebounce = setTimeout(() => {
+          _scrollDebounce = null;
+          if (!ballotScroller) return;
+          const rootRect = ballotScroller.getBoundingClientRect();
+          const rootCenter = rootRect.left + rootRect.width / 2;
 
-    if (entryMode === 'new_simulation') {
-      sessionStorage.removeItem('entry_mode');
-      vote.resetForNewSimulation();
-      resetAllSelections(); // sync preferencePicker in-memory state
-    } else if (saved && vote.count === 0) {
-      vote.hydrate(saved);
-      loadPreferencesFromStorage(); // sync preferencePicker visual state from localStorage
+          let bestEl: HTMLElement | null = null;
+          let bestDist = Infinity;
+          ballotScroller.querySelectorAll<HTMLElement>('[data-col-id]').forEach(el => {
+            const rect = el.getBoundingClientRect();
+            const dist = Math.abs((rect.left + rect.width / 2) - rootCenter);
+            if (dist < bestDist) { bestDist = dist; bestEl = el; }
+          });
+
+          if (bestEl) {
+            const idx = STEP_COL_IDS.indexOf(bestEl.dataset.colId!);
+            if (idx !== -1 && idx !== activeIdx) activeIdx = idx;
+          }
+        }, 120);
+      }
+
+      ballotScroller.addEventListener('scroll', onBallotScroll, { passive: true });
+      cleanups.push(() => ballotScroller!.removeEventListener('scroll', onBallotScroll));
     }
 
-    scrollToActive();
-
-    // Measure header height dynamically
+    // ResizeObserver: measure header height
     if (headerEl) {
       const ro = new ResizeObserver(() => { headerH = headerEl!.offsetHeight; });
       ro.observe(headerEl);
       headerH = headerEl.offsetHeight;
-      return () => ro.disconnect();
+      cleanups.push(() => ro.disconnect());
     }
+
+    return () => cleanups.forEach(fn => fn());
   });
 
   // Persist votes on any change
@@ -239,7 +366,7 @@
 <!-- ═══════════════════════════════════════════════════════════════════════════ -->
 <div
   class="sim-shell"
-  style="--header-h: {headerH}px; --mobile-panel-h: {mobilePanelH}px"
+  style="--header-h: {headerH}px; --panel-h: {panelH}"
 >
 
   <!-- ── Fixed header with stepper ───────────────────────────────────────── -->
@@ -265,13 +392,17 @@
       onpointerdown={markUserInteraction}
       onwheel={markUserInteraction}
       ontouchstart={markUserInteraction}
+      onmousemove={handleBallotMouseMove}
+      onmouseleave={handleBallotMouseLeave}
     >
       <BallotStage
         columns={ballotColumns}
         bind:scroller={ballotScroller}
         {activeColumnId}
         {completedColumnIds}
+        {highlightColumnId}
         onColumnFocus={handleColumnFocus}
+        onColumnHover={handleColumnHover}
       />
     </div>
 
@@ -289,47 +420,48 @@
 
   </div>
 
-  <!-- ── Mobile bottom panel ──────────────────────────────────────────────── -->
-  <div class="context-panel-mobile" aria-label="Guía de votación">
-    <!-- Toggle bar -->
-    <button
-      class="mobile-panel-toggle"
-      onclick={() => mobilePanelExpanded = !mobilePanelExpanded}
-      aria-expanded={mobilePanelExpanded}
+  <!-- ── Mobile bottom panel (3-state bottom sheet) ─────────────────────── -->
+  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+  <div
+    class="context-panel-mobile"
+    class:state-hidden={mobilePanelState === 'hidden'}
+    class:state-peek={mobilePanelState === 'peek'}
+    class:state-full={mobilePanelState === 'full'}
+    aria-label="Guía de votación"
+    role="complementary"
+  >
+    <!-- Drag handle -->
+    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+    <div
+      class="mobile-handle"
+      ontouchstart={handleTouchStart}
+      ontouchend={handleTouchEnd}
+      onclick={() => { mobilePanelState = mobilePanelState === 'full' ? 'peek' : 'full'; }}
+      onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { mobilePanelState = mobilePanelState === 'full' ? 'peek' : 'full'; } }}
+      role="button"
+      tabindex="0"
+      aria-expanded={mobilePanelState !== 'hidden'}
+      aria-label="Expandir guía de votación"
     >
-      <span class="mobile-step-label">
-        Paso {activeIdx + 1} de 5 — {['Presidencia','Senado nacional','Senado regional','Diputados','Parlamento Andino'][activeIdx]}
-      </span>
-      <span class="mobile-chevron" class:up={mobilePanelExpanded}>›</span>
-    </button>
+      <div class="handle-pill"></div>
+      <div class="handle-row">
+        <span class="mobile-step-label">Paso {activeIdx + 1} de 5 — {STEP_LABELS[activeIdx]}</span>
+        <span class="mobile-chevron" class:up={mobilePanelState === 'full'}>›</span>
+      </div>
+    </div>
 
-    {#if mobilePanelExpanded}
-      <div class="mobile-panel-content" transition:fade={{ duration: 180 }}>
+    <!-- Panel content — only when not hidden -->
+    {#if mobilePanelState !== 'hidden'}
+      <div class="mobile-panel-content">
         <SimulatorContextPanel
           onDeliver={handleDeliver}
           {isSubmitting}
           {showVideo}
           onToggleVideo={() => showVideo = !showVideo}
+          {activeIdx}
+          onNextStep={handleNextStep}
+          panelMode={mobilePanelState === 'full' ? 'full' : 'peek'}
         />
-      </div>
-    {:else}
-      <!-- Compact CTA always visible -->
-      <div class="mobile-cta-compact">
-        <button
-          class="deliver-btn-mobile active"
-          disabled={isSubmitting}
-          onclick={handleDeliver}
-        >
-          {#if isSubmitting}
-            Procesando...
-          {:else if ballotStatus === 'complete'}
-            Entregar cédula y ver cómo se procesa mi voto
-          {:else if ballotStatus === 'partial'}
-            Entregar cédula parcial y ver qué pasa
-          {:else}
-            Entregar cédula en blanco y ver qué pasa
-          {/if}
-        </button>
       </div>
     {/if}
   </div>
@@ -416,7 +548,7 @@
     flex-direction: column;
   }
 
-  /* ── Mobile bottom panel ───────────────────────────────────────────────── */
+  /* ── Mobile bottom panel (3-state bottom sheet) ───────────────────────── */
   .context-panel-mobile {
     display: none;
   }
@@ -427,7 +559,8 @@
     }
 
     .context-panel-mobile {
-      display: block;
+      display: flex;
+      flex-direction: column;
       position: fixed;
       bottom: 0;
       left: 0;
@@ -435,23 +568,45 @@
       z-index: 50;
       background: #0f172a;
       border-top: 1px solid #1e293b;
-      max-height: 60dvh;
-      overflow-y: auto;
+      transition: height 0.22s ease;
+      overflow: hidden;
     }
+
+    .context-panel-mobile.state-hidden { height: 48px; }
+    .context-panel-mobile.state-peek   { height: 45dvh; }
+    .context-panel-mobile.state-full   { height: 65dvh; }
   }
 
-  /* ── Mobile toggle bar ─────────────────────────────────────────────────── */
-  .mobile-panel-toggle {
+  /* ── Mobile handle bar ─────────────────────────────────────────────────── */
+  .mobile-handle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px 10px;
+    cursor: pointer;
+    flex-shrink: 0;
+    border-bottom: 1px solid #1e293b;
+    min-height: 48px;
+    justify-content: center;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .handle-pill {
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: #334155;
+    flex-shrink: 0;
+  }
+
+  .handle-row {
     width: 100%;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    padding: 10px 16px;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    border-bottom: 1px solid #1e293b;
   }
 
   .mobile-step-label {
@@ -465,54 +620,32 @@
     font-size: 20px;
     color: #475569;
     font-weight: 300;
-    transform: rotate(90deg);
-    transition: transform 0.2s ease;
+    transform: rotate(-90deg);
+    transition: transform 0.22s ease;
     flex-shrink: 0;
   }
 
   .mobile-chevron.up {
-    transform: rotate(-90deg);
+    transform: rotate(90deg);
   }
 
-  /* ── Mobile expanded panel content ─────────────────────────────────────── */
+  /* ── Mobile panel content ──────────────────────────────────────────────── */
+  .mobile-panel-content {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+  }
+
   .mobile-panel-content :global(.panel) {
     height: auto;
     min-height: 0;
     border-left: none;
-    border-top: 1px solid #1e293b;
+    border-top: none;
   }
 
   .mobile-panel-content :global(.cta-area) {
     position: static;
     margin-top: 0;
-    border-top: 1px solid #1e293b;
-  }
-
-  /* ── Mobile compact CTA ─────────────────────────────────────────────────── */
-  .mobile-cta-compact {
-    padding: 10px 16px 12px;
-  }
-
-  .deliver-btn-mobile {
-    width: 100%;
-    padding: 13px 16px;
-    border: none;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: not-allowed;
-    background: #1e293b;
-    color: #475569;
-    transition: all 0.25s ease;
-    line-height: 1.4;
-    text-align: center;
-  }
-
-  .deliver-btn-mobile.active {
-    background: linear-gradient(135deg, #C8102E 0%, #a00d25 100%);
-    color: white;
-    cursor: pointer;
-    box-shadow: 0 4px 16px rgba(200, 16, 46, 0.3);
   }
 
   /* ── Transition overlay ─────────────────────────────────────────────────── */
