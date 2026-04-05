@@ -536,13 +536,17 @@ export function resetAllSelections() {
     diputados: null,
     parlamentoAndino: null
   };
-  
+
   presidentSelectedRowId = null;
   presidentSelections = {};
-  
+  preferenceState = {};
+
   persistSelectedRows();
   persistPresidentSelections();
   persistPresidentRow();
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('dailyvote_preferences');
+  }
 }
 
 // Manejo global de tecla Escape para cerrar picker
