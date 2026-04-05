@@ -277,7 +277,7 @@
         <span class="hiw-num">1</span>
         <div class="hiw-body">
           <strong class="hiw-term">Votos válidos</strong>
-          <p class="hiw-desc">Solo cuentan los votos marcados. Los votos en blanco no suman a ningún partido — y reducen el total de votos válidos.</p>
+          <p class="hiw-desc">Solo cuentan los votos válidos. Los votos en blanco o viciados reducen el total de votos válidos — y bajan la valla electoral.</p>
         </div>
       </div>
       <div class="hiw-arrow">→</div>
