@@ -386,7 +386,16 @@
 
   <!-- ── Fixed header with stepper ───────────────────────────────────────── -->
   <div class="header-anchor" bind:this={headerEl}>
-    <BallotProgressHeader {activeIdx} onOpenSummary={() => showSummaryDrawer = true} />
+    <BallotProgressHeader
+      {activeIdx}
+      onOpenSummary={() => showSummaryDrawer = true}
+      onStepClick={(idx) => {
+        activeIdx = idx;
+        if (typeof window !== 'undefined' && window.innerWidth <= 900) {
+          mobilePanelState = 'full';
+        }
+      }}
+    />
 
     {#if !canSimulate}
       <div class="closed-bar" transition:fade={{ duration: 300 }}>

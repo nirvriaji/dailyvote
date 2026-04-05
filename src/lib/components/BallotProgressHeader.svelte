@@ -9,8 +9,9 @@
   interface Props {
     activeIdx?: number;
     onOpenSummary?: () => void;
+    onStepClick?: (idx: number) => void;
   }
-  let { activeIdx: activeIdxProp = undefined, onOpenSummary }: Props = $props();
+  let { activeIdx: activeIdxProp = undefined, onOpenSummary, onStepClick }: Props = $props();
 
   const STEPS: { key: ColumnKey; label: string }[] = [
     { key: 'presidente',      label: 'Presidencia' },
@@ -75,9 +76,12 @@
         class:is-completed={completed}
         class:is-active={active}
         class:is-pending={!completed && !active}
-        role="listitem"
+        role="button"
+        tabindex="0"
         aria-current={active ? 'step' : undefined}
         aria-label="{step.label}: {completed ? 'completo' : active ? 'en progreso' : 'pendiente'}"
+        onclick={() => onStepClick?.(i)}
+        onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') onStepClick?.(i); }}
       >
         <div class="step-dot" aria-hidden="true">
           {#if completed}
@@ -181,7 +185,7 @@
     padding: 8px 12px;
     border-bottom: 2px solid transparent;
     white-space: nowrap;
-    cursor: default;
+    cursor: pointer;
     transition: border-color 0.25s ease, opacity 0.25s ease;
     flex-shrink: 0;
   }
