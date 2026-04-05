@@ -40,11 +40,14 @@
 
   // ─── User ballot ─────────────────────────────────────────────────────────────
   let userBallot = $derived(
-    BALLOT_DEF.map(def => ({
-      ...def,
-      selection: vote.getVote(def.colId),
-      prefs: def.hasPreferential ? getColumnPreferenceNumbers(def.key) : [] as number[],
-    }))
+    BALLOT_DEF.map(def => {
+      const selection = vote.getVote(def.colId);
+      return {
+        ...def,
+        selection,
+        prefs: def.hasPreferential && selection ? getColumnPreferenceNumbers(def.key) : [] as number[],
+      };
+    })
   );
   let hasUserVote  = $derived(vote.count > 0);
   let markedCount  = $derived(vote.count);
@@ -241,7 +244,7 @@
           </div>
           <div>
             <h3 class="reveal-card-title">{insights.blankColumns.length === 1 ? 'Una decisión quedó en blanco' : `${insights.blankColumns.length} decisiones quedaron en blanco`}</h3>
-            <p class="reveal-card-desc">{insights.blankColumns.join(', ')} {insights.blankColumns.length === 1 ? 'no sumó votos' : 'no sumaron votos'} en esa elección. Solo las decisiones marcadas entran al procesamiento de resultados.</p>
+            <p class="reveal-card-desc">{insights.blankColumns.join(', ')} {insights.blankColumns.length === 1 ? 'no sumó votos en esa elección' : 'no sumaron votos en esas elecciones'}. Solo las decisiones marcadas entran al procesamiento de resultados.</p>
           </div>
         </article>
       {/if}

@@ -38,7 +38,7 @@ export function deriveInsights(userBallot: UserBallotRow[]): SimulationInsights 
   const isConcentrated  = legCount >= 2 && legParties.size === 1;
   const isFragmented    = uniqueParties >= 4;
 
-  const hasAnyPreferences = userBallot.some(r => r.prefs.length > 0);
+  const hasAnyPreferences = voted.some(r => r.prefs.length > 0);
   const hasAllPrefs       = legCount > 0 && legVoted.every(r => r.prefs.length > 0);
   const prefCoverage      = legCount === 0 ? 0
     : legVoted.filter(r => r.prefs.length > 0).length / legCount;
