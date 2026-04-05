@@ -103,7 +103,7 @@
 
         <h1 class="headline" in:fly={{ y: 20, duration: 500, delay: 200 }}>
           <span class="headline-line1">SIMULA TU VOTO.</span>
-          <span class="headline-line2">VE CÓMO CAMBIA LOS RESULTADOS.</span>
+          <span class="headline-line2">ENTIENDE CÓMO SE DEFINE EL CONGRESO Y LA PRESIDENCIA.</span>
         </h1>
 
         <div class="countdown-wrapper" in:fade={{ duration: 400, delay: 300 }}>
@@ -128,7 +128,8 @@
               <span class="countdown-label">seg</span>
             </div>
           </div>
-          <span class="countdown-caption">Para el 12 de abril</span>
+          <span class="countdown-caption">Hasta el 12 de abril</span>
+          <span class="countdown-context">Ese día defines presidente y Congreso en una sola votación.</span>
         </div>
 
         <p class="subline" in:fade={{ duration: 400, delay: 400 }}>
@@ -266,9 +267,10 @@
         <p class="footer-title">¿Te ayudó esta herramienta?</p>
         <p class="footer-sub">Tu opinión ayuda a mejorar este simulador educativo.</p>
         <div class="footer-actions">
-          <button class="footer-link" onclick={() => showHelpPanel = true}>Enviar sugerencia</button>
+          <button class="footer-link" onclick={() => showHelpPanel = true}>Contacto</button>
           <button class="footer-link" onclick={() => showShareModal = true}>Compartir</button>
         </div>
+
       </footer>
 
     </div>
@@ -399,6 +401,13 @@
     text-transform: uppercase;
     letter-spacing: 1px;
     font-weight: 500;
+  }
+
+  .countdown-context {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.55);
+    font-weight: 400;
+    line-height: 1.5;
   }
 
   .subline {
@@ -903,5 +912,114 @@
     .countdown-number {
       font-size: 20px;
     }
+  }
+
+  /* ── ABOUT / AUTHORS ── */
+  .about-project-block {
+    margin-top: 32px;
+    width: 100%;
+    text-align: left;
+  }
+
+  .about-project-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.35);
+    margin: 0 0 8px;
+  }
+
+  .about-project-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.85);
+    margin: 0 0 8px;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .about-project-desc {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.5);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .authors-grid {
+    display: grid;
+    gap: 12px;
+    width: 100%;
+    margin-top: 16px;
+  }
+
+  @media (min-width: 480px) {
+    .authors-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .author-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+  }
+
+  .author-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 10px;
+    flex-shrink: 0;
+  }
+
+  .author-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.85);
+    margin: 0;
+  }
+
+  .author-role {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.38);
+    margin: 3px 0 12px;
+  }
+
+  .author-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: auto;
+  }
+
+  .author-btn {
+    display: inline-block;
+    padding: 7px 14px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 7px;
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 12px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: border-color 0.15s ease, color 0.15s ease;
+    font-family: inherit;
+  }
+
+  .author-btn:hover {
+    border-color: rgba(255, 255, 255, 0.28);
+    color: rgba(255, 255, 255, 0.85);
   }
 </style>

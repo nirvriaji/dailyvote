@@ -56,7 +56,7 @@
           class:sb-partial={validCount > 0 && !isReady}
           class:sb-blank={validCount === 0}
         >
-          {isReady ? 'Completa' : validCount > 0 ? 'Parcial' : 'En blanco'}
+          {isReady ? 'Cédula completa' : validCount > 0 ? 'Cédula parcial' : 'Cédula en blanco'}
         </span>
       </div>
       <button class="summary-btn" onclick={onOpenSummary}>

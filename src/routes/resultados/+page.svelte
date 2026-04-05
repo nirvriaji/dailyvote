@@ -55,7 +55,8 @@
   // ─── Actions ─────────────────────────────────────────────────────────────────
   let showHelpPanel  = $state(false);
   let showShareModal = $state(false);
-  let restarting     = $state(false);
+  let restarting       = $state(false);
+  let whatIfScenario   = $state<'concentrar' | 'dividir'>('concentrar');
 
   async function handleRestart() {
     if (restarting) return;
@@ -334,6 +335,86 @@
     </div>
   </section>
 
+  <!-- ═══ QUÉ IMPLICA ESTO EN EL PERÚ ════════════════════════════════════ -->
+  <section class="system-insights-sect">
+    <h2 class="section-label">Qué implica esto en el Perú</h2>
+
+    <div class="system-insights-intro">
+      <p class="system-insights-intro-text">
+        Además de definir candidaturas, este tipo de voto influye en cómo se organiza el poder político después de la elección.
+      </p>
+    </div>
+
+    <div class="system-insights-stack">
+      <article class="system-insight-card">
+        <h3 class="system-insight-title">El voto está fragmentado</h3>
+        <p class="system-insight-desc">
+          En el Perú participan muchos partidos, por lo que los votos se reparten entre varias opciones. Esto hace que incluso el presidente electo difícilmente tenga mayoría en el Congreso.
+        </p>
+      </article>
+
+      <article class="system-insight-card">
+        <h3 class="system-insight-title">El voto preferencial influye dentro del partido</h3>
+        <p class="system-insight-desc">
+          Tu voto primero ayuda al partido a superar la valla electoral. Luego, el voto preferencial define qué candidatos de ese partido obtienen los escaños.
+        </p>
+      </article>
+
+      <article class="system-insight-card">
+        <h3 class="system-insight-title">Los incentivos del sistema</h3>
+        <p class="system-insight-desc">
+          En algunos casos, candidatos muy conocidos, incluidos candidatos presidenciales, encabezan listas al Congreso. Si no ganan la presidencia, pueden acceder a un escaño gracias al voto preferencial. Esto contribuye a un Congreso con múltiples fuerzas políticas.
+        </p>
+      </article>
+    </div>
+  </section>
+
+  <!-- ═══ EXPLORA OTRO ESCENARIO ══════════════════════════════════════════ -->
+  <section class="what-if-sect">
+    <h2 class="section-label">Explora otro escenario</h2>
+
+    <p class="what-if-intro">
+      Tu resultado muestra lo que pasó con tu voto. Aquí puedes comparar, de forma simple, qué cambia cuando el apoyo se concentra en un solo partido o se reparte entre varios.
+    </p>
+
+    <div class="what-if-toggle" role="tablist" aria-label="Comparar escenarios de voto">
+      <button
+        type="button"
+        class="what-if-btn"
+        class:is-active={whatIfScenario === 'concentrar'}
+        aria-pressed={whatIfScenario === 'concentrar'}
+        onclick={() => whatIfScenario = 'concentrar'}
+      >
+        Concentrar voto
+      </button>
+      <button
+        type="button"
+        class="what-if-btn"
+        class:is-active={whatIfScenario === 'dividir'}
+        aria-pressed={whatIfScenario === 'dividir'}
+        onclick={() => whatIfScenario = 'dividir'}
+      >
+        Dividir voto
+      </button>
+    </div>
+
+    {#if whatIfScenario === 'concentrar'}
+      <div class="what-if-card">
+        <p class="what-if-result">
+          Cuando el voto se concentra en un mismo partido, ese partido obtiene una mayor proporción de escaños en el Congreso.
+          Luego de esa distribución, el voto preferencial define qué candidatos de ese partido ocupan esos escaños.
+        </p>
+      </div>
+    {:else}
+      <div class="what-if-card">
+        <p class="what-if-result">
+          Cuando el voto se reparte entre distintos partidos, los escaños se distribuyen entre más fuerzas políticas.
+          Después de esa distribución, el voto preferencial define qué candidatos de cada partido ocupan esos escaños.
+        </p>
+      </div>
+    {/if}
+  </section>
+
   <!-- ═══ SIMULAR DE NUEVO + FEEDBACK ══════════════════════════════════════ -->
   <section class="closing-sect">
     <button class="btn-primary" onclick={handleRestart} disabled={restarting}>
@@ -345,12 +426,13 @@
 
     <div class="feedback-block">
       <p class="feedback-title">¿Te ayudó esta herramienta?</p>
-      <p class="feedback-sub">Tu opinión ayuda a mejorar esta herramienta educativa.</p>
+      <p class="feedback-sub">Tu opinión ayuda a mejorar.</p>
       <div class="feedback-actions">
-        <button class="btn-ghost" onclick={() => showHelpPanel = true}>Enviar sugerencia</button>
+        <button class="btn-ghost" onclick={() => showHelpPanel = true}>Contacto</button>
         <button class="btn-ghost" onclick={() => showShareModal = true}>Compartir</button>
       </div>
     </div>
+
   </section>
 
 </div>
@@ -359,8 +441,9 @@
   /* ─────────────────────────────────────────────────────────────────────────
      Base
   ───────────────────────────────────────────────────────────────────────── */
+  :global(html),
   :global(body) {
-    background: #0b1220;
+    background: #0b1220 !important;
     color: #e2e8f0;
     font-family: system-ui, -apple-system, sans-serif;
   }
@@ -372,6 +455,8 @@
     display: flex;
     flex-direction: column;
     gap: 56px;
+    background: #0b1220;
+    min-height: 100dvh;
   }
 
   /* ─────────────────────────────────────────────────────────────────────────
@@ -864,6 +949,106 @@
   }
 
   /* ─────────────────────────────────────────────────────────────────────────
+     System insights
+  ───────────────────────────────────────────────────────────────────────── */
+  .system-insights-sect {
+    margin-top: 48px;
+  }
+
+  .system-insights-intro {
+    margin-bottom: 18px;
+  }
+
+  .system-insights-intro-text {
+    font-size: 14px;
+    color: rgba(226, 232, 240, 0.72);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .system-insights-stack {
+    display: grid;
+    gap: 14px;
+  }
+
+  .system-insight-card {
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 12px;
+    padding: 18px 20px;
+  }
+
+  .system-insight-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #f1f5f9;
+    line-height: 1.35;
+    margin: 0 0 8px;
+  }
+
+  .system-insight-desc {
+    font-size: 13px;
+    color: rgba(203, 213, 225, 0.75);
+    line-height: 1.65;
+    margin: 0;
+  }
+
+  /* ─────────────────────────────────────────────────────────────────────────
+     What-if / scenario explorer
+  ───────────────────────────────────────────────────────────────────────── */
+  .what-if-sect {
+    margin-top: 40px;
+  }
+
+  .what-if-intro {
+    font-size: 14px;
+    color: rgba(220, 230, 242, 0.78);
+    line-height: 1.6;
+    margin: 12px 0 16px;
+  }
+
+  .what-if-toggle {
+    display: inline-flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+
+  .what-if-btn {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.03);
+    color: rgba(230, 238, 248, 0.72);
+    border-radius: 999px;
+    padding: 9px 16px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+
+  .what-if-btn.is-active {
+    background: rgba(255, 255, 255, 0.09);
+    border-color: rgba(255, 255, 255, 0.18);
+    color: #f4f7fb;
+    font-weight: 600;
+  }
+
+  .what-if-card {
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 12px;
+    padding: 18px 20px;
+  }
+
+  .what-if-result {
+    font-size: 13px;
+    color: rgba(203, 213, 225, 0.78);
+    line-height: 1.65;
+    margin: 0;
+  }
+
+  /* ─────────────────────────────────────────────────────────────────────────
      Closing section
   ───────────────────────────────────────────────────────────────────────── */
   .closing-sect {
@@ -972,5 +1157,101 @@
       transform: rotate(90deg);
       height: 24px;
     }
+  }
+
+  /* ─────────────────────────────────────────────────────────────────────────
+     About / Authors
+  ───────────────────────────────────────────────────────────────────────── */
+  .about-project-block {
+    margin-top: 32px;
+    width: 100%;
+  }
+
+  .about-project-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(200, 210, 220, 0.55);
+    margin: 0 0 8px;
+  }
+
+  .about-project-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #f4f7fb;
+    margin: 0 0 8px;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .about-project-desc {
+    font-size: 13px;
+    color: rgba(220, 230, 242, 0.72);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .authors-grid {
+    display: grid;
+    gap: 14px;
+    width: 100%;
+    margin-top: 16px;
+  }
+
+  @media (min-width: 560px) {
+    .authors-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .author-card {
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .author-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: #94a3b8;
+    margin-bottom: 10px;
+    flex-shrink: 0;
+  }
+
+  .author-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #f1f5f9;
+    margin: 0;
+  }
+
+  .author-role {
+    font-size: 12px;
+    color: rgba(220, 230, 242, 0.55);
+    margin: 3px 0 12px;
+  }
+
+  .author-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: auto;
+  }
+
+  .author-actions .btn-ghost {
+    font-size: 12px;
+    padding: 7px 14px;
+    text-decoration: none;
   }
 </style>

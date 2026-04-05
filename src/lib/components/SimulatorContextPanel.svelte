@@ -13,6 +13,7 @@
     onToggleVideo?: () => void;
     activeIdx?: number;
     onNextStep?: () => void;
+    onDeliver?: () => void;
     /** 'peek' = step context only (no help/video) */
     panelMode?: 'peek' | 'full';
   }
@@ -21,6 +22,7 @@
     onToggleVideo,
     activeIdx: activeIdxProp = undefined,
     onNextStep,
+    onDeliver,
     panelMode = 'full',
   }: Props = $props();
 
@@ -29,6 +31,7 @@
     colId: string;
     title: string;
     briefEducation: string;
+    education: string;
     hasPreferential: boolean;
   };
 
@@ -37,35 +40,40 @@
       key: 'presidente',
       colId: 'col0',
       title: 'Presidencia',
-      briefEducation: 'Elige una sola fórmula presidencial. Un voto, una decisión.',
+      briefEducation: 'Aquí eliges una sola opción para presidente y vicepresidentes.',
+      education: 'Este voto impacta directamente en la elección presidencial.',
       hasPreferential: false,
     },
     {
       key: 'senadoNacional',
       colId: 'col1',
       title: 'Senado nacional',
-      briefEducation: 'Primero elige partido. El voto preferencial decide qué candidatos entran.',
+      briefEducation: 'Elige un partido. Si quieres, también puedes marcar hasta 2 números preferenciales.',
+      education: 'Este número cuenta si el partido pasa la valla y obtiene puestos. Define qué candidatos del partido finalmente entran al congreso.',
       hasPreferential: true,
     },
     {
       key: 'senadoRegional',
       colId: 'col2',
       title: 'Senado regional',
-      briefEducation: 'Primero elige partido. El voto preferencial decide qué candidatos entran.',
+      briefEducation: 'Elige un partido. Si quieres, también puedes marcar un número preferencial.',
+      education: 'Este número cuenta si el partido pasa la valla y obtiene puestos. Define qué candidatos del partido finalmente entran al congreso.',
       hasPreferential: true,
     },
     {
       key: 'diputados',
       colId: 'col3',
       title: 'Diputados',
-      briefEducation: 'Tu voto es primero por partido. Luego influyes en qué candidatos entran.',
+      briefEducation: 'Elige un partido. Si quieres, también puedes marcar hasta 2 números preferenciales.',
+      education: 'Este número cuenta si el partido pasa la valla y obtiene puestos. Define qué candidatos del partido finalmente entran al congreso.',
       hasPreferential: true,
     },
     {
       key: 'parlamentoAndino',
       colId: 'col4',
       title: 'Parlamento Andino',
-      briefEducation: 'Primero elige partido. El voto preferencial decide qué candidatos entran.',
+      briefEducation: 'Elige un partido. Si quieres, también puedes marcar hasta 2 números preferenciales.',
+      education: 'Este número cuenta si el partido pasa la valla y obtiene puestos. Define qué candidatos del partido finalmente entran al congreso.',
       hasPreferential: true,
     },
   ];
@@ -114,7 +122,7 @@
       <!-- Local state -->
       <div class="local-state" class:has-vote={!!currentVote}>
         {#if !currentVote}
-          <span class="state-empty">No has marcado una opción.</span>
+          <span class="state-empty">Aún no has marcado una opción.</span>
         {:else}
           <div class="state-filled">
             <span class="state-label">Has elegido</span>
@@ -126,13 +134,25 @@
         {/if}
       </div>
 
+      <!-- Education block -->
+      <div class="ctx-education">
+        <p>{currentStep.education}</p>
+      </div>
+
       <!-- Single primary CTA -->
       {#if ballotStatus !== 'complete' && onNextStep}
         <button class="primary-cta" onclick={onNextStep}>
           {ctaLabel}
         </button>
       {:else if ballotStatus === 'complete'}
-        <p class="complete-hint">Cédula completa — abre el resumen desde la cabecera para entregar.</p>
+        <button class="deliver-cta" onclick={onDeliver}>
+          <span class="deliver-icon" aria-hidden="true">✓</span>
+          <span class="deliver-text">
+            <span class="deliver-title">Cédula completa</span>
+            <span class="deliver-sub">Toca aquí para entregar y ver resultados</span>
+          </span>
+          <span class="deliver-arrow" aria-hidden="true">→</span>
+        </button>
       {/if}
 
     </div>
@@ -147,13 +167,19 @@
         <span class="help-chevron" class:rotated={showVideo} aria-hidden="true">›</span>
       </button>
       {#if showVideo}
-        <div class="video-body" transition:fly={{ y: -8, duration: 220 }}>
-          <p class="video-desc">Aprende a recorrer la cédula, marcar correctamente y evitar errores comunes.</p>
-          <div class="video-frame">
-            <video class="video-player" autoplay muted loop playsinline preload="auto">
-              <source src="/videos/demo.mp4" type="video/mp4" />
-            </video>
-          </div>
+        <div class="pref-explainer" transition:fly={{ y: -8, duration: 220 }}>
+          <p class="pref-item">
+            <span class="pref-label">¿Qué es?</span>
+            Después de elegir partido, puedes indicar qué candidatos específicos del partido prefieres que entren al congreso.
+          </p>
+          <p class="pref-item">
+            <span class="pref-label">¿Siempre cuenta?</span>
+            Solo si tu partido supera la valla electoral. Si no la pasa, ninguno de sus candidatos entra, independientemente del número que marcaste.
+          </p>
+          <p class="pref-item">
+            <span class="pref-label">¿Es obligatorio?</span>
+            No. Puedes votar solo por partido y dejar el número en blanco.
+          </p>
         </div>
       {/if}
     </div>
@@ -250,6 +276,21 @@
   .state-party { font-size: 14px; font-weight: 700; color: #e2e8f0; line-height: 1.3; }
   .state-prefs { font-size: 12px; color: #94a3b8; }
 
+  /* ── Education block ─────────────────────────────────────────────────────── */
+  .ctx-education {
+    padding: 10px 12px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 8px;
+    border-left: 3px solid #C8102E;
+  }
+
+  .ctx-education p {
+    font-size: 12px;
+    color: #94a3b8;
+    line-height: 1.6;
+    margin: 0;
+  }
+
   /* ── Primary CTA ─────────────────────────────────────────────────────────── */
   .primary-cta {
     width: 100%;
@@ -270,17 +311,78 @@
 
   .primary-cta:hover { background: #1e4080; color: #93c5fd; }
 
-  /* ── Complete hint ───────────────────────────────────────────────────────── */
-  .complete-hint {
-    font-size: 12px;
-    color: #4ade80;
-    line-height: 1.55;
-    margin: 0;
-    padding: 10px 12px;
-    background: rgba(34,197,94,0.05);
-    border: 1px solid rgba(34,197,94,0.2);
+  /* ── Deliver CTA ─────────────────────────────────────────────────────────── */
+  .deliver-cta {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 13px 14px;
+    border: 1px solid rgba(34,197,94,0.35);
     border-radius: 8px;
-    text-align: center;
+    background: linear-gradient(135deg, rgba(34,197,94,0.12) 0%, rgba(21,128,61,0.18) 100%);
+    color: #4ade80;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    transition: background 0.18s ease, border-color 0.18s ease, transform 0.12s ease;
+  }
+
+  .deliver-cta:hover {
+    background: linear-gradient(135deg, rgba(34,197,94,0.18) 0%, rgba(21,128,61,0.26) 100%);
+    border-color: rgba(34,197,94,0.55);
+    transform: translateY(-1px);
+  }
+
+  .deliver-cta:active {
+    transform: translateY(0);
+  }
+
+  .deliver-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(34,197,94,0.18);
+    border: 1px solid rgba(34,197,94,0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .deliver-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .deliver-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #4ade80;
+    line-height: 1.2;
+  }
+
+  .deliver-sub {
+    font-size: 11px;
+    color: rgba(74,222,128,0.7);
+    line-height: 1.3;
+  }
+
+  .deliver-arrow {
+    font-size: 16px;
+    color: rgba(74,222,128,0.5);
+    flex-shrink: 0;
+    transition: transform 0.15s ease;
+  }
+
+  .deliver-cta:hover .deliver-arrow {
+    transform: translateX(3px);
+    color: rgba(74,222,128,0.8);
   }
 
   /* ── Help section ────────────────────────────────────────────────────────── */
@@ -332,16 +434,27 @@
 
   .help-chevron.rotated { transform: rotate(90deg); }
 
-  .video-body { padding: 0 16px 12px; }
-
-  .video-desc { font-size: 12px; color: #64748b; line-height: 1.5; margin: 0 0 10px; }
-
-  .video-frame {
-    background: #1a1a1a;
-    border-radius: 10px;
-    overflow: hidden;
-    border: 1px solid #334155;
+  .pref-explainer {
+    padding: 0 16px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
   }
 
-  .video-player { width: 100%; height: auto; display: block; max-height: 280px; background: #000; }
+  .pref-item {
+    font-size: 12px;
+    color: #64748b;
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .pref-label {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #475569;
+    margin-bottom: 2px;
+  }
 </style>

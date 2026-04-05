@@ -150,9 +150,10 @@ export function toggleSymbolSelection(columnKey: ColumnKey, rowId: string) {
   const isSelected = selectedRowByColumn[columnKey] === rowId;
   
   if (isSelected) {
-    // Deseleccionar: limpiar preferencias y cerrar picker
+    // Deseleccionar: limpiar preferencias, cerrar picker y sincronizar vote store
     clearRowPreferences(rowId, columnKey);
     deselectRow(columnKey);
+    removeVote(columnKey);
     
     // Cerrar picker si estaba abierto para esta fila
     if (activePicker?.columnKey === columnKey && activePicker?.rowId === rowId) {
@@ -277,8 +278,9 @@ export function togglePresidentSymbol(rowId: string) {
     // Si ambos quedan desmarcados, deseleccionar la fila completamente
     if (!newSymbolSelected && !newPhotoSelected) {
       presidentSelectedRowId = null;
+      vote.remove(columnKeyToId.presidente);
     }
-    
+
     presidentSelections = {
       ...presidentSelections,
       [rowId]: {
@@ -287,7 +289,7 @@ export function togglePresidentSymbol(rowId: string) {
       }
     };
   }
-  
+
   persistPresidentSelections();
   persistPresidentRow();
 }
@@ -318,8 +320,9 @@ export function togglePresidentPhoto(rowId: string) {
     // Si ambos quedan desmarcados, deseleccionar la fila completamente
     if (!newSymbolSelected && !newPhotoSelected) {
       presidentSelectedRowId = null;
+      vote.remove(columnKeyToId.presidente);
     }
-    
+
     presidentSelections = {
       ...presidentSelections,
       [rowId]: {
@@ -328,7 +331,7 @@ export function togglePresidentPhoto(rowId: string) {
       }
     };
   }
-  
+
   persistPresidentSelections();
   persistPresidentRow();
 }

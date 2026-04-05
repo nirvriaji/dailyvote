@@ -1,29 +1,19 @@
 <script lang="ts">
   import { fade, fly } from 'svelte/transition';
-  
+
   interface Props {
     isOpen: boolean;
     onClose: () => void;
   }
-  
+
   let { isOpen, onClose }: Props = $props();
-  
-  // Contact URLs
-  const X_URL = 'https://x.com/nirvriaji';
-  const LINKEDIN_URL = 'https://www.linkedin.com/in/irvin-pereyra/';
-  
-  // Determine if mobile
+
   let isMobile = $derived(typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
-  
+
   function handleKeydown(event: KeyboardEvent) {
     if (event.key === 'Escape' && isOpen) {
       onClose();
     }
-  }
-  
-  function openLink(url: string) {
-    window.open(url, '_blank', 'noopener,noreferrer');
-    onClose();
   }
 </script>
 
@@ -31,57 +21,46 @@
 
 {#if isOpen}
   <!-- Backdrop -->
-  <div 
-    class="help-backdrop" 
+  <div
+    class="help-backdrop"
     onclick={onClose}
     transition:fade={{ duration: 200 }}
   ></div>
-  
+
   <!-- Panel -->
-  <div 
+  <div
     class="help-panel"
     class:mobile={isMobile}
     transition:fly={{ y: isMobile ? 100 : 20, duration: 300 }}
   >
     <!-- Header -->
     <div class="help-header">
-      <h3 class="help-title">¿Necesitas algo?</h3>
+      <h3 class="help-title">Contacto</h3>
       <button class="help-close" onclick={onClose} aria-label="Cerrar">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M18 6L6 18M6 6l12 12"/>
         </svg>
       </button>
     </div>
-    
-    <p class="help-subtitle">
-      Escríbenos si quieres sugerir mejoras, reportar un problema o ponerte en contacto.
-    </p>
-    
-    <!-- Options -->
-    <div class="help-options">
-      <button 
-        class="help-option"
-        onclick={() => openLink(X_URL)}
-      >
-        <span class="option-title">Enviar sugerencia</span>
-        <span class="option-subtitle">Ayúdanos a mejorar el simulador</span>
-      </button>
-      
-      <button 
-        class="help-option"
-        onclick={() => openLink(X_URL)}
-      >
-        <span class="option-title">Reportar un problema</span>
-        <span class="option-subtitle">Si algo no funciona como esperabas</span>
-      </button>
-      
-      <button 
-        class="help-option"
-        onclick={() => openLink(LINKEDIN_URL)}
-      >
-        <span class="option-title">Contacto</span>
-        <span class="option-subtitle">Para consultas, prensa o colaboraciones</span>
-      </button>
+
+    <div class="authors-grid">
+      <div class="author-card">
+        <p class="author-name">Irvin Pereyra</p>
+        <p class="author-role">Desarrollo de software</p>
+        <div class="author-actions">
+          <a href="https://x.com/nirvriaji" target="_blank" rel="noopener" class="author-btn">Ver en X</a>
+          <a href="https://www.linkedin.com/in/irvin-pereyra/" target="_blank" rel="noopener" class="author-btn">Ver LinkedIn</a>
+        </div>
+      </div>
+
+      <div class="author-card">
+        <p class="author-name">Adolfo Coll Cárdenas</p>
+        <p class="author-role">Dirección de producto</p>
+        <div class="author-actions">
+          <a href="mailto:adolfcoll65@gmail.com" class="author-btn">Enviar correo</a>
+          <a href="https://www.linkedin.com/in/adolfo-coll-cardenas" target="_blank" rel="noopener" class="author-btn">Ver LinkedIn</a>
+        </div>
+      </div>
     </div>
   </div>
 {/if}
@@ -97,39 +76,52 @@
   .help-panel {
     position: fixed;
     z-index: 999;
-    width: 320px;
-    padding: 16px;
+    width: 360px;
+    padding: 20px;
     border-radius: 16px;
     background: #111827;
     border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
-    
-    /* Desktop: centered horizontally near top */
     top: 80px;
     left: 50%;
     transform: translateX(-50%);
   }
 
   .help-panel.mobile {
-    /* Mobile: bottom sheet style */
     top: auto;
     bottom: 0;
     left: 0;
     right: 0;
     width: 100%;
+    transform: none;
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
     border-top-left-radius: 20px;
     border-top-right-radius: 20px;
-    min-height: 280px;
     padding: 20px;
+  }
+
+  @media (max-width: 768px) {
+    .help-panel {
+      top: auto;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
+      transform: none;
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+      border-top-left-radius: 20px;
+      border-top-right-radius: 20px;
+      padding: 20px;
+    }
   }
 
   .help-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 8px;
+    margin-bottom: 16px;
   }
 
   .help-title {
@@ -155,45 +147,58 @@
     color: #F9FAFB;
   }
 
-  .help-subtitle {
-    font-size: 13px;
-    line-height: 1.4;
-    color: #9CA3AF;
-    margin: 0 0 16px 0;
-  }
-
-  .help-options {
+  .authors-grid {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 12px;
   }
 
-  .help-option {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding: 12px;
+  .author-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.07);
     border-radius: 12px;
-    background: transparent;
-    border: none;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
     text-align: left;
-    cursor: pointer;
-    transition: background 0.2s ease;
   }
 
-  .help-option:hover {
-    background: rgba(255, 255, 255, 0.06);
-  }
-
-  .option-title {
+  .author-name {
     font-size: 14px;
     font-weight: 700;
-    color: #F9FAFB;
+    color: #f1f5f9;
+    margin: 0;
   }
 
-  .option-subtitle {
+  .author-role {
     font-size: 12px;
-    line-height: 1.3;
-    color: #9CA3AF;
+    color: rgba(148, 163, 184, 0.8);
+    margin: 2px 0 10px;
+  }
+
+  .author-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .author-btn {
+    display: inline-block;
+    padding: 6px 12px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 12px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: border-color 0.15s ease, color 0.15s ease;
+    font-family: inherit;
+  }
+
+  .author-btn:hover {
+    border-color: rgba(255, 255, 255, 0.25);
+    color: rgba(255, 255, 255, 0.9);
   }
 </style>

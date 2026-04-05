@@ -137,10 +137,13 @@
     mobilePanelState === 'peek'   ? '45dvh' : '65dvh'
   );
 
-  // ─── Suppress IntersectionObserver during programmatic scroll ────────────────
-  let _suppressObserver = false;
-
   // ─── Scroll active column into view ─────────────────────────────────────────
+  // _activeIdxFromScroll: true when activeIdx was set by the mobile scroll observer.
+  // When the user already scrolled to the column, the $effect should not
+  // programmatically scroll back — that creates a feedback loop that blocks
+  // further manual swipes for up to 700ms.
+  let _activeIdxFromScroll = false;
+  let _suppressObserver    = false; // only used when $effect does a real programmatic scroll
   let _scrollEffectFirstRun = true;
 
   $effect(() => {
@@ -148,11 +151,13 @@
     if (_scrollEffectFirstRun) { _scrollEffectFirstRun = false; return; }
     if (!ballotScroller) return;
 
+    // User already scrolled here — panel update is enough, no need to move viewport.
+    if (_activeIdxFromScroll) { _activeIdxFromScroll = false; return; }
+
     const colEl = ballotScroller.querySelector<HTMLElement>(`[data-col-id="${STEP_COL_IDS[idx]}"]`);
     if (!colEl) return;
 
-    // Only scroll if the column isn't already fully visible — hovering a centered
-    // column should update the panel context without moving the viewport.
+    // Only scroll if the column isn't already fully visible (desktop hover case).
     const rootRect = ballotScroller.getBoundingClientRect();
     const colRect  = colEl.getBoundingClientRect();
     const fullyVisible = colRect.left >= rootRect.left - 2 && colRect.right <= rootRect.right + 2;
@@ -261,9 +266,6 @@
     if (isSubmitting || isTransitioning) return;
     isTransitioning = true;
 
-    // Fire-and-forget to Firebase
-    vote.submitVotes().catch(() => {});
-
     // Hold the transition screen for effect
     await new Promise(r => setTimeout(r, 1400));
     goto('/resultados');
@@ -326,7 +328,10 @@
 
           if (bestEl) {
             const idx = STEP_COL_IDS.indexOf(bestEl.dataset.colId!);
-            if (idx !== -1 && idx !== activeIdx) activeIdx = idx;
+            if (idx !== -1 && idx !== activeIdx) {
+              _activeIdxFromScroll = true; // tell $effect not to scroll back
+              activeIdx = idx;
+            }
           }
         }, 120);
       }
@@ -421,6 +426,7 @@
         {showVideo}
         {activeIdx}
         onNextStep={handleNextStep}
+        onDeliver={handleDeliver}
         onToggleVideo={() => showVideo = !showVideo}
       />
     </aside>
@@ -465,6 +471,7 @@
           onToggleVideo={() => showVideo = !showVideo}
           {activeIdx}
           onNextStep={handleNextStep}
+          onDeliver={handleDeliver}
           panelMode={mobilePanelState === 'full' ? 'full' : 'peek'}
         />
       </div>
