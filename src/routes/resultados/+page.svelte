@@ -806,7 +806,7 @@
   .flow-track-animated {
     display: flex;
     flex-wrap: wrap;
-    align-items: flex-start;
+    align-items: stretch;
     gap: 8px;
   }
 
@@ -909,6 +909,7 @@
     color: #334155;
     padding-top: 18px;
     flex-shrink: 0;
+    align-self: flex-start;
   }
 
   /* ─────────────────────────────────────────────────────────────────────────
