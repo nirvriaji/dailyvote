@@ -21,7 +21,6 @@
   ] as const;
 
   // ─── State ───────────────────────────────────────────────────────────────────
-  let arriving = $state(true);
 
   // ─── Protagonist flow (Senado nacional) ──────────────────────────────────────
   let protagonistStep    = $state(0);
@@ -77,7 +76,6 @@
     if (savedVotes && vote.count === 0) vote.hydrate(savedVotes);
     loadPreferencesFromStorage();
 
-    setTimeout(() => { arriving = false; }, 1200);
 
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
@@ -112,20 +110,6 @@
   <meta property="twitter:image" content="https://lafechamasimportante.com/favicon.svg" />
 </svelte:head>
 
-<!-- ── Entry veil ─────────────────────────────────────────────────────────── -->
-{#if arriving}
-  <div class="arrival-veil" out:fade={{ duration: 600 }}>
-    <div class="arrival-inner">
-      <div class="arrival-check">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="20 6 9 17 4 12"/>
-        </svg>
-      </div>
-      <p class="arrival-title">Tu voto fue registrado</p>
-      <p class="arrival-sub">Preparando la explicación...</p>
-    </div>
-  </div>
-{/if}
 
 <!-- ── Modales ────────────────────────────────────────────────────────────── -->
 <HelpPanel isOpen={showHelpPanel} onClose={() => showHelpPanel = false} />
@@ -546,47 +530,6 @@
   /* ─────────────────────────────────────────────────────────────────────────
      Entry veil
   ───────────────────────────────────────────────────────────────────────── */
-  .arrival-veil {
-    position: fixed;
-    inset: 0;
-    background: #0b1220;
-    z-index: 999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .arrival-inner {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 14px;
-    text-align: center;
-  }
-
-  .arrival-check {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    background: rgba(34, 197, 94, 0.12);
-    border: 1px solid rgba(34, 197, 94, 0.3);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .arrival-title {
-    font-size: 20px;
-    font-weight: 700;
-    color: #f1f5f9;
-    margin: 0;
-  }
-
-  .arrival-sub {
-    font-size: 14px;
-    color: #64748b;
-    margin: 0;
-  }
 
   /* ─────────────────────────────────────────────────────────────────────────
      Section label
