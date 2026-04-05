@@ -93,6 +93,7 @@
     getValidColumnCount() === 5 ? 'complete' : getValidColumnCount() === 0 ? 'blank' : 'partial'
   );
 
+
   // ─── Simulation status ───────────────────────────────────────────────────────
   let canSimulate = $state(true);
 
@@ -108,9 +109,6 @@
   let headerEl: HTMLElement | null = $state(null);
   let headerH = $state(88);
 
-  // ─── Video help toggle ───────────────────────────────────────────────────────
-  let showVideo = $state(false);
-
   // ─── Delivery / transition ───────────────────────────────────────────────────
   let isSubmitting  = $state(false);
   let isTransitioning = $state(false);
@@ -122,7 +120,7 @@
   const STEP_LABELS = ['Presidencia', 'Senado nacional', 'Senado regional', 'Diputados', 'Parlamento Andino'];
 
   // ─── Mobile bottom sheet state ───────────────────────────────────────────────
-  let mobilePanelState = $state<'hidden' | 'peek' | 'full'>('peek');
+  let mobilePanelState = $state<'hidden' | 'peek' | 'full'>('full');
 
   // ─── Desktop hover lock ──────────────────────────────────────────────────────
   let lockedIdx = $state<number | null>(null);
@@ -254,12 +252,13 @@
   function handleTouchEnd(e: TouchEvent) {
     const dy = _touchStartY - e.changedTouches[0].clientY;
     if (Math.abs(dy) < 10) {
-      // tap: cycle peek↔full, or hidden→peek
-      mobilePanelState = mobilePanelState === 'full' ? 'peek' : 'full';
+      // tap: prevent subsequent click event from double-toggling
+      e.preventDefault();
+      mobilePanelState = mobilePanelState === 'hidden' ? 'full' : 'hidden';
     } else if (dy > 30) {
-      mobilePanelState = mobilePanelState === 'hidden' ? 'peek' : 'full';
+      mobilePanelState = 'full';
     } else if (dy < -30) {
-      mobilePanelState = mobilePanelState === 'full' ? 'peek' : 'hidden';
+      mobilePanelState = 'hidden';
     }
   }
 
@@ -426,11 +425,9 @@
     <!-- Context panel — desktop (right sidebar) -->
     <aside class="context-panel-desktop" aria-label="Guía de votación">
       <SimulatorContextPanel
-        {showVideo}
         {activeIdx}
         onNextStep={handleNextStep}
         onDeliver={handleDeliver}
-        onToggleVideo={() => showVideo = !showVideo}
       />
     </aside>
 
@@ -446,14 +443,15 @@
     aria-label="Guía de votación"
     role="complementary"
   >
-    <!-- Drag handle -->
+    <!-- Drag handle — visible solo cuando colapsado (CSS transition, no {#if}) -->
     <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
     <div
       class="mobile-handle"
+      class:handle-hidden={mobilePanelState !== 'hidden'}
       ontouchstart={handleTouchStart}
       ontouchend={handleTouchEnd}
-      onclick={() => { mobilePanelState = mobilePanelState === 'full' ? 'peek' : 'full'; }}
-      onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { mobilePanelState = mobilePanelState === 'full' ? 'peek' : 'full'; } }}
+      onclick={() => { mobilePanelState = 'full'; }}
+      onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { mobilePanelState = 'full'; } }}
       role="button"
       tabindex="0"
       aria-expanded={mobilePanelState !== 'hidden'}
@@ -462,23 +460,36 @@
       <div class="handle-pill"></div>
       <div class="handle-row">
         <span class="mobile-step-label">Paso {activeIdx + 1} de 5 — {STEP_LABELS[activeIdx]}</span>
-        <span class="mobile-chevron" class:up={mobilePanelState === 'full'}>›</span>
+        <span class="mobile-chevron">›</span>
       </div>
     </div>
 
-    <!-- Panel content — only when not hidden -->
-    {#if mobilePanelState !== 'hidden'}
+    <!-- Panel content colapsable -->
+    <div class="mobile-collapsible" class:is-collapsed={mobilePanelState === 'hidden'}>
       <div class="mobile-panel-content">
         <SimulatorContextPanel
-          {showVideo}
-          onToggleVideo={() => showVideo = !showVideo}
           {activeIdx}
           onNextStep={handleNextStep}
           onDeliver={handleDeliver}
-          panelMode={mobilePanelState === 'full' ? 'full' : 'peek'}
+          onCollapse={() => { mobilePanelState = 'hidden'; }}
+          panelMode="full"
+          showCta={false}
         />
       </div>
-    {/if}
+    </div>
+
+    <!-- CTA siempre visible -->
+    <div class="mobile-cta-bar">
+      {#if ballotStatus === 'complete'}
+        <button class="mobile-cta-deliver" onclick={handleDeliver} type="button">
+          <span>✓</span> Entregar cédula y ver resultados
+        </button>
+      {:else}
+        <button class="mobile-cta-next" onclick={handleNextStep} type="button">
+          {isColumnValid(STEP_KEYS[activeIdx]) ? 'Continuar' : 'Continuar sin elegir'}
+        </button>
+      {/if}
+    </div>
   </div>
 
   <!-- ── Global summary drawer ────────────────────────────────────────────────── -->
@@ -603,13 +614,7 @@
       z-index: 50;
       background: #0f172a;
       border-top: 1px solid #1e293b;
-      transition: height 0.22s ease;
-      overflow: hidden;
     }
-
-    .context-panel-mobile.state-hidden { height: 48px; }
-    .context-panel-mobile.state-peek   { height: 45dvh; }
-    .context-panel-mobile.state-full   { height: 65dvh; }
   }
 
   /* ── Mobile handle bar ─────────────────────────────────────────────────── */
@@ -626,6 +631,24 @@
     justify-content: center;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
+    overflow: hidden;
+    max-height: 80px;
+    opacity: 1;
+    transition: max-height 0.25s ease, opacity 0.2s ease, padding 0.25s ease, min-height 0.25s ease, border-color 0.25s ease;
+  }
+
+  .mobile-handle.handle-hidden {
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    min-height: 0;
+    border-bottom-color: transparent;
+    pointer-events: none;
+  }
+
+  .mobile-handle:active {
+    background: rgba(255, 255, 255, 0.04);
   }
 
   .handle-pill {
@@ -652,8 +675,9 @@
   }
 
   .mobile-chevron {
-    font-size: 20px;
-    color: #475569;
+    font-size: 40px;
+    line-height: 0;
+    color: #3b82f6;
     font-weight: 300;
     transform: rotate(-90deg);
     transition: transform 0.22s ease;
@@ -664,19 +688,72 @@
     transform: rotate(90deg);
   }
 
-  /* ── Mobile panel content ──────────────────────────────────────────────── */
+  /* ── Mobile collapsible content ────────────────────────────────────────── */
+  .mobile-collapsible {
+    overflow: hidden;
+    max-height: 55dvh;
+    transition: max-height 0.25s ease;
+    border-bottom: none;
+  }
+
+  .mobile-collapsible.is-collapsed {
+    max-height: 0;
+  }
+
   .mobile-panel-content {
-    flex: 1;
     overflow-y: auto;
-    min-height: 0;
+    max-height: 55dvh;
   }
 
   .mobile-panel-content :global(.panel) {
     height: auto;
-    min-height: 0;
     border-left: none;
     border-top: none;
+    overflow-y: visible;
   }
+
+  /* ── Mobile CTA bar (siempre visible) ──────────────────────────────────── */
+  .mobile-cta-bar {
+    padding: 10px 16px 12px;
+    border-top: 1px solid #1e293b;
+    flex-shrink: 0;
+  }
+
+  .mobile-cta-next {
+    width: 100%;
+    padding: 12px 16px;
+    background: #3b82f6;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mobile-cta-next:active { background: #2563eb; }
+
+  .mobile-cta-deliver {
+    width: 100%;
+    padding: 12px 16px;
+    background: #16a34a;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    -webkit-tap-highlight-color: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .mobile-cta-deliver:active { background: #15803d; }
 
   .mobile-panel-content :global(.cta-area) {
     position: static;

@@ -6,24 +6,25 @@
   } from '$lib/stores/preferencePicker.svelte';
   import type { ColumnKey } from '$lib/stores/preferencePicker.svelte';
   import { vote } from '$lib/stores/vote.svelte';
-  import { fade, fly } from 'svelte/transition';
+  import { fade } from 'svelte/transition';
 
   interface Props {
-    showVideo?: boolean;
-    onToggleVideo?: () => void;
     activeIdx?: number;
     onNextStep?: () => void;
     onDeliver?: () => void;
+    onCollapse?: () => void;
     /** 'peek' = step context only (no help/video) */
     panelMode?: 'peek' | 'full';
+    /** false = hide CTA buttons (used when parent renders them externally) */
+    showCta?: boolean;
   }
   let {
-    showVideo = false,
-    onToggleVideo,
     activeIdx: activeIdxProp = undefined,
     onNextStep,
     onDeliver,
+    onCollapse,
     panelMode = 'full',
+    showCta = true,
   }: Props = $props();
 
   type StepConfig = {
@@ -108,11 +109,16 @@
 <div class="panel">
 
   {#key activeIdx}
-    <div class="step-body" transition:fade={{ duration: 180 }}>
+    <div class="step-body" out:fade={{ duration: 120 }} in:fade={{ duration: 200, delay: 130 }}>
 
       <!-- Step header -->
       <div class="step-header">
-        <span class="step-eyebrow">Paso {activeIdx + 1} de 5</span>
+        <div class="step-eyebrow-row">
+          <span class="step-eyebrow">Paso {activeIdx + 1} de 5</span>
+          {#if onCollapse}
+            <button class="collapse-btn" onclick={onCollapse} type="button" aria-label="Cerrar panel">›</button>
+          {/if}
+        </div>
         <h3 class="step-title">{currentStep.title}</h3>
       </div>
 
@@ -140,50 +146,26 @@
       </div>
 
       <!-- Single primary CTA -->
-      {#if ballotStatus !== 'complete' && onNextStep}
-        <button class="primary-cta" onclick={onNextStep}>
-          {ctaLabel}
-        </button>
-      {:else if ballotStatus === 'complete'}
-        <button class="deliver-cta" onclick={onDeliver}>
-          <span class="deliver-icon" aria-hidden="true">✓</span>
-          <span class="deliver-text">
-            <span class="deliver-title">Cédula completa</span>
-            <span class="deliver-sub">Toca aquí para entregar y ver resultados</span>
-          </span>
-          <span class="deliver-arrow" aria-hidden="true">→</span>
-        </button>
+      {#if showCta}
+        {#if ballotStatus !== 'complete' && onNextStep}
+          <button class="primary-cta" onclick={onNextStep}>
+            {ctaLabel}
+          </button>
+        {:else if ballotStatus === 'complete'}
+          <button class="deliver-cta" onclick={onDeliver}>
+            <span class="deliver-icon" aria-hidden="true">✓</span>
+            <span class="deliver-text">
+              <span class="deliver-title">Cédula completa</span>
+              <span class="deliver-sub">Toca aquí para entregar y ver resultados</span>
+            </span>
+            <span class="deliver-arrow" aria-hidden="true">→</span>
+          </button>
+        {/if}
       {/if}
 
     </div>
   {/key}
 
-  <!-- Help section — only in full mode -->
-  {#if panelMode !== 'peek'}
-    <div class="help-section">
-      <button class="help-toggle" onclick={onToggleVideo} aria-expanded={showVideo}>
-        <span class="help-icon" aria-hidden="true">?</span>
-        <span class="help-text">¿Cómo funciona el voto preferencial?</span>
-        <span class="help-chevron" class:rotated={showVideo} aria-hidden="true">›</span>
-      </button>
-      {#if showVideo}
-        <div class="pref-explainer" transition:fly={{ y: -8, duration: 220 }}>
-          <p class="pref-item">
-            <span class="pref-label">¿Qué es?</span>
-            Después de elegir partido, puedes indicar qué candidatos específicos del partido prefieres que entren al congreso.
-          </p>
-          <p class="pref-item">
-            <span class="pref-label">¿Siempre cuenta?</span>
-            Solo si tu partido supera la valla electoral. Si no la pasa, ninguno de sus candidatos entra, independientemente del número que marcaste.
-          </p>
-          <p class="pref-item">
-            <span class="pref-label">¿Es obligatorio?</span>
-            No. Puedes votar solo por partido y dejar el número en blanco.
-          </p>
-        </div>
-      {/if}
-    </div>
-  {/if}
 
 </div>
 
@@ -199,6 +181,11 @@
     scrollbar-color: #334155 transparent;
   }
 
+  .panel::-webkit-scrollbar {
+    width: 0;
+    display: none;
+  }
+
   /* ── Step body ───────────────────────────────────────────────────────────── */
   .step-body {
     padding: 20px 16px;
@@ -212,6 +199,12 @@
     display: flex;
     flex-direction: column;
     gap: 3px;
+  }
+
+  .step-eyebrow-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
 
   .step-eyebrow {
@@ -230,6 +223,28 @@
     letter-spacing: -0.02em;
     line-height: 1.2;
     text-transform: uppercase;
+  }
+
+  .collapse-btn {
+    font-size: 40px;
+    font-weight: 300;
+    color: #3b82f6;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-family: inherit;
+    flex-shrink: 0;
+    -webkit-tap-highlight-color: transparent;
+    transform: rotate(90deg);
+    line-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .collapse-btn:active {
+    color: #2563eb;
   }
 
   /* ── Education brief ─────────────────────────────────────────────────────── */
@@ -385,76 +400,4 @@
     color: rgba(74,222,128,0.8);
   }
 
-  /* ── Help section ────────────────────────────────────────────────────────── */
-  .help-section {
-    border-top: 1px solid #1e293b;
-    margin-top: auto;
-  }
-
-  .help-toggle {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 16px;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    text-align: left;
-    color: #475569;
-    transition: color 0.15s ease, background 0.15s ease;
-    font-family: inherit;
-  }
-
-  .help-toggle:hover { background: rgba(255,255,255,0.03); color: #64748b; }
-
-  .help-icon {
-    width: 18px;
-    height: 18px;
-    border: 1px solid #334155;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 10px;
-    font-weight: 700;
-    font-style: normal;
-    flex-shrink: 0;
-  }
-
-  .help-text { flex: 1; font-size: 12px; font-weight: 500; line-height: 1.4; }
-
-  .help-chevron {
-    font-size: 18px;
-    font-weight: 300;
-    color: #334155;
-    transition: transform 0.2s ease;
-    flex-shrink: 0;
-  }
-
-  .help-chevron.rotated { transform: rotate(90deg); }
-
-  .pref-explainer {
-    padding: 0 16px 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .pref-item {
-    font-size: 12px;
-    color: #64748b;
-    line-height: 1.6;
-    margin: 0;
-  }
-
-  .pref-label {
-    display: block;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: #475569;
-    margin-bottom: 2px;
-  }
 </style>

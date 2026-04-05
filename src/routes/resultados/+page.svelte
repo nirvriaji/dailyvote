@@ -399,6 +399,40 @@
     {/each}
   </section>
 
+  <!-- ═══ TUS NÚMEROS PREFERENCIALES ════════════════════════════════════════ -->
+  {#if insights.hasAnyPreferences}
+  <section class="pref-explainer-sect">
+    <div class="pref-explainer-card">
+      <div class="pref-explainer-header">
+        <svg class="pref-explainer-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <h3 class="pref-explainer-title">¿Qué hacen tus números preferenciales?</h3>
+      </div>
+
+      <div class="pref-rows">
+        {#each userBallot.filter(r => r.hasPreferential && r.selection && r.prefs.length > 0) as row}
+          <div class="pref-row">
+            <div class="pref-row-top">
+              <span class="pref-row-label">{row.label}</span>
+              <div class="pref-row-nums">
+                {#each row.prefs as num}<span class="pref-chip">N° {num}</span>{/each}
+              </div>
+            </div>
+            <p class="pref-row-desc">
+              Indicaste que prefieres al candidato N° {row.prefs.join(' y N° ')} de {row.selection!.partyName}.
+              Si ese partido supera la valla electoral y obtiene escaños, tu número influye en qué candidato de la lista ocupa esos puestos.
+            </p>
+          </div>
+        {/each}
+      </div>
+
+      <div class="pref-explainer-note">
+        <p><strong>¿Siempre cuenta?</strong> Solo si el partido supera la valla del 5% de los votos válidos. Si no la pasa, ninguno de sus candidatos entra, sin importar el número que marcaste.</p>
+        <p><strong>¿Es obligatorio?</strong> No. Puedes votar solo por partido sin marcar ningún número.</p>
+      </div>
+    </div>
+  </section>
+  {/if}
+
   <!-- ═══ VOTO EN BLANCO POR COLUMNA ════════════════════════════════════════ -->
   {#if insights.blankColumns.length > 0}
   <section class="blank-insight-sect">
@@ -917,6 +951,103 @@
     color: #475569;
     line-height: 1.55;
     margin: 0;
+  }
+
+  /* ─────────────────────────────────────────────────────────────────────────
+     Preferential vote explainer
+  ───────────────────────────────────────────────────────────────────────── */
+  .pref-explainer-sect {
+    padding: 0 0 8px;
+  }
+
+  .pref-explainer-card {
+    background: rgba(99, 102, 241, 0.05);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 12px;
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .pref-explainer-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .pref-explainer-icon {
+    color: #818cf8;
+    flex-shrink: 0;
+  }
+
+  .pref-explainer-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #e2e8f0;
+    margin: 0;
+  }
+
+  .pref-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .pref-row {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .pref-row-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .pref-row-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #94a3b8;
+  }
+
+  .pref-row-nums {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .pref-row-desc {
+    font-size: 13px;
+    color: #64748b;
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .pref-explainer-note {
+    border-top: 1px solid rgba(99, 102, 241, 0.15);
+    padding-top: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .pref-explainer-note p {
+    font-size: 12px;
+    color: #64748b;
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .pref-explainer-note strong {
+    color: #94a3b8;
   }
 
   /* ─────────────────────────────────────────────────────────────────────────
