@@ -247,7 +247,7 @@
           <div class="bc-top-row">
             <span class="bc-col-label">{row.label}</span>
             <span class="bc-status-chip" class:chip-marked={!!row.selection} class:chip-blank={!row.selection}>
-              {row.selection ? 'Marcado' : 'En blanco'}
+              {row.selection ? 'Válido' : 'En blanco'}
             </span>
           </div>
           {#if row.selection}
@@ -267,50 +267,6 @@
       {/each}
     </div>
   </section>
-
-  <!-- ═══ CÓMO FUNCIONA EL CONTEO ═══════════════════════════════════════════ -->
-  {#if ballotStatus !== 'blank'}
-  <section class="how-it-works-sect">
-    <h2 class="section-label">Cómo se decide quién entra al Congreso</h2>
-    <div class="hiw-chain">
-      <div class="hiw-step">
-        <span class="hiw-num">1</span>
-        <div class="hiw-body">
-          <strong class="hiw-term">Votos válidos</strong>
-          <p class="hiw-desc">Solo cuentan los votos válidos. Los votos en blanco o viciados reducen el total de votos válidos — y bajan la valla electoral.</p>
-        </div>
-      </div>
-      <div class="hiw-arrow">→</div>
-      <div class="hiw-step">
-        <span class="hiw-num">2</span>
-        <div class="hiw-body">
-          <strong class="hiw-term">Valla electoral</strong>
-          <p class="hiw-desc">Un partido necesita al menos el 5% de los votos válidos para entrar al reparto. Si no lo alcanza, ninguno de sus candidatos entra al Congreso.</p>
-        </div>
-      </div>
-      <div class="hiw-arrow">→</div>
-      <div class="hiw-step">
-        <span class="hiw-num">3</span>
-        <div class="hiw-body">
-          <strong class="hiw-term">Escaños</strong>
-          <p class="hiw-desc">Los puestos del Congreso se reparten proporcionalmente entre los partidos que superaron la valla. Más votos válidos = más escaños.</p>
-        </div>
-      </div>
-      <div class="hiw-arrow">→</div>
-      <div class="hiw-step">
-        <span class="hiw-num">4</span>
-        <div class="hiw-body">
-          <strong class="hiw-term">Candidatos</strong>
-          <p class="hiw-desc">Dentro de cada partido, los escaños van a los candidatos con más votos preferenciales. Si nadie marcó un número, entra el orden de lista.</p>
-        </div>
-      </div>
-    </div>
-    <div class="hiw-example">
-      <span class="hiw-example-label">Ejemplo ilustrativo</span>
-      <p class="hiw-example-text">Imagina 150 votos en total. Si 50 son nulos o viciados, quedan 100 votos válidos — y la valla electoral es de 5 votos (5%). Si los votos nulos o viciados aumentaran y dejaran solo 80 votos válidos, la valla bajaría a 4 votos. Más votos en blanco o viciados = valla más baja.</p>
-    </div>
-  </section>
-  {/if}
 
   <!-- ═══ QUÉ PASÓ CON TU VOTO ════════════════════════════════════════════ -->
   <section class="processing-sect">
@@ -434,6 +390,50 @@
       </div>
     {/each}
   </section>
+
+  <!-- ═══ CÓMO FUNCIONA EL CONTEO ═══════════════════════════════════════════ -->
+  {#if ballotStatus !== 'blank'}
+  <section class="how-it-works-sect">
+    <h2 class="section-label">Cómo se decide quién entra al Congreso</h2>
+    <div class="hiw-chain">
+      <div class="hiw-step">
+        <span class="hiw-num">1</span>
+        <div class="hiw-body">
+          <strong class="hiw-term">Votos válidos</strong>
+          <p class="hiw-desc">Solo cuentan los votos válidos. Los votos en blanco o viciados reducen el total de votos válidos — y bajan la valla electoral.</p>
+        </div>
+      </div>
+      <div class="hiw-arrow">→</div>
+      <div class="hiw-step">
+        <span class="hiw-num">2</span>
+        <div class="hiw-body">
+          <strong class="hiw-term">Valla electoral</strong>
+          <p class="hiw-desc">Un partido necesita al menos el 5% de los votos válidos para entrar al reparto. Si no lo alcanza, ninguno de sus candidatos entra al Congreso.</p>
+        </div>
+      </div>
+      <div class="hiw-arrow">→</div>
+      <div class="hiw-step">
+        <span class="hiw-num">3</span>
+        <div class="hiw-body">
+          <strong class="hiw-term">Escaños</strong>
+          <p class="hiw-desc">Los puestos del Congreso se reparten proporcionalmente entre los partidos que superaron la valla. Más votos válidos = más escaños.</p>
+        </div>
+      </div>
+      <div class="hiw-arrow">→</div>
+      <div class="hiw-step">
+        <span class="hiw-num">4</span>
+        <div class="hiw-body">
+          <strong class="hiw-term">Candidatos</strong>
+          <p class="hiw-desc">Dentro de cada partido, los escaños van a los candidatos con más votos preferenciales. Si nadie marcó un número, entra el orden de lista.</p>
+        </div>
+      </div>
+    </div>
+    <div class="hiw-example">
+      <span class="hiw-example-label">Ejemplo ilustrativo</span>
+      <p class="hiw-example-text">Imagina 150 votos en total. Si 50 son nulos o viciados, quedan 100 votos válidos — y la valla electoral es de 5 votos (5%). Si los votos nulos o viciados aumentaran y dejaran solo 80 votos válidos, la valla bajaría a 4 votos. Más votos en blanco o viciados = valla más baja.</p>
+    </div>
+  </section>
+  {/if}
 
   <!-- ═══ VOTO EN BLANCO POR COLUMNA ════════════════════════════════════════ -->
   {#if insights.blankColumns.length > 0}
