@@ -1,6 +1,7 @@
 import { initializeApp, type FirebaseApp } from 'firebase/app';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getAuth, type Auth, GoogleAuthProvider } from 'firebase/auth';
+import { getAnalytics } from 'firebase/analytics';
 import { firebaseConfig } from './config';
 
 // Variables para la app de Firebase
@@ -48,6 +49,11 @@ export function initializeFirebase() {
       prompt: 'select_account'
     });
     
+    // Inicializar Analytics (solo en browser)
+    if (typeof window !== 'undefined') {
+      getAnalytics(app);
+    }
+
     isFirebaseReady = true;
     return true;
   } catch (error) {
