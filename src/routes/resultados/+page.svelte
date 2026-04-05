@@ -306,6 +306,26 @@
     {/each}
   </section>
 
+  <!-- ═══ VOTO EN BLANCO POR COLUMNA ════════════════════════════════════════ -->
+  {#if insights.blankColumns.length > 0}
+  <section class="blank-insight-sect">
+    <div class="blank-insight-card">
+      <div class="blank-insight-header">
+        <svg class="blank-insight-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <h3 class="blank-insight-title">
+          {insights.blankColumns.length === 1 ? 'Dejaste 1 decisión en blanco' : `Dejaste ${insights.blankColumns.length} decisiones en blanco`}
+        </h3>
+      </div>
+      <p class="blank-insight-body">En esas elecciones no elegiste un partido. Eso significa que tu voto no se suma a ninguna organización política en esas columnas.</p>
+      <p class="blank-insight-body">Además, en cada una de esas elecciones, al haber menos votos válidos, puede ser más fácil que algunos partidos alcancen la valla electoral.</p>
+      <div class="blank-insight-example">
+        <p class="blank-insight-example-label">Ejemplo ilustrativo</p>
+        <p class="blank-insight-example-text">Si en una elección hay 100 votos válidos, un partido necesitaría 5 para pasar la valla. Pero si varias personas dejan esa parte en blanco y el total baja a 80, necesitaría 4. Al haber menos votos válidos, el mínimo también baja.</p>
+      </div>
+    </div>
+  </section>
+  {/if}
+
   <!-- ═══ QUÉ DEBES RECORDAR ═══════════════════════════════════════════════ -->
   <section class="takeaway-sect" in:fly={{ y: 16, duration: 500 }}>
     <h2 class="section-label">Qué debes recordar</h2>
@@ -917,6 +937,71 @@
     font-size: 12px;
     color: #475569;
     line-height: 1.55;
+    margin: 0;
+  }
+
+  /* ─────────────────────────────────────────────────────────────────────────
+     Blank vote insight
+  ───────────────────────────────────────────────────────────────────────── */
+  .blank-insight-card {
+    background: rgba(251, 191, 36, 0.04);
+    border: 1px solid rgba(251, 191, 36, 0.18);
+    border-radius: 12px;
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .blank-insight-header {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+
+  .blank-insight-icon {
+    flex-shrink: 0;
+    color: #fbbf24;
+  }
+
+  .blank-insight-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #fde68a;
+    margin: 0;
+    line-height: 1.3;
+  }
+
+  .blank-insight-body {
+    font-size: 13px;
+    color: rgba(226, 232, 240, 0.78);
+    line-height: 1.65;
+    margin: 0;
+  }
+
+  .blank-insight-example {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-top: 2px;
+  }
+
+  .blank-insight-example-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #64748b;
+    margin: 0;
+  }
+
+  .blank-insight-example-text {
+    font-size: 12px;
+    color: rgba(203, 213, 225, 0.65);
+    line-height: 1.65;
     margin: 0;
   }
 
