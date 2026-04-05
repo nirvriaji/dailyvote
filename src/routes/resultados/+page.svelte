@@ -6,7 +6,6 @@
   import {
     getColumnPreferenceNumbers,
     loadPreferencesFromStorage,
-    resetAllSelections,
   } from '$lib/stores/preferencePicker.svelte';
   import type { ColumnKey } from '$lib/stores/preferencePicker.svelte';
   import HelpPanel from '$lib/components/HelpPanel.svelte';
@@ -67,8 +66,7 @@
   async function handleRestart() {
     if (restarting) return;
     restarting = true;
-    vote.resetForNewSimulation();
-    resetAllSelections();
+    sessionStorage.setItem('entry_mode', 'new_simulation');
     await goto('/simular');
   }
 
