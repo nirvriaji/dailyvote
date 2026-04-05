@@ -19,6 +19,8 @@
   import VoteOverlay from '$lib/components/VoteOverlay.svelte';
   import SimulatorContextPanel from '$lib/components/SimulatorContextPanel.svelte';
   import GlobalSummaryDrawer from '$lib/components/GlobalSummaryDrawer.svelte';
+  import HintTooltip from '$lib/components/HintTooltip.svelte';
+  import { handleBallotClick, getActiveHint, dismissHint } from '$lib/stores/hintSystem.svelte';
   import { initDemoMode } from '$lib/utils/ballotDemoTour.js';
 
   // ─── Step/focus state ────────────────────────────────────────────────────────
@@ -408,6 +410,7 @@
       ontouchstart={markUserInteraction}
       onmousemove={handleBallotMouseMove}
       onmouseleave={handleBallotMouseLeave}
+      onclick={handleBallotClick}
     >
       <BallotStage
         columns={ballotColumns}
@@ -488,6 +491,18 @@
 
   <!-- ── VoteOverlay (bottom sheet for marking) ───────────────────────────── -->
   <VoteOverlay />
+
+  <!-- ── Contextual hints ─────────────────────────────────────────────────── -->
+  {#if getActiveHint()}
+    {@const hint = getActiveHint()}
+    {#if hint}
+      <HintTooltip
+        text={hint.text}
+        anchorEl={hint.anchorEl}
+        onDismiss={dismissHint}
+      />
+    {/if}
+  {/if}
 
   <!-- ── Transition overlay ───────────────────────────────────────────────── -->
   {#if isTransitioning}
