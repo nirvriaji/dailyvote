@@ -268,16 +268,22 @@
             {columnKey}
             rowId={row.id}
             slotIndex={0}
+            partyName={row.partyName}
+            partyNumber={row.partyNumber}
+            partyColor={row.partyColor}
           />
         </div>
       {/if}
-      
+
       {#if preferenceConfig && preferenceConfig.slots >= 2}
         <div class="cell vote-cell" data-demo="preferencial-{section}-{rowIndex}-1">
           <PreferenceVoteSlot
             {columnKey}
             rowId={row.id}
             slotIndex={1}
+            partyName={row.partyName}
+            partyNumber={row.partyNumber}
+            partyColor={row.partyColor}
           />
         </div>
       {/if}

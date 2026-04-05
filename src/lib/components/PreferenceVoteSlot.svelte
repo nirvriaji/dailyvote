@@ -1,22 +1,26 @@
 <script lang="ts">
-  import { 
-    openPicker, 
+  import {
+    openPicker,
     closePicker,
     isPickerActive,
     clearPreferenceNumber,
     getPreferenceValue,
     isRowSelected,
-    replaceSelectedRow
+    replaceSelectedRow,
+    castVoteFromSelection
   } from '$lib/stores/preferencePicker.svelte';
   import type { ColumnKey } from '$lib/stores/preferencePicker.svelte';
-  
+
   interface Props {
     columnKey: ColumnKey;
     rowId: string;
     slotIndex: number;
+    partyName: string;
+    partyNumber: number;
+    partyColor: string;
   }
-  
-  let { columnKey, rowId, slotIndex }: Props = $props();
+
+  let { columnKey, rowId, slotIndex, partyName, partyNumber, partyColor }: Props = $props();
   
   let slotElement: HTMLButtonElement;
   
@@ -37,8 +41,9 @@
   // Manejar click
   function handleSlotClick() {
     if (!isThisRowSelected) {
-      // Seleccionar fila y abrir picker
+      // Seleccionar fila → registrar voto + abrir picker
       replaceSelectedRow(columnKey, rowId);
+      castVoteFromSelection(columnKey, rowId, { partyName, partyNumber, partyColor }, 'symbol', 'Símbolo del partido');
       openPicker({
         columnKey,
         rowId,
