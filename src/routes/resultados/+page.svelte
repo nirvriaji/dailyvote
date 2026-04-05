@@ -135,9 +135,9 @@
     </h1>
     <p class="hero-subtitle">
       {#if ballotStatus === 'complete' && insights.isConcentrated}Tus cuatro elecciones al Congreso sumaron al mismo partido. Tu voto presidencial es una elección separada y directa. Los escaños se reparten entre los partidos que superan la valla electoral.
-      {:else if ballotStatus === 'complete' && insights.isFragmented}Tus decisiones se distribuyen entre varias fuerzas políticas. Los escaños (los puestos en el Congreso) se reparten entre quienes superan la valla electoral.
-      {:else if ballotStatus === 'complete'}Tus decisiones se distribuyen entre los partidos que elegiste. Los escaños (los puestos en el Congreso) se reparten entre quienes superan la valla electoral.
-      {:else if ballotStatus === 'partial'}Tus decisiones se distribuyen entre varias fuerzas políticas. Los escaños (los puestos en el Congreso) se reparten entre quienes superan la valla electoral.
+      {:else if ballotStatus === 'complete' && insights.isFragmented}Tus decisiones se distribuyen entre varias fuerzas políticas. Los escaños en el Congreso se reparten entre quienes superan la valla electoral.
+      {:else if ballotStatus === 'complete'}Tus decisiones se distribuyen entre los partidos que elegiste. Los escaños en el Congreso se reparten entre quienes superan la valla electoral.
+      {:else if ballotStatus === 'partial'}Tus decisiones se distribuyen entre varias fuerzas políticas. Los escaños en el Congreso se reparten entre quienes superan la valla electoral.
       {:else}No marcaste ninguna de las elecciones de esta cédula. Por eso no hubo votos que procesar en presidencia ni en el Congreso.{/if}
     </p>
   </section>
