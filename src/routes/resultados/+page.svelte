@@ -11,6 +11,7 @@
   import type { ColumnKey } from '$lib/stores/preferencePicker.svelte';
   import HelpPanel from '$lib/components/HelpPanel.svelte';
   import ShareModal from '$lib/components/ShareModal.svelte';
+  import { deriveInsights } from '$lib/utils/simulationInsights';
   // ─── Ballot definition ───────────────────────────────────────────────────────
   const BALLOT_DEF = [
     { colId: 'col0', key: 'presidente'       as ColumnKey, label: 'Presidencia',       hasPreferential: false },
@@ -51,12 +52,14 @@
   let ballotStatus = $derived<BallotStatus>(
     markedCount === 5 ? 'complete' : markedCount === 0 ? 'blank' : 'partial'
   );
+  let insights = $derived(deriveInsights(userBallot));
 
   // ─── Actions ─────────────────────────────────────────────────────────────────
   let showHelpPanel  = $state(false);
   let showShareModal = $state(false);
   let restarting       = $state(false);
-  let whatIfScenario   = $state<'concentrar' | 'dividir'>('concentrar');
+  let _whatIfOverride  = $state<'concentrar' | 'dividir' | null>(null);
+  let whatIfScenario   = $derived(_whatIfOverride ?? (insights.isConcentrated ? 'dividir' : 'concentrar'));
 
   async function handleRestart() {
     if (restarting) return;
@@ -139,12 +142,16 @@
   <section class="hero-sect" in:fly={{ y: 28, duration: 700, delay: 500 }}>
     <p class="hero-eyebrow">Simulación electoral · Perú 2026</p>
     <h1 class="hero-title">
-      {#if ballotStatus === 'complete'}Así se procesó tu voto
+      {#if ballotStatus === 'complete' && insights.isConcentrated}Tu voto fue directo y concentrado
+      {:else if ballotStatus === 'complete' && insights.isFragmented}Tu voto se diversificó entre varios partidos
+      {:else if ballotStatus === 'complete'}Así se procesó tu voto
       {:else if ballotStatus === 'partial'}Así se procesó tu cédula parcial
       {:else}Entregaste una cédula en blanco{/if}
     </h1>
     <p class="hero-subtitle">
-      {#if ballotStatus === 'complete'}Marcaste las 5 decisiones de la cédula. Mira cómo tu elección impactó en presidencia, partido y voto preferencial.
+      {#if ballotStatus === 'complete' && insights.isConcentrated}Marcaste las 5 decisiones y concentraste el voto legislativo en un solo partido. Mira cómo eso afecta la distribución de escaños y el voto preferencial.
+      {:else if ballotStatus === 'complete' && insights.isFragmented}Marcaste las 5 decisiones y repartiste el voto entre {insights.uniqueParties} partidos distintos. Mira cómo esa diversificación se procesa en presidencia y en el congreso.
+      {:else if ballotStatus === 'complete'}Marcaste las 5 decisiones de la cédula. Mira cómo tu elección impactó en presidencia, partido y voto preferencial.
       {:else if ballotStatus === 'partial'}Solo se procesaron las decisiones que sí marcaste. Mira qué pasó con esas elecciones y cuáles quedaron en blanco.
       {:else}No marcaste ninguna de las elecciones de esta cédula. Por eso no hubo votos que procesar en presidencia ni en el congreso.{/if}
     </p>
@@ -181,22 +188,6 @@
           {/if}
         </div>
       {/each}
-    </div>
-  </section>
-
-  <!-- ═══ ESTADO GLOBAL DE LA CÉDULA ══════════════════════════════════════ -->
-  <section class="global-state-sect">
-    <div class="gsb" class:gsb-complete={ballotStatus === 'complete'} class:gsb-partial={ballotStatus === 'partial'} class:gsb-blank={ballotStatus === 'blank'}>
-      <p class="gsb-title">
-        {#if ballotStatus === 'complete'}Tu cédula fue procesada como una cédula completa.
-        {:else if ballotStatus === 'partial'}Tu cédula fue procesada como una cédula parcial.
-        {:else}Tu cédula fue procesada como una cédula en blanco.{/if}
-      </p>
-      <p class="gsb-desc">
-        {#if ballotStatus === 'complete'}Las 5 decisiones que marcaste entraron a la simulación de resultados.
-        {:else if ballotStatus === 'partial'}Se tomaron en cuenta solo las decisiones que marcaste. Las demás quedaron en blanco.
-        {:else}Como no hubo selecciones marcadas, esta simulación no suma votos en ninguna de las elecciones de la cédula.{/if}
-      </p>
     </div>
   </section>
 
@@ -335,46 +326,106 @@
     </div>
   </section>
 
-  <!-- ═══ QUÉ IMPLICA ESTO EN EL PERÚ ════════════════════════════════════ -->
-  <section class="system-insights-sect">
-    <h2 class="section-label">Qué implica esto en el Perú</h2>
+  <!-- ═══ LO QUE REVELA TU CÉDULA ════════════════════════════════════════ -->
+  {#if ballotStatus !== 'blank'}
+  <section class="ballot-reveal-sect">
+    <h2 class="section-label">Lo que revela tu cédula</h2>
 
-    <div class="system-insights-intro">
-      <p class="system-insights-intro-text">
-        Además de definir candidaturas, este tipo de voto influye en cómo se organiza el poder político después de la elección.
-      </p>
-    </div>
+    <div class="reveal-cards">
+      <!-- Card 1: Concentración / fragmentación -->
+      {#if insights.legislativeSelectionsCount >= 2}
+        {#if insights.isConcentrated}
+          <article class="reveal-card reveal-card--concentrated">
+            <div class="reveal-card-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
+            </div>
+            <div>
+              <h3 class="reveal-card-title">Apostaste por un solo partido en el Congreso</h3>
+              <p class="reveal-card-desc">Todas tus elecciones legislativas sumaron al mismo partido. Si ese partido pasa la valla, concentra más escaños y tiene mayor influencia en el Congreso.</p>
+            </div>
+          </article>
+        {:else if insights.isFragmented}
+          <article class="reveal-card reveal-card--fragmented">
+            <div class="reveal-card-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2"/><circle cx="12" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="12" cy="18" r="2"/><circle cx="19" cy="18" r="2"/></svg>
+            </div>
+            <div>
+              <h3 class="reveal-card-title">Tu voto se distribuyó entre {insights.uniqueParties} partidos distintos</h3>
+              <p class="reveal-card-desc">Repartiste tu apoyo entre muchas fuerzas políticas. Cada una necesita pasar la valla por su cuenta para obtener escaños. Esto favorece un Congreso más diverso.</p>
+            </div>
+          </article>
+        {:else}
+          <article class="reveal-card">
+            <div class="reveal-card-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+            </div>
+            <div>
+              <h3 class="reveal-card-title">Repartiste el voto entre {insights.uniqueParties} partidos</h3>
+              <p class="reveal-card-desc">Tus elecciones legislativas sumaron a partidos distintos. Los escaños se distribuyen entre quienes pasen la valla electoral.</p>
+            </div>
+          </article>
+        {/if}
+      {/if}
 
-    <div class="system-insights-stack">
-      <article class="system-insight-card">
-        <h3 class="system-insight-title">El voto está fragmentado</h3>
-        <p class="system-insight-desc">
-          En el Perú participan muchos partidos, por lo que los votos se reparten entre varias opciones. Esto hace que incluso el presidente electo difícilmente tenga mayoría en el Congreso.
-        </p>
-      </article>
+      <!-- Card 2: Voto preferencial -->
+      {#if insights.legislativeSelectionsCount > 0}
+        {#if insights.hasAllPrefs}
+          <article class="reveal-card reveal-card--prefs">
+            <div class="reveal-card-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div>
+              <h3 class="reveal-card-title">Usaste el voto preferencial en todas tus elecciones legislativas</h3>
+              <p class="reveal-card-desc">Si tus partidos pasan la valla y obtienen escaños, tus números preferenciales influyen en qué candidatos de esos partidos entran al Congreso.</p>
+            </div>
+          </article>
+        {:else if insights.hasAnyPreferences}
+          <article class="reveal-card">
+            <div class="reveal-card-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <div>
+              <h3 class="reveal-card-title">Usaste el voto preferencial en algunas elecciones</h3>
+              <p class="reveal-card-desc">En las secciones donde sí marcaste un número, ese número influye en qué candidatos entran al Congreso si el partido pasa la valla. En las demás, el orden de lista del partido decide.</p>
+            </div>
+          </article>
+        {:else}
+          <article class="reveal-card">
+            <div class="reveal-card-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            </div>
+            <div>
+              <h3 class="reveal-card-title">No marcaste votos preferenciales</h3>
+              <p class="reveal-card-desc">Sin preferencial, el orden de la lista del partido determina qué candidatos entran al Congreso. El voto preferencial es opcional, pero influye en quiénes específicamente representan al partido.</p>
+            </div>
+          </article>
+        {/if}
+      {/if}
 
-      <article class="system-insight-card">
-        <h3 class="system-insight-title">El voto preferencial influye dentro del partido</h3>
-        <p class="system-insight-desc">
-          Tu voto primero ayuda al partido a superar la valla electoral. Luego, el voto preferencial define qué candidatos de ese partido obtienen los escaños.
-        </p>
-      </article>
-
-      <article class="system-insight-card">
-        <h3 class="system-insight-title">Los incentivos del sistema</h3>
-        <p class="system-insight-desc">
-          En algunos casos, candidatos muy conocidos, incluidos candidatos presidenciales, encabezan listas al Congreso. Si no ganan la presidencia, pueden acceder a un escaño gracias al voto preferencial. Esto contribuye a un Congreso con múltiples fuerzas políticas.
-        </p>
-      </article>
+      <!-- Card 3: Columnas en blanco (solo si parcial) -->
+      {#if ballotStatus === 'partial' && insights.blankColumns.length > 0}
+        <article class="reveal-card reveal-card--blank">
+          <div class="reveal-card-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+          </div>
+          <div>
+            <h3 class="reveal-card-title">{insights.blankColumns.length === 1 ? 'Una decisión quedó en blanco' : `${insights.blankColumns.length} decisiones quedaron en blanco`}</h3>
+            <p class="reveal-card-desc">{insights.blankColumns.join(', ')} {insights.blankColumns.length === 1 ? 'no sumó votos' : 'no sumaron votos'} en esa elección. Solo las decisiones marcadas entran al procesamiento de resultados.</p>
+          </div>
+        </article>
+      {/if}
     </div>
   </section>
+  {/if}
 
   <!-- ═══ EXPLORA OTRO ESCENARIO ══════════════════════════════════════════ -->
   <section class="what-if-sect">
     <h2 class="section-label">Explora otro escenario</h2>
 
     <p class="what-if-intro">
-      Tu resultado muestra lo que pasó con tu voto. Aquí puedes comparar, de forma simple, qué cambia cuando el apoyo se concentra en un solo partido o se reparte entre varios.
+      {#if insights.isConcentrated}Tu cédula concentró el voto legislativo en un solo partido. Aquí puedes ver qué implica esa decisión o explorar qué pasaría si lo dividieras.
+      {:else if insights.isFragmented}Tu cédula repartió el voto entre varios partidos. Aquí puedes comparar qué implica eso frente a concentrar el apoyo.
+      {:else}Tu resultado muestra lo que pasó con tu voto. Aquí puedes comparar, de forma simple, qué cambia cuando el apoyo se concentra en un solo partido o se reparte entre varios.{/if}
     </p>
 
     <div class="what-if-toggle" role="tablist" aria-label="Comparar escenarios de voto">
@@ -383,7 +434,7 @@
         class="what-if-btn"
         class:is-active={whatIfScenario === 'concentrar'}
         aria-pressed={whatIfScenario === 'concentrar'}
-        onclick={() => whatIfScenario = 'concentrar'}
+        onclick={() => _whatIfOverride = 'concentrar'}
       >
         Concentrar voto
       </button>
@@ -392,7 +443,7 @@
         class="what-if-btn"
         class:is-active={whatIfScenario === 'dividir'}
         aria-pressed={whatIfScenario === 'dividir'}
-        onclick={() => whatIfScenario = 'dividir'}
+        onclick={() => _whatIfOverride = 'dividir'}
       >
         Dividir voto
       </button>
@@ -718,55 +769,6 @@
   }
 
   /* ─────────────────────────────────────────────────────────────────────────
-     Global state block
-  ───────────────────────────────────────────────────────────────────────── */
-  .global-state-sect {
-    margin: 0;
-  }
-
-  .gsb {
-    border-radius: 12px;
-    padding: 20px 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    border: 1px solid;
-  }
-
-  .gsb-complete {
-    background: rgba(34, 197, 94, 0.05);
-    border-color: rgba(34, 197, 94, 0.2);
-  }
-
-  .gsb-partial {
-    background: rgba(245, 158, 11, 0.04);
-    border-color: rgba(245, 158, 11, 0.18);
-  }
-
-  .gsb-blank {
-    background: rgba(255,255,255,0.02);
-    border-color: #1e293b;
-  }
-
-  .gsb-title {
-    font-size: 16px;
-    font-weight: 700;
-    margin: 0;
-    line-height: 1.3;
-  }
-
-  .gsb-complete .gsb-title { color: #4ade80; }
-  .gsb-partial  .gsb-title { color: #fbbf24; }
-  .gsb-blank    .gsb-title { color: #94a3b8; }
-
-  .gsb-desc {
-    font-size: 14px;
-    color: #64748b;
-    line-height: 1.6;
-    margin: 0;
-  }
-
-  /* ─────────────────────────────────────────────────────────────────────────
      Flow track (protagonist — Senado nacional)
   ───────────────────────────────────────────────────────────────────────── */
   .flow-track-animated {
@@ -949,44 +951,68 @@
   }
 
   /* ─────────────────────────────────────────────────────────────────────────
-     System insights
+     Ballot reveal (dynamic insights)
   ───────────────────────────────────────────────────────────────────────── */
-  .system-insights-sect {
-    margin-top: 48px;
-  }
-
-  .system-insights-intro {
-    margin-bottom: 18px;
-  }
-
-  .system-insights-intro-text {
-    font-size: 14px;
-    color: rgba(226, 232, 240, 0.72);
-    line-height: 1.6;
-    margin: 0;
-  }
-
-  .system-insights-stack {
+  .reveal-cards {
     display: grid;
-    gap: 14px;
+    gap: 12px;
   }
 
-  .system-insight-card {
-    background: rgba(255, 255, 255, 0.025);
+  .reveal-card {
+    background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.07);
     border-radius: 12px;
-    padding: 18px 20px;
+    padding: 16px 18px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
   }
 
-  .system-insight-title {
+  .reveal-card--concentrated {
+    border-color: rgba(59, 130, 246, 0.25);
+    background: rgba(59, 130, 246, 0.05);
+  }
+
+  .reveal-card--fragmented {
+    border-color: rgba(168, 85, 247, 0.25);
+    background: rgba(168, 85, 247, 0.05);
+  }
+
+  .reveal-card--prefs {
+    border-color: rgba(34, 197, 94, 0.22);
+    background: rgba(34, 197, 94, 0.04);
+  }
+
+  .reveal-card--blank {
+    border-color: rgba(100, 116, 139, 0.25);
+  }
+
+  .reveal-card-icon {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    margin-top: 1px;
+  }
+
+  .reveal-card--concentrated .reveal-card-icon { color: #60a5fa; }
+  .reveal-card--fragmented   .reveal-card-icon { color: #c084fc; }
+  .reveal-card--prefs        .reveal-card-icon { color: #4ade80; }
+
+  .reveal-card-title {
     font-size: 14px;
     font-weight: 700;
     color: #f1f5f9;
     line-height: 1.35;
-    margin: 0 0 8px;
+    margin: 0 0 6px;
   }
 
-  .system-insight-desc {
+  .reveal-card-desc {
     font-size: 13px;
     color: rgba(203, 213, 225, 0.75);
     line-height: 1.65;
@@ -1159,99 +1185,4 @@
     }
   }
 
-  /* ─────────────────────────────────────────────────────────────────────────
-     About / Authors
-  ───────────────────────────────────────────────────────────────────────── */
-  .about-project-block {
-    margin-top: 32px;
-    width: 100%;
-  }
-
-  .about-project-label {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: rgba(200, 210, 220, 0.55);
-    margin: 0 0 8px;
-  }
-
-  .about-project-title {
-    font-size: 16px;
-    font-weight: 700;
-    color: #f4f7fb;
-    margin: 0 0 8px;
-    text-transform: none;
-    letter-spacing: 0;
-  }
-
-  .about-project-desc {
-    font-size: 13px;
-    color: rgba(220, 230, 242, 0.72);
-    line-height: 1.6;
-    margin: 0;
-  }
-
-  .authors-grid {
-    display: grid;
-    gap: 14px;
-    width: 100%;
-    margin-top: 16px;
-  }
-
-  @media (min-width: 560px) {
-    .authors-grid {
-      grid-template-columns: 1fr 1fr;
-    }
-  }
-
-  .author-card {
-    background: rgba(255, 255, 255, 0.025);
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    border-radius: 12px;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .author-avatar {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.08);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    font-weight: 700;
-    color: #94a3b8;
-    margin-bottom: 10px;
-    flex-shrink: 0;
-  }
-
-  .author-name {
-    font-size: 14px;
-    font-weight: 700;
-    color: #f1f5f9;
-    margin: 0;
-  }
-
-  .author-role {
-    font-size: 12px;
-    color: rgba(220, 230, 242, 0.55);
-    margin: 3px 0 12px;
-  }
-
-  .author-actions {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-top: auto;
-  }
-
-  .author-actions .btn-ghost {
-    font-size: 12px;
-    padding: 7px 14px;
-    text-decoration: none;
-  }
 </style>
