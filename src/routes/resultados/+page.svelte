@@ -157,7 +157,7 @@
             </div>
             <div>
               <h3 class="reveal-card-title">Tus cuatro votos al Congreso fueron al mismo partido</h3>
-              <p class="reveal-card-desc">Tu voto presidencial es directo e independiente. En el Congreso, tus cuatro votos válidos sumaron al mismo partido. Si supera la valla electoral (5% de los votos válidos), ese partido concentra más escaños.</p>
+              <p class="reveal-card-desc">Tu voto presidencial es directo e independiente. En el Congreso, tus cuatro votos válidos sumaron al mismo partido. Si supera la valla electoral, ese partido concentra más escaños.</p>
             </div>
           </article>
         {:else if insights.isFragmented}
@@ -167,7 +167,7 @@
             </div>
             <div>
               <h3 class="reveal-card-title">Tu voto se distribuyó entre {insights.uniqueParties} partidos distintos</h3>
-              <p class="reveal-card-desc">Tus votos válidos se distribuyeron entre varios partidos. Cada uno que supere la valla electoral (5% de los votos válidos) obtiene escaños proporcionales a sus votos.</p>
+              <p class="reveal-card-desc">Tus votos válidos se distribuyeron entre varios partidos. Cada uno que supere la valla electoral obtiene escaños proporcionales a sus votos.</p>
             </div>
           </article>
         {:else}
@@ -177,7 +177,7 @@
             </div>
             <div>
               <h3 class="reveal-card-title">Repartiste el voto entre {insights.uniqueParties} partidos</h3>
-              <p class="reveal-card-desc">Tus votos válidos sumaron a partidos distintos. Los escaños se reparten entre los que superen la valla electoral (5% de los votos válidos).</p>
+              <p class="reveal-card-desc">Tus votos válidos sumaron a partidos distintos. Los escaños se reparten entre los que superen la valla electoral.</p>
             </div>
           </article>
         {/if}
@@ -421,7 +421,7 @@
           </div>
           <p class="resumen-logic">
             Tu voto suma a {col.selection.partyName} como voto válido.
-            Si supera la valla electoral (5% de los votos válidos), obtiene escaños en el Congreso.
+            Si supera la valla electoral, obtiene escaños en el Congreso.
             {#if col.prefs.length > 0}
               Tu N° {col.prefs.join(' y N° ')} le da más chances a {col.prefs.length === 1 ? 'ese candidato' : 'esos candidatos'} de ocupar uno de esos escaños.
             {:else}
