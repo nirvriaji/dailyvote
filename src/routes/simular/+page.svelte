@@ -18,6 +18,7 @@
   import BallotProgressHeader from '$lib/components/BallotProgressHeader.svelte';
   import VoteOverlay from '$lib/components/VoteOverlay.svelte';
   import SimulatorContextPanel from '$lib/components/SimulatorContextPanel.svelte';
+  import GlobalSummaryDrawer from '$lib/components/GlobalSummaryDrawer.svelte';
   import { initDemoMode } from '$lib/utils/ballotDemoTour.js';
 
   // ─── Step/focus state ────────────────────────────────────────────────────────
@@ -111,6 +112,9 @@
   // ─── Delivery / transition ───────────────────────────────────────────────────
   let isSubmitting  = $state(false);
   let isTransitioning = $state(false);
+
+  // ─── Global summary drawer ───────────────────────────────────────────────────
+  let showSummaryDrawer = $state(false);
 
   // ─── Step labels ─────────────────────────────────────────────────────────────
   const STEP_LABELS = ['Presidencia', 'Senado nacional', 'Senado regional', 'Diputados', 'Parlamento Andino'];
@@ -222,14 +226,19 @@
     if (typeof window !== 'undefined' && window.innerWidth <= 900) mobilePanelState = 'peek';
   }
 
-  // Advance to the next step in sequence (both "Continuar" and "Dejar en blanco")
+  // Advance to the next step in sequence; at last step, open the summary drawer
   function handleNextStep() {
-    const next = Math.min(activeIdx + 1, STEP_KEYS.length - 1);
-    activeIdx = next;
-    lockedIdx = next;
-    if (_lockTimer) clearTimeout(_lockTimer);
-    _lockTimer = setTimeout(() => { lockedIdx = null; }, 1500);
-    if (typeof window !== 'undefined' && window.innerWidth <= 900) mobilePanelState = 'peek';
+    if (activeIdx < STEP_KEYS.length - 1) {
+      const next = activeIdx + 1;
+      activeIdx = next;
+      lockedIdx = next;
+      if (_lockTimer) clearTimeout(_lockTimer);
+      _lockTimer = setTimeout(() => { lockedIdx = null; }, 1500);
+      if (typeof window !== 'undefined' && window.innerWidth <= 900) mobilePanelState = 'peek';
+    } else {
+      // Last step — guide user to the summary drawer
+      showSummaryDrawer = true;
+    }
   }
 
   // Mobile handle touch — swipe up/down to change sheet state, tap to toggle
@@ -371,7 +380,7 @@
 
   <!-- ── Fixed header with stepper ───────────────────────────────────────── -->
   <div class="header-anchor" bind:this={headerEl}>
-    <BallotProgressHeader {activeIdx} />
+    <BallotProgressHeader {activeIdx} onOpenSummary={() => showSummaryDrawer = true} />
 
     {#if !canSimulate}
       <div class="closed-bar" transition:fade={{ duration: 300 }}>
@@ -409,8 +418,6 @@
     <!-- Context panel — desktop (right sidebar) -->
     <aside class="context-panel-desktop" aria-label="Guía de votación">
       <SimulatorContextPanel
-        onDeliver={handleDeliver}
-        {isSubmitting}
         {showVideo}
         {activeIdx}
         onNextStep={handleNextStep}
@@ -454,8 +461,6 @@
     {#if mobilePanelState !== 'hidden'}
       <div class="mobile-panel-content">
         <SimulatorContextPanel
-          onDeliver={handleDeliver}
-          {isSubmitting}
           {showVideo}
           onToggleVideo={() => showVideo = !showVideo}
           {activeIdx}
@@ -465,6 +470,14 @@
       </div>
     {/if}
   </div>
+
+  <!-- ── Global summary drawer ────────────────────────────────────────────────── -->
+  <GlobalSummaryDrawer
+    isOpen={showSummaryDrawer}
+    onClose={() => showSummaryDrawer = false}
+    onDeliver={handleDeliver}
+    {isSubmitting}
+  />
 
   <!-- ── VoteOverlay (bottom sheet for marking) ───────────────────────────── -->
   <VoteOverlay />

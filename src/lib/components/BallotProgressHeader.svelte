@@ -8,8 +8,9 @@
 
   interface Props {
     activeIdx?: number;
+    onOpenSummary?: () => void;
   }
-  let { activeIdx: activeIdxProp = undefined }: Props = $props();
+  let { activeIdx: activeIdxProp = undefined, onOpenSummary }: Props = $props();
 
   const STEPS: { key: ColumnKey; label: string }[] = [
     { key: 'presidente',      label: 'Presidencia' },
@@ -44,9 +45,24 @@
         {/if}
       </span>
     </div>
-    <span class="header-counter" aria-label="{validCount} de 5 secciones completas">
-      {validCount}<span class="counter-total">/5</span>
-    </span>
+    <div class="header-actions">
+      <div class="header-tally">
+        <span class="header-counter" aria-label="{validCount} de 5 secciones completas">
+          {validCount}<span class="counter-total">/5</span>
+        </span>
+        <span
+          class="status-badge"
+          class:sb-complete={isReady}
+          class:sb-partial={validCount > 0 && !isReady}
+          class:sb-blank={validCount === 0}
+        >
+          {isReady ? 'Completa' : validCount > 0 ? 'Parcial' : 'En blanco'}
+        </span>
+      </div>
+      <button class="summary-btn" onclick={onOpenSummary}>
+        Ver resumen
+      </button>
+    </div>
   </div>
 
   <!-- Stepper -->
@@ -225,6 +241,61 @@
   .is-pending .step-label  { color: #94a3b8; }
   .is-active .step-label   { color: #e2e8f0; }
   .is-completed .step-label { color: #4ade80; }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  .header-tally {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+  }
+
+  .status-badge {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 10px;
+    white-space: nowrap;
+  }
+
+  .sb-complete { background: rgba(34,197,94,0.15);   color: #4ade80; }
+  .sb-partial  { background: rgba(245,158,11,0.15); color: #fbbf24; }
+  .sb-blank    { background: rgba(100,116,139,0.15); color: #94a3b8; }
+
+  .summary-btn {
+    padding: 6px 12px;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    background: transparent;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+    font-family: inherit;
+  }
+
+  .summary-btn:hover {
+    border-color: #475569;
+    color: #e2e8f0;
+    background: rgba(255,255,255,0.04);
+  }
+
+  @media (max-width: 768px) {
+    .summary-btn {
+      padding: 5px 10px;
+      font-size: 10px;
+    }
+  }
 
   /* Mobile */
   @media (max-width: 768px) {
