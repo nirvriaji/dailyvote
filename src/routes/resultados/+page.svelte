@@ -307,7 +307,7 @@
     </div>
     <div class="hiw-example">
       <span class="hiw-example-label">Ejemplo ilustrativo</span>
-      <p class="hiw-example-text">Imagina 150 votos emitidos. Si 50 son nulos o viciados, quedan 100 votos válidos — y la valla electoral es de 5 votos (5%). Si los votos nulos o viciados aumentaran y dejaran solo 80 votos válidos, la valla bajaría a 4 votos. Menos votos válidos = valla más baja.</p>
+      <p class="hiw-example-text">Imagina 150 votos en total. Si 50 son nulos o viciados, quedan 100 votos válidos — y la valla electoral es de 5 votos (5%). Si los votos nulos o viciados aumentaran y dejaran solo 80 votos válidos, la valla bajaría a 4 votos. Menos votos válidos = valla más baja.</p>
     </div>
   </section>
   {/if}
