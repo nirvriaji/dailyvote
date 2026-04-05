@@ -127,14 +127,14 @@
   <section class="hero-sect" in:fly={{ y: 28, duration: 700, delay: 500 }}>
     <p class="hero-eyebrow">Simulación electoral · Perú 2026</p>
     <h1 class="hero-title">
-      {#if ballotStatus === 'complete' && insights.isConcentrated}Concentraste tu voto en un solo partido
+      {#if ballotStatus === 'complete' && insights.isConcentrated}Tu voto al Congreso fue a un solo partido
       {:else if ballotStatus === 'complete' && insights.isFragmented}Repartiste tu voto entre {insights.uniqueParties} partidos
       {:else if ballotStatus === 'complete'}Así se procesó tu voto
       {:else if ballotStatus === 'partial'}Repartiste tu voto entre {insights.uniqueParties > 1 ? `${insights.uniqueParties} partidos` : 'algunos partidos'}
       {:else}Entregaste una cédula en blanco{/if}
     </h1>
     <p class="hero-subtitle">
-      {#if ballotStatus === 'complete' && insights.isConcentrated}Todas tus decisiones legislativas sumaron al mismo partido. Los escaños (los puestos en el Congreso) se reparten entre quienes superan la valla electoral.
+      {#if ballotStatus === 'complete' && insights.isConcentrated}Tus cuatro elecciones al Congreso sumaron al mismo partido. Tu voto presidencial es una elección separada y directa. Los escaños se reparten entre los partidos que superan la valla electoral.
       {:else if ballotStatus === 'complete' && insights.isFragmented}Tus decisiones se distribuyen entre varias fuerzas políticas. Los escaños (los puestos en el Congreso) se reparten entre quienes superan la valla electoral.
       {:else if ballotStatus === 'complete'}Tus decisiones se distribuyen entre los partidos que elegiste. Los escaños (los puestos en el Congreso) se reparten entre quienes superan la valla electoral.
       {:else if ballotStatus === 'partial'}Tus decisiones se distribuyen entre varias fuerzas políticas. Los escaños (los puestos en el Congreso) se reparten entre quienes superan la valla electoral.
@@ -156,8 +156,8 @@
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
             </div>
             <div>
-              <h3 class="reveal-card-title">Apostaste por un solo partido en el Congreso</h3>
-              <p class="reveal-card-desc">Todas tus elecciones legislativas sumaron al mismo partido. Si ese partido pasa la valla electoral, concentra más escaños y tiene mayor influencia en el Congreso.</p>
+              <h3 class="reveal-card-title">Tus cuatro votos al Congreso fueron al mismo partido</h3>
+              <p class="reveal-card-desc">Tu voto presidencial es una elección directa e independiente. Las cuatro elecciones legislativas sumaron al mismo partido — si pasa la valla, concentra más escaños en el Congreso.</p>
             </div>
           </article>
         {:else if insights.isFragmented}
