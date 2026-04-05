@@ -142,20 +142,112 @@
   <section class="hero-sect" in:fly={{ y: 28, duration: 700, delay: 500 }}>
     <p class="hero-eyebrow">Simulación electoral · Perú 2026</p>
     <h1 class="hero-title">
-      {#if ballotStatus === 'complete' && insights.isConcentrated}Tu voto fue directo y concentrado
-      {:else if ballotStatus === 'complete' && insights.isFragmented}Tu voto se diversificó entre varios partidos
+      {#if ballotStatus === 'complete' && insights.isConcentrated}Concentraste tu voto en un solo partido
+      {:else if ballotStatus === 'complete' && insights.isFragmented}Repartiste tu voto entre {insights.uniqueParties} partidos
       {:else if ballotStatus === 'complete'}Así se procesó tu voto
-      {:else if ballotStatus === 'partial'}Así se procesó tu cédula parcial
+      {:else if ballotStatus === 'partial'}Repartiste tu voto entre {insights.uniqueParties > 1 ? `${insights.uniqueParties} partidos` : 'algunos partidos'}
       {:else}Entregaste una cédula en blanco{/if}
     </h1>
     <p class="hero-subtitle">
-      {#if ballotStatus === 'complete' && insights.isConcentrated}Marcaste las 5 decisiones y concentraste el voto legislativo en un solo partido. Mira cómo eso afecta la distribución de escaños y el voto preferencial.
-      {:else if ballotStatus === 'complete' && insights.isFragmented}Marcaste las 5 decisiones y repartiste el voto entre {insights.uniqueParties} partidos distintos. Mira cómo esa diversificación se procesa en presidencia y en el congreso.
-      {:else if ballotStatus === 'complete'}Marcaste las 5 decisiones de la cédula. Mira cómo tu elección impactó en presidencia, partido y voto preferencial.
-      {:else if ballotStatus === 'partial'}Solo se procesaron las decisiones que sí marcaste. Mira qué pasó con esas elecciones y cuáles quedaron en blanco.
-      {:else}No marcaste ninguna de las elecciones de esta cédula. Por eso no hubo votos que procesar en presidencia ni en el congreso.{/if}
+      {#if ballotStatus === 'complete' && insights.isConcentrated}Todas tus decisiones legislativas sumaron al mismo partido. Los escaños (los puestos en el Congreso) se reparten entre quienes superan la valla electoral.
+      {:else if ballotStatus === 'complete' && insights.isFragmented}Tus decisiones se distribuyen entre varias fuerzas políticas. Los escaños (los puestos en el Congreso) se reparten entre quienes superan la valla electoral.
+      {:else if ballotStatus === 'complete'}Tus decisiones se distribuyen entre los partidos que elegiste. Los escaños (los puestos en el Congreso) se reparten entre quienes superan la valla electoral.
+      {:else if ballotStatus === 'partial'}Tus decisiones se distribuyen entre varias fuerzas políticas. Los escaños (los puestos en el Congreso) se reparten entre quienes superan la valla electoral.
+      {:else}No marcaste ninguna de las elecciones de esta cédula. Por eso no hubo votos que procesar en presidencia ni en el Congreso.{/if}
     </p>
   </section>
+
+  <!-- ═══ LO QUE REVELA TU CÉDULA ════════════════════════════════════════ -->
+  {#if ballotStatus !== 'blank'}
+  <section class="ballot-reveal-sect">
+    <h2 class="section-label">Lo que revela tu cédula</h2>
+
+    <div class="reveal-cards">
+      <!-- Card 1: Concentración / fragmentación -->
+      {#if insights.legislativeSelectionsCount >= 2}
+        {#if insights.isConcentrated}
+          <article class="reveal-card reveal-card--concentrated">
+            <div class="reveal-card-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
+            </div>
+            <div>
+              <h3 class="reveal-card-title">Apostaste por un solo partido en el Congreso</h3>
+              <p class="reveal-card-desc">Todas tus elecciones legislativas sumaron al mismo partido. Si ese partido pasa la valla electoral, concentra más escaños y tiene mayor influencia en el Congreso.</p>
+            </div>
+          </article>
+        {:else if insights.isFragmented}
+          <article class="reveal-card reveal-card--fragmented">
+            <div class="reveal-card-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2"/><circle cx="12" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="12" cy="18" r="2"/><circle cx="19" cy="18" r="2"/></svg>
+            </div>
+            <div>
+              <h3 class="reveal-card-title">Tu voto se distribuyó entre {insights.uniqueParties} partidos distintos</h3>
+              <p class="reveal-card-desc">Repartiste tu apoyo entre varias fuerzas políticas. Los escaños se reparten entre los partidos que superan la valla electoral.</p>
+            </div>
+          </article>
+        {:else}
+          <article class="reveal-card">
+            <div class="reveal-card-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+            </div>
+            <div>
+              <h3 class="reveal-card-title">Repartiste el voto entre {insights.uniqueParties} partidos</h3>
+              <p class="reveal-card-desc">Tus elecciones legislativas sumaron a partidos distintos. Los escaños se reparten entre los partidos que superan la valla electoral.</p>
+            </div>
+          </article>
+        {/if}
+      {/if}
+
+      <!-- Card 2: Voto preferencial -->
+      {#if insights.legislativeSelectionsCount > 0}
+        {#if insights.hasAllPrefs}
+          <article class="reveal-card reveal-card--prefs">
+            <div class="reveal-card-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div>
+              <h3 class="reveal-card-title">Usaste el voto preferencial en todas tus elecciones legislativas</h3>
+              <p class="reveal-card-desc">Si tus partidos pasan la valla y obtienen escaños, tus números preferenciales influyen en qué candidatos de esos partidos entran al Congreso.</p>
+            </div>
+          </article>
+        {:else if insights.hasAnyPreferences}
+          <article class="reveal-card">
+            <div class="reveal-card-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <div>
+              <h3 class="reveal-card-title">Usaste el voto preferencial en algunas elecciones</h3>
+              <p class="reveal-card-desc">Donde sí marcaste un número, ese número influye en qué candidatos ocupan los escaños si el partido pasa la valla. En las demás, el orden de la lista del partido decide.</p>
+            </div>
+          </article>
+        {:else}
+          <article class="reveal-card">
+            <div class="reveal-card-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            </div>
+            <div>
+              <h3 class="reveal-card-title">No marcaste votos preferenciales</h3>
+              <p class="reveal-card-desc">El orden de la lista del partido define qué candidatos ocupan los escaños.</p>
+            </div>
+          </article>
+        {/if}
+      {/if}
+
+      <!-- Card 3: Columnas en blanco (solo si parcial) -->
+      {#if ballotStatus === 'partial' && insights.blankColumns.length > 0}
+        <article class="reveal-card reveal-card--blank">
+          <div class="reveal-card-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+          </div>
+          <div>
+            <h3 class="reveal-card-title">{insights.blankColumns.length === 1 ? 'Una decisión quedó en blanco' : `${insights.blankColumns.length} decisiones quedaron en blanco`}</h3>
+            <p class="reveal-card-desc">{insights.blankColumns.join(', ')} {insights.blankColumns.length === 1 ? 'no sumó votos' : 'no sumaron votos'} en esa elección. Solo las decisiones marcadas entran al procesamiento de resultados.</p>
+          </div>
+        </article>
+      {/if}
+    </div>
+  </section>
+  {/if}
 
   <!-- ═══ RESUMEN DE LA CÉDULA ════════════════════════════════════════════ -->
   <section class="ballot-summary-sect" in:fly={{ y: 20, duration: 600, delay: 700 }}>
@@ -298,7 +390,7 @@
               </div>
             {/if}
           </div>
-          <p class="resumen-logic">Tu voto sigue la misma lógica: suma al partido y, si hay preferenciales, define qué candidatos del partido entran al congreso.</p>
+          <p class="resumen-logic">Tu voto suma al partido que elegiste. Si hay voto preferencial, ayuda a definir qué candidatos ocupan los escaños.</p>
         {:else}
           <p class="proc-blank-text">Esta sección quedó en blanco. No se sumó ningún voto en esta elección de la cédula.</p>
         {/if}
@@ -316,124 +408,15 @@
           {insights.blankColumns.length === 1 ? 'Dejaste 1 decisión en blanco' : `Dejaste ${insights.blankColumns.length} decisiones en blanco`}
         </h3>
       </div>
-      <p class="blank-insight-body">En esas elecciones no elegiste un partido. Eso significa que tu voto no se suma a ninguna organización política en esas columnas.</p>
-      <p class="blank-insight-body">Además, en cada una de esas elecciones, al haber menos votos válidos, puede ser más fácil que algunos partidos alcancen la valla electoral.</p>
+      <ul class="blank-insight-list">
+        <li>No elegiste un partido en {insights.blankColumns.length === 1 ? 'esa elección' : 'esas elecciones'}.</li>
+        <li>Ese voto no se suma a ninguna organización política.</li>
+        <li>Al haber menos votos válidos en {insights.blankColumns.length === 1 ? 'esa elección' : 'esas elecciones'}, la valla electoral puede ser más fácil de alcanzar.</li>
+      </ul>
       <div class="blank-insight-example">
         <p class="blank-insight-example-label">Ejemplo ilustrativo</p>
-        <p class="blank-insight-example-text">Si en una elección hay 100 votos válidos, un partido necesitaría 5 para pasar la valla. Pero si varias personas dejan esa parte en blanco y el total baja a 80, necesitaría 4. Al haber menos votos válidos, el mínimo también baja.</p>
+        <p class="blank-insight-example-text">Si el mínimo fuera 5 de cada 100 votos válidos, al bajar a 80 pasa a ser 4.</p>
       </div>
-    </div>
-  </section>
-  {/if}
-
-  <!-- ═══ QUÉ DEBES RECORDAR ═══════════════════════════════════════════════ -->
-  <section class="takeaway-sect" in:fly={{ y: 16, duration: 500 }}>
-    <h2 class="section-label">Qué debes recordar</h2>
-    <div class="takeaway-card">
-      {#if ballotStatus === 'complete'}
-        <p class="takeaway-line">Tu voto primero suma al partido.</p>
-        <p class="takeaway-line">Si el partido pasa la valla y obtiene puestos, el voto preferencial ayuda a definir qué candidatos del partido entran al congreso.</p>
-        <p class="takeaway-footer">Los resultados finales dependen de millones de votos como este.</p>
-      {:else if ballotStatus === 'partial'}
-        <p class="takeaway-line">Solo las decisiones que marcaste entraron a la simulación.</p>
-        <p class="takeaway-line">Las secciones en blanco no suman votos en esas elecciones.</p>
-        <p class="takeaway-footer">Si el partido pasa la valla y obtiene puestos, el voto preferencial ayuda a definir qué candidatos del partido entran al congreso.</p>
-      {:else}
-        <p class="takeaway-line">Una cédula en blanco no suma votos en ninguna de las elecciones que contiene.</p>
-        <p class="takeaway-line">Por eso esta simulación no muestra impacto en presidencia ni en el congreso.</p>
-        <p class="takeaway-footer">Marcar la cédula es lo que activa el procesamiento del voto.</p>
-      {/if}
-    </div>
-  </section>
-
-  <!-- ═══ LO QUE REVELA TU CÉDULA ════════════════════════════════════════ -->
-  {#if ballotStatus !== 'blank'}
-  <section class="ballot-reveal-sect">
-    <h2 class="section-label">Lo que revela tu cédula</h2>
-
-    <div class="reveal-cards">
-      <!-- Card 1: Concentración / fragmentación -->
-      {#if insights.legislativeSelectionsCount >= 2}
-        {#if insights.isConcentrated}
-          <article class="reveal-card reveal-card--concentrated">
-            <div class="reveal-card-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
-            </div>
-            <div>
-              <h3 class="reveal-card-title">Apostaste por un solo partido en el Congreso</h3>
-              <p class="reveal-card-desc">Todas tus elecciones legislativas sumaron al mismo partido. Si ese partido pasa la valla, concentra más escaños y tiene mayor influencia en el Congreso.</p>
-            </div>
-          </article>
-        {:else if insights.isFragmented}
-          <article class="reveal-card reveal-card--fragmented">
-            <div class="reveal-card-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2"/><circle cx="12" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="12" cy="18" r="2"/><circle cx="19" cy="18" r="2"/></svg>
-            </div>
-            <div>
-              <h3 class="reveal-card-title">Tu voto se distribuyó entre {insights.uniqueParties} partidos distintos</h3>
-              <p class="reveal-card-desc">Repartiste tu apoyo entre muchas fuerzas políticas. Cada una necesita pasar la valla por su cuenta para obtener escaños. Esto favorece un Congreso más diverso.</p>
-            </div>
-          </article>
-        {:else}
-          <article class="reveal-card">
-            <div class="reveal-card-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
-            </div>
-            <div>
-              <h3 class="reveal-card-title">Repartiste el voto entre {insights.uniqueParties} partidos</h3>
-              <p class="reveal-card-desc">Tus elecciones legislativas sumaron a partidos distintos. Los escaños se distribuyen entre quienes pasen la valla electoral.</p>
-            </div>
-          </article>
-        {/if}
-      {/if}
-
-      <!-- Card 2: Voto preferencial -->
-      {#if insights.legislativeSelectionsCount > 0}
-        {#if insights.hasAllPrefs}
-          <article class="reveal-card reveal-card--prefs">
-            <div class="reveal-card-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            </div>
-            <div>
-              <h3 class="reveal-card-title">Usaste el voto preferencial en todas tus elecciones legislativas</h3>
-              <p class="reveal-card-desc">Si tus partidos pasan la valla y obtienen escaños, tus números preferenciales influyen en qué candidatos de esos partidos entran al Congreso.</p>
-            </div>
-          </article>
-        {:else if insights.hasAnyPreferences}
-          <article class="reveal-card">
-            <div class="reveal-card-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            </div>
-            <div>
-              <h3 class="reveal-card-title">Usaste el voto preferencial en algunas elecciones</h3>
-              <p class="reveal-card-desc">En las secciones donde sí marcaste un número, ese número influye en qué candidatos entran al Congreso si el partido pasa la valla. En las demás, el orden de lista del partido decide.</p>
-            </div>
-          </article>
-        {:else}
-          <article class="reveal-card">
-            <div class="reveal-card-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-            </div>
-            <div>
-              <h3 class="reveal-card-title">No marcaste votos preferenciales</h3>
-              <p class="reveal-card-desc">Sin preferencial, el orden de la lista del partido determina qué candidatos entran al Congreso. El voto preferencial es opcional, pero influye en quiénes específicamente representan al partido.</p>
-            </div>
-          </article>
-        {/if}
-      {/if}
-
-      <!-- Card 3: Columnas en blanco (solo si parcial) -->
-      {#if ballotStatus === 'partial' && insights.blankColumns.length > 0}
-        <article class="reveal-card reveal-card--blank">
-          <div class="reveal-card-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
-          </div>
-          <div>
-            <h3 class="reveal-card-title">{insights.blankColumns.length === 1 ? 'Una decisión quedó en blanco' : `${insights.blankColumns.length} decisiones quedaron en blanco`}</h3>
-            <p class="reveal-card-desc">{insights.blankColumns.join(', ')} {insights.blankColumns.length === 1 ? 'no sumó votos' : 'no sumaron votos'} en esa elección. Solo las decisiones marcadas entran al procesamiento de resultados.</p>
-          </div>
-        </article>
-      {/if}
     </div>
   </section>
   {/if}
@@ -443,9 +426,9 @@
     <h2 class="section-label">Explora otro escenario</h2>
 
     <p class="what-if-intro">
-      {#if insights.isConcentrated}Tu cédula concentró el voto legislativo en un solo partido. Aquí puedes ver qué implica esa decisión o explorar qué pasaría si lo dividieras.
-      {:else if insights.isFragmented}Tu cédula repartió el voto entre varios partidos. Aquí puedes comparar qué implica eso frente a concentrar el apoyo.
-      {:else}Tu resultado muestra lo que pasó con tu voto. Aquí puedes comparar, de forma simple, qué cambia cuando el apoyo se concentra en un solo partido o se reparte entre varios.{/if}
+      {#if insights.isConcentrated}Tu voto se concentró en un solo partido. ¿Qué pasaría si lo dividieras entre varios?
+      {:else if insights.isFragmented}Tu voto se repartió entre varios partidos. ¿Qué pasaría si lo concentraras en uno solo?
+      {:else}Tu voto se repartió entre varios partidos. ¿Qué pasaría si lo concentraras en uno solo?{/if}
     </p>
 
     <div class="what-if-toggle" role="tablist" aria-label="Comparar escenarios de voto">
@@ -471,27 +454,22 @@
 
     {#if whatIfScenario === 'concentrar'}
       <div class="what-if-card">
-        <p class="what-if-result">
-          Cuando el voto se concentra en un mismo partido, ese partido obtiene una mayor proporción de escaños en el Congreso.
-          Luego de esa distribución, el voto preferencial define qué candidatos de ese partido ocupan esos escaños.
-        </p>
+        <p class="what-if-result">Cuando el voto se concentra en un solo partido, ese partido puede obtener más escaños en el Congreso.</p>
       </div>
     {:else}
       <div class="what-if-card">
-        <p class="what-if-result">
-          Cuando el voto se reparte entre distintos partidos, los escaños se distribuyen entre más fuerzas políticas.
-          Después de esa distribución, el voto preferencial define qué candidatos de cada partido ocupan esos escaños.
-        </p>
+        <p class="what-if-result">Cuando el voto se reparte entre varios partidos, los escaños se distribuyen entre más fuerzas políticas y se necesitan acuerdos para gobernar.</p>
       </div>
     {/if}
   </section>
 
   <!-- ═══ SIMULAR DE NUEVO + FEEDBACK ══════════════════════════════════════ -->
   <section class="closing-sect">
+    <p class="closing-invite">Ahora que viste cómo funciona tu voto, puedes probar distintas combinaciones y comparar resultados.</p>
     <button class="btn-primary" onclick={handleRestart} disabled={restarting}>
       {#if restarting}Preparando...
-      {:else if ballotStatus === 'complete'}Simular de nuevo
-      {:else if ballotStatus === 'partial'}Probar una cédula completa
+      {:else if ballotStatus === 'complete'}Probar otra combinación de voto
+      {:else if ballotStatus === 'partial'}Probar otra combinación de voto
       {:else}Volver y marcar la cédula{/if}
     </button>
 
@@ -998,41 +976,25 @@
     margin: 0;
   }
 
+  .blank-insight-list {
+    margin: 0;
+    padding-left: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .blank-insight-list li {
+    font-size: 13px;
+    color: rgba(226, 232, 240, 0.78);
+    line-height: 1.55;
+  }
+
   .blank-insight-example-text {
     font-size: 12px;
     color: rgba(203, 213, 225, 0.65);
     line-height: 1.65;
     margin: 0;
-  }
-
-  /* ─────────────────────────────────────────────────────────────────────────
-     Takeaway
-  ───────────────────────────────────────────────────────────────────────── */
-  .takeaway-card {
-    background: #111827;
-    border: 1px solid #1e293b;
-    border-radius: 12px;
-    padding: 28px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
-
-  .takeaway-line {
-    font-size: 16px;
-    font-weight: 600;
-    color: #e2e8f0;
-    line-height: 1.6;
-    margin: 0;
-  }
-
-  .takeaway-footer {
-    font-size: 13px;
-    color: #475569;
-    line-height: 1.6;
-    margin: 0;
-    padding-top: 6px;
-    border-top: 1px solid #1e293b;
   }
 
   /* ─────────────────────────────────────────────────────────────────────────
@@ -1166,8 +1128,17 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 32px;
+    gap: 20px;
     padding-bottom: 16px;
+  }
+
+  .closing-invite {
+    font-size: 15px;
+    color: #94a3b8;
+    line-height: 1.6;
+    margin: 0;
+    text-align: center;
+    max-width: 420px;
   }
 
   .btn-primary {
