@@ -157,7 +157,7 @@
             </div>
             <div>
               <h3 class="reveal-card-title">Tus cuatro votos al Congreso fueron al mismo partido</h3>
-              <p class="reveal-card-desc">Tu voto presidencial es una elección directa e independiente. Las cuatro elecciones legislativas sumaron al mismo partido — si pasa la valla, concentra más escaños en el Congreso.</p>
+              <p class="reveal-card-desc">Tu voto presidencial es directo e independiente. En el Congreso, tus cuatro votos válidos sumaron al mismo partido. Si supera la valla electoral (5% de los votos válidos), ese partido concentra más escaños.</p>
             </div>
           </article>
         {:else if insights.isFragmented}
@@ -167,7 +167,7 @@
             </div>
             <div>
               <h3 class="reveal-card-title">Tu voto se distribuyó entre {insights.uniqueParties} partidos distintos</h3>
-              <p class="reveal-card-desc">Repartiste tu apoyo entre varias fuerzas políticas. Los escaños se reparten entre los partidos que superan la valla electoral.</p>
+              <p class="reveal-card-desc">Tus votos válidos se distribuyeron entre varios partidos. Cada uno que supere la valla electoral (5% de los votos válidos) obtiene escaños proporcionales a sus votos.</p>
             </div>
           </article>
         {:else}
@@ -177,7 +177,7 @@
             </div>
             <div>
               <h3 class="reveal-card-title">Repartiste el voto entre {insights.uniqueParties} partidos</h3>
-              <p class="reveal-card-desc">Tus elecciones legislativas sumaron a partidos distintos. Los escaños se reparten entre los partidos que superan la valla electoral.</p>
+              <p class="reveal-card-desc">Tus votos válidos sumaron a partidos distintos. Los escaños se reparten entre los que superen la valla electoral (5% de los votos válidos).</p>
             </div>
           </article>
         {/if}
@@ -192,7 +192,7 @@
             </div>
             <div>
               <h3 class="reveal-card-title">Usaste el voto preferencial en todas tus elecciones legislativas</h3>
-              <p class="reveal-card-desc">Si tus partidos pasan la valla y obtienen escaños, tus números preferenciales influyen en qué candidatos de esos partidos entran al Congreso.</p>
+              <p class="reveal-card-desc">Si tus partidos superan la valla electoral y obtienen escaños, tus números preferenciales aumentan las chances de esos candidatos de ocupar uno de esos escaños.</p>
             </div>
           </article>
         {:else if insights.hasAnyPreferences}
@@ -202,7 +202,7 @@
             </div>
             <div>
               <h3 class="reveal-card-title">Usaste el voto preferencial en algunas elecciones</h3>
-              <p class="reveal-card-desc">Donde sí marcaste un número, ese número influye en qué candidatos ocupan los escaños si el partido pasa la valla. En las demás, el orden lo deciden los votos preferenciales de los demás electores.</p>
+              <p class="reveal-card-desc">Donde marcaste un número, ese candidato tiene más chances de ocupar un escaño si el partido supera la valla. Donde no marcaste, los escaños los definen los votos preferenciales de los demás electores.</p>
             </div>
           </article>
         {:else}
@@ -212,7 +212,7 @@
             </div>
             <div>
               <h3 class="reveal-card-title">No marcaste votos preferenciales</h3>
-              <p class="reveal-card-desc">Sin números preferenciales, los escaños van a los candidatos que más votos preferenciales reciban de otros electores — tú no influyes en ese orden.</p>
+              <p class="reveal-card-desc">Tus votos válidos ayudan al partido a superar la valla electoral. Si lo logra y obtiene escaños, son los votos preferenciales de otros electores los que deciden qué candidatos entran.</p>
             </div>
           </article>
         {/if}
@@ -268,6 +268,50 @@
     </div>
   </section>
 
+  <!-- ═══ CÓMO FUNCIONA EL CONTEO ═══════════════════════════════════════════ -->
+  {#if ballotStatus !== 'blank'}
+  <section class="how-it-works-sect">
+    <h2 class="section-label">Cómo se decide quién entra al Congreso</h2>
+    <div class="hiw-chain">
+      <div class="hiw-step">
+        <span class="hiw-num">1</span>
+        <div class="hiw-body">
+          <strong class="hiw-term">Votos válidos</strong>
+          <p class="hiw-desc">Solo cuentan los votos marcados. Los votos en blanco no suman a ningún partido — y reducen el total de votos válidos.</p>
+        </div>
+      </div>
+      <div class="hiw-arrow">→</div>
+      <div class="hiw-step">
+        <span class="hiw-num">2</span>
+        <div class="hiw-body">
+          <strong class="hiw-term">Valla electoral</strong>
+          <p class="hiw-desc">Un partido necesita al menos el 5% de los votos válidos para entrar al reparto. Si no lo alcanza, ninguno de sus candidatos entra al Congreso.</p>
+        </div>
+      </div>
+      <div class="hiw-arrow">→</div>
+      <div class="hiw-step">
+        <span class="hiw-num">3</span>
+        <div class="hiw-body">
+          <strong class="hiw-term">Escaños</strong>
+          <p class="hiw-desc">Los puestos del Congreso se reparten proporcionalmente entre los partidos que superaron la valla. Más votos = más escaños.</p>
+        </div>
+      </div>
+      <div class="hiw-arrow">→</div>
+      <div class="hiw-step">
+        <span class="hiw-num">4</span>
+        <div class="hiw-body">
+          <strong class="hiw-term">Candidatos</strong>
+          <p class="hiw-desc">Dentro de cada partido, los escaños van a los candidatos con más votos preferenciales. Si nadie marcó un número, entra el orden de lista.</p>
+        </div>
+      </div>
+    </div>
+    <div class="hiw-example">
+      <span class="hiw-example-label">Ejemplo ilustrativo</span>
+      <p class="hiw-example-text">Imagina 1,000,000 votos válidos: la valla electoral es 50,000 votos. Un partido con 80,000 votos entra al reparto de escaños. Uno con 30,000 queda fuera y ninguno de sus candidatos entra al Congreso. Si los votos en blanco redujeran el total a 900,000, la valla bajaría a 45,000.</p>
+    </div>
+  </section>
+  {/if}
+
   <!-- ═══ QUÉ PASÓ CON TU VOTO ════════════════════════════════════════════ -->
   <section class="processing-sect">
     <h2 class="section-label">Qué pasó con tu voto</h2>
@@ -302,7 +346,7 @@
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:{senadoNac.selection.partyColor}"><rect x="3" y="3" width="18" height="18" rx="2"/><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
                 </div>
                 <p class="fn-label">Tu voto</p>
-                <p class="fn-desc">Tu voto sumó al partido que elegiste.</p>
+                <p class="fn-desc">Tu voto se suma como voto válido al partido que elegiste.</p>
                 <span class="fn-tag" style="border-color:{senadoNac.selection.partyColor}25;background:{senadoNac.selection.partyColor}12;color:{senadoNac.selection.partyColor}">{senadoNac.selection.partyName}</span>
               </div>
             {/if}
@@ -316,7 +360,7 @@
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 </div>
                 <p class="fn-label">Partido</p>
-                <p class="fn-desc">Si el partido pasa la valla y obtiene puestos, entra en la distribución.</p>
+                <p class="fn-desc">El partido necesita el 5% de los votos válidos para superar la valla electoral.</p>
               </div>
             {/if}
 
@@ -328,8 +372,8 @@
                 <div class="fn-icon-wrap fi-puestos">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                 </div>
-                <p class="fn-label">Puestos</p>
-                <p class="fn-desc">Los puestos dependen de cuántos votos obtiene el partido.</p>
+                <p class="fn-label">Escaños</p>
+                <p class="fn-desc">Si supera la valla, obtiene escaños proporcionales a sus votos.</p>
               </div>
             {/if}
 
@@ -342,12 +386,12 @@
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 </div>
                 <p class="fn-label">Candidatos</p>
-                <p class="fn-desc">Si marcaste números preferenciales, esos números ayudan a definir qué candidatos del partido entran al congreso.</p>
+                <p class="fn-desc">Los escaños van a los candidatos con más votos preferenciales.</p>
                 {#if senadoNac.prefs.length > 0}
                   <div class="fn-prefs-row">
                     {#each senadoNac.prefs as num}<span class="fn-pref-num">N° {num}</span>{/each}
                   </div>
-                  <p class="fn-pref-note">Este número cuenta si el partido pasa la valla y obtiene puestos. Define qué candidatos del partido entran al congreso.</p>
+                  <p class="fn-pref-note">Tu preferencia cuenta si el partido supera la valla electoral. Aumenta las chances de ese candidato de ocupar un escaño.</p>
                 {:else}
                   <span class="fn-no-pref">Sin voto preferencial</span>
                 {/if}
@@ -375,47 +419,21 @@
               </div>
             {/if}
           </div>
-          <p class="resumen-logic">Tu voto suma al partido que elegiste. Si hay voto preferencial, ayuda a definir qué candidatos ocupan los escaños.</p>
+          <p class="resumen-logic">
+            Tu voto suma a {col.selection.partyName} como voto válido.
+            Si supera la valla electoral (5% de los votos válidos), obtiene escaños en el Congreso.
+            {#if col.prefs.length > 0}
+              Tu N° {col.prefs.join(' y N° ')} le da más chances a {col.prefs.length === 1 ? 'ese candidato' : 'esos candidatos'} de ocupar uno de esos escaños.
+            {:else}
+              Los escaños van a los candidatos con más votos preferenciales de otros electores.
+            {/if}
+          </p>
         {:else}
           <p class="proc-blank-text">Esta sección quedó en blanco. No se sumó ningún voto en esta elección de la cédula.</p>
         {/if}
       </div>
     {/each}
   </section>
-
-  <!-- ═══ TUS NÚMEROS PREFERENCIALES ════════════════════════════════════════ -->
-  {#if insights.hasAnyPreferences}
-  <section class="pref-explainer-sect">
-    <div class="pref-explainer-card">
-      <div class="pref-explainer-header">
-        <svg class="pref-explainer-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        <h3 class="pref-explainer-title">¿Qué hacen tus números preferenciales?</h3>
-      </div>
-
-      <div class="pref-rows">
-        {#each userBallot.filter(r => r.hasPreferential && r.selection && r.prefs.length > 0) as row}
-          <div class="pref-row">
-            <div class="pref-row-top">
-              <span class="pref-row-label">{row.label}</span>
-              <div class="pref-row-nums">
-                {#each row.prefs as num}<span class="pref-chip">N° {num}</span>{/each}
-              </div>
-            </div>
-            <p class="pref-row-desc">
-              Indicaste que prefieres al candidato N° {row.prefs.join(' y N° ')} de {row.selection!.partyName}.
-              Si ese partido supera la valla electoral y obtiene escaños, tu número influye en qué candidato de la lista ocupa esos puestos.
-            </p>
-          </div>
-        {/each}
-      </div>
-
-      <div class="pref-explainer-note">
-        <p><strong>¿Siempre cuenta?</strong> Solo si el partido supera la valla del 5% de los votos válidos. Si no la pasa, ninguno de sus candidatos entra, sin importar el número que marcaste.</p>
-        <p><strong>¿Es obligatorio?</strong> No. Puedes votar solo por partido sin marcar ningún número.</p>
-      </div>
-    </div>
-  </section>
-  {/if}
 
   <!-- ═══ VOTO EN BLANCO POR COLUMNA ════════════════════════════════════════ -->
   {#if insights.blankColumns.length > 0}
@@ -428,14 +446,9 @@
         </h3>
       </div>
       <ul class="blank-insight-list">
-        <li>No elegiste un partido en {insights.blankColumns.length === 1 ? 'esa elección' : 'esas elecciones'}.</li>
-        <li>Ese voto no se suma a ninguna organización política.</li>
-        <li>Al haber menos votos válidos en {insights.blankColumns.length === 1 ? 'esa elección' : 'esas elecciones'}, la valla electoral puede ser más fácil de alcanzar.</li>
+        <li>{insights.blankColumns.join(' y ')} {insights.blankColumns.length === 1 ? 'no sumó votos válidos' : 'no sumaron votos válidos'} — ese espacio no cuenta para ningún partido.</li>
+        <li>Al reducirse los votos válidos en {insights.blankColumns.length === 1 ? 'esa elección' : 'esas elecciones'}, la valla electoral baja y puede ser más fácil de superar para los partidos que sí recibieron votos.</li>
       </ul>
-      <div class="blank-insight-example">
-        <p class="blank-insight-example-label">Ejemplo ilustrativo</p>
-        <p class="blank-insight-example-text">Si se contaran 100 votos válidos, la valla electoral sería de 5 votos; pero si la cantidad de votos válidos bajara a 80, la valla electoral sería solo de 4 votos.</p>
-      </div>
     </div>
   </section>
   {/if}
@@ -445,9 +458,9 @@
     <h2 class="section-label">Explora otro escenario</h2>
 
     <p class="what-if-intro">
-      {#if insights.isConcentrated}Tu voto se concentró en un solo partido. ¿Qué pasaría si lo dividieras entre varios?
-      {:else if insights.isFragmented}Tu voto se repartió entre varios partidos. ¿Qué pasaría si lo concentraras en uno solo?
-      {:else}Tu voto se repartió entre varios partidos. ¿Qué pasaría si lo concentraras en uno solo?{/if}
+      {#if insights.isConcentrated}Concentraste tus votos válidos en un partido. ¿Cómo cambia el reparto de escaños si los divides?
+      {:else if insights.isFragmented}Distribuiste tus votos válidos entre varios partidos. ¿Cómo cambia el reparto de escaños si los concentras?
+      {:else}Distribuiste tus votos válidos entre partidos distintos. ¿Cómo cambia el reparto de escaños si los concentras?{/if}
     </p>
 
     <div class="what-if-toggle" role="tablist" aria-label="Comparar escenarios de voto">
@@ -473,11 +486,11 @@
 
     {#if whatIfScenario === 'concentrar'}
       <div class="what-if-card">
-        <p class="what-if-result">Cuando el voto se concentra en un solo partido, ese partido puede obtener más escaños en el Congreso.</p>
+        <p class="what-if-result">Cuando los votos válidos se concentran en un partido, ese partido acumula más votos y puede obtener más escaños — siempre que supere la valla electoral.</p>
       </div>
     {:else}
       <div class="what-if-card">
-        <p class="what-if-result">Cuando el voto se reparte entre varios partidos, los escaños se distribuyen entre más fuerzas políticas y se necesitan acuerdos para gobernar.</p>
+        <p class="what-if-result">Cuando los votos válidos se reparten entre varios partidos, los escaños se distribuyen entre más fuerzas. Ningún partido domina solo — se necesitan acuerdos para gobernar.</p>
       </div>
     {/if}
   </section>
@@ -1285,6 +1298,97 @@
   .btn-ghost:hover {
     border-color: #475569;
     color: #94a3b8;
+  }
+
+  /* ─────────────────────────────────────────────────────────────────────────
+     How it works
+  ───────────────────────────────────────────────────────────────────────── */
+  .how-it-works-sect {
+    padding: 0 0 8px;
+  }
+
+  .hiw-chain {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .hiw-step {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 14px 16px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid #1e293b;
+    border-radius: 8px;
+  }
+
+  .hiw-num {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #1e293b;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .hiw-body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .hiw-term {
+    font-size: 13px;
+    font-weight: 700;
+    color: #e2e8f0;
+  }
+
+  .hiw-desc {
+    font-size: 13px;
+    color: #64748b;
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .hiw-arrow {
+    text-align: center;
+    color: #334155;
+    font-size: 18px;
+    padding: 4px 0;
+    line-height: 1;
+  }
+
+  .hiw-example {
+    margin-top: 12px;
+    background: rgba(99, 102, 241, 0.05);
+    border: 1px solid rgba(99, 102, 241, 0.15);
+    border-radius: 8px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .hiw-example-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #818cf8;
+  }
+
+  .hiw-example-text {
+    font-size: 13px;
+    color: #64748b;
+    line-height: 1.6;
+    margin: 0;
   }
 
   /* ─────────────────────────────────────────────────────────────────────────
