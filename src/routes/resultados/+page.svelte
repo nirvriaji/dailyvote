@@ -293,7 +293,7 @@
         <span class="hiw-num">3</span>
         <div class="hiw-body">
           <strong class="hiw-term">Escaños</strong>
-          <p class="hiw-desc">Los puestos del Congreso se reparten proporcionalmente entre los partidos que superaron la valla. Más votos = más escaños.</p>
+          <p class="hiw-desc">Los puestos del Congreso se reparten proporcionalmente entre los partidos que superaron la valla. Más votos válidos = más escaños.</p>
         </div>
       </div>
       <div class="hiw-arrow">→</div>
