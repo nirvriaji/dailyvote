@@ -202,7 +202,7 @@
             </div>
             <div>
               <h3 class="reveal-card-title">Usaste el voto preferencial en algunas elecciones</h3>
-              <p class="reveal-card-desc">Donde sí marcaste un número, ese número influye en qué candidatos ocupan los escaños si el partido pasa la valla. En las demás, el orden de la lista del partido decide.</p>
+              <p class="reveal-card-desc">Donde sí marcaste un número, ese número influye en qué candidatos ocupan los escaños si el partido pasa la valla. En las demás, el orden lo deciden los votos preferenciales de los demás electores.</p>
             </div>
           </article>
         {:else}
@@ -212,7 +212,7 @@
             </div>
             <div>
               <h3 class="reveal-card-title">No marcaste votos preferenciales</h3>
-              <p class="reveal-card-desc">El orden de la lista del partido define qué candidatos ocupan los escaños.</p>
+              <p class="reveal-card-desc">Sin números preferenciales, los escaños van a los candidatos que más votos preferenciales reciban de otros electores — tú no influyes en ese orden.</p>
             </div>
           </article>
         {/if}
