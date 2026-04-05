@@ -415,7 +415,7 @@
       </ul>
       <div class="blank-insight-example">
         <p class="blank-insight-example-label">Ejemplo ilustrativo</p>
-        <p class="blank-insight-example-text">Si el mínimo fuera 5 de cada 100 votos válidos, al bajar a 80 pasa a ser 4.</p>
+        <p class="blank-insight-example-text">Si se contaran 100 votos válidos, la valla electoral sería de 5 votos; pero si la cantidad de votos válidos bajara a 80, la valla electoral sería solo de 4 votos.</p>
       </div>
     </div>
   </section>
