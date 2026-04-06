@@ -337,4 +337,12 @@
       font-size: 11px;
     }
   }
+
+  /* ── Desktop: bump gray text one stop darker for readability ──────────── */
+  @media (min-width: 901px) {
+    .header-eyebrow          { color: #475569; }
+    .counter-total           { color: #64748b; }
+    .is-pending .step-label  { color: #64748b; }
+    .summary-btn             { color: #475569; }
+  }
 </style>

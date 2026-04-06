@@ -400,4 +400,13 @@
     color: rgba(21,128,61,0.8);
   }
 
+  /* ── Desktop: bump gray text one stop darker for readability ──────────── */
+  @media (min-width: 901px) {
+    .step-eyebrow  { color: #64748b; }
+    .state-empty   { color: #64748b; }
+    .state-prefs   { color: #475569; }
+    .education-brief,
+    .ctx-education p { color: #334155; }
+  }
+
 </style>

@@ -1475,4 +1475,35 @@
     }
   }
 
+  /* ── Desktop: bump gray text one stop darker for readability ──────────── */
+  @media (min-width: 901px) {
+    /* #475569 → #334155 */
+    .hero-eyebrow,
+    .hero-subtitle,
+    .proc-card-desc,
+    .blank-insight-body,
+    .blank-insight-list li,
+    .what-if-intro,
+    .what-if-result,
+    .closing-invite,
+    .reveal-card-desc { color: #334155; }
+
+    /* #64748b → #475569 */
+    .fn-desc,
+    .fn-pref-note,
+    .resumen-logic,
+    .pref-row-desc,
+    .pref-explainer-note p,
+    .blank-insight-example-label,
+    .blank-insight-example-text,
+    .feedback-sub,
+    .hiw-desc,
+    .hiw-example-text { color: #475569; }
+
+    /* #94a3b8 → #64748b */
+    .chip-blank,
+    .pref-row-label,
+    .pref-explainer-note strong { color: #64748b; }
+  }
+
 </style>
