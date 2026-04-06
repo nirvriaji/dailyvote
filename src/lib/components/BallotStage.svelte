@@ -127,7 +127,7 @@
   /* Mobile: bottom clearance so last ballot row isn't hidden behind the fixed panel */
   @media (max-width: 900px) {
     .spacer-bottom {
-      height: var(--panel-h, 48px);
+      height: var(--panel-h, 140px);
     }
   }
 

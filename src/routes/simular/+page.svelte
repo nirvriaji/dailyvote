@@ -134,9 +134,12 @@
 
   let highlightColumnId = $derived(lockedIdx !== null ? STEP_COL_IDS[lockedIdx] : null);
 
-  // Panel height CSS var based on mobile state
+  // Panel height CSS var — measured from the actual DOM element so spacer-bottom is exact
+  let mobilePanelEl: HTMLElement | null = $state(null);
+  let mobilePanelClientH = $state(0);
   let panelH = $derived(
-    mobilePanelState === 'hidden' ? '48px' :
+    mobilePanelClientH > 0 ? `${mobilePanelClientH}px` :
+    mobilePanelState === 'hidden' ? '120px' :
     mobilePanelState === 'peek'   ? '45dvh' : '65dvh'
   );
 
@@ -444,6 +447,8 @@
     class:state-full={mobilePanelState === 'full'}
     aria-label="Guía de votación"
     role="complementary"
+    bind:this={mobilePanelEl}
+    bind:clientHeight={mobilePanelClientH}
   >
     <!-- Drag handle — visible solo cuando colapsado (CSS transition, no {#if}) -->
     <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
