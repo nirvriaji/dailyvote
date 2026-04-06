@@ -57,14 +57,17 @@
   <meta property="og:site_name" content="La Fecha Más Importante" />
   <meta property="og:title" content="Simulador Electoral Perú 2026 — Aprende a votar" />
   <meta property="og:description" content="Practica tu voto para las Elecciones Generales Perú 2026. Simulador interactivo de la cédula electoral con los partidos políticos." />
-  <meta property="og:image" content="https://lafechamasimportante.com/favicon.svg" />
-  <meta property="og:image:type" content="image/svg+xml" />
+  <meta property="og:image" content="https://lafechamasimportante.com/og-image.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Simulador Electoral Perú 2026 — Practica tu voto" />
   <meta property="og:locale" content="es_PE" />
-  <meta property="twitter:card" content="summary" />
+  <meta property="twitter:card" content="summary_large_image" />
   <meta property="twitter:url" content="https://lafechamasimportante.com/" />
   <meta property="twitter:title" content="Simulador Electoral Perú 2026 — Aprende a votar" />
   <meta property="twitter:description" content="Practica tu voto para las Elecciones Generales Perú 2026. Simulador interactivo de la cédula electoral." />
-  <meta property="twitter:image" content="https://lafechamasimportante.com/favicon.svg" />
+  <meta property="twitter:image" content="https://lafechamasimportante.com/og-image.png" />
   <meta property="twitter:creator" content="@nirvriaji" />
   {@html `<script type="application/ld+json">${JSON.stringify({
     "@context": "https://schema.org",

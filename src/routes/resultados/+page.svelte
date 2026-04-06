@@ -122,14 +122,20 @@
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://lafechamasimportante.com/resultados" />
   <meta property="og:title" content="Así se procesó tu voto — Elecciones Perú 2026" />
-  <meta property="og:description" content="Ve cómo tu voto se procesó paso a paso." />
-  <meta property="og:image" content="https://lafechamasimportante.com/favicon.svg" />
+  <meta property="og:description" content="Ve cómo tu voto se procesó paso a paso: partidos, valla electoral, escaños y voto preferencial en las Elecciones Perú 2026." />
+  <meta property="og:image" content="https://lafechamasimportante.com/og-image.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Así se procesó tu voto — Simulación Electoral Perú 2026" />
   <meta property="og:locale" content="es_PE" />
-  <meta property="twitter:card" content="summary" />
+  <meta property="og:site_name" content="La Fecha Más Importante" />
+  <meta property="twitter:card" content="summary_large_image" />
   <meta property="twitter:url" content="https://lafechamasimportante.com/resultados" />
   <meta property="twitter:title" content="Así se procesó tu voto — Elecciones Perú 2026" />
-  <meta property="twitter:description" content="Ve cómo tu voto se procesó paso a paso." />
-  <meta property="twitter:image" content="https://lafechamasimportante.com/favicon.svg" />
+  <meta property="twitter:description" content="Ve cómo tu voto se procesó paso a paso: partidos, valla electoral, escaños y voto preferencial en las Elecciones Perú 2026." />
+  <meta property="twitter:image" content="https://lafechamasimportante.com/og-image.png" />
+  <meta name="twitter:creator" content="@lafechamásimportante" />
 </svelte:head>
 
 
