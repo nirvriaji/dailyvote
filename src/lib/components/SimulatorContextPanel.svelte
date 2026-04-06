@@ -174,11 +174,11 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    background: #0f172a;
-    border-left: 1px solid #1e293b;
+    background: #ffffff;
+    border-left: 1px solid #e2e8f0;
     overflow-y: auto;
     scrollbar-width: thin;
-    scrollbar-color: #334155 transparent;
+    scrollbar-color: #e2e8f0 transparent;
   }
 
   .panel::-webkit-scrollbar {
@@ -212,13 +212,13 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: #475569;
+    color: #94a3b8;
   }
 
   .step-title {
     font-size: 22px;
     font-weight: 800;
-    color: white;
+    color: #0f172a;
     margin: 0;
     letter-spacing: -0.02em;
     line-height: 1.2;
@@ -250,20 +250,20 @@
   /* ── Education brief ─────────────────────────────────────────────────────── */
   .education-brief {
     font-size: 13px;
-    color: #94a3b8;
+    color: #475569;
     line-height: 1.55;
     margin: 0;
     padding: 10px 12px;
-    background: rgba(200,16,46,0.07);
-    border-left: 3px solid rgba(200,16,46,0.6);
+    background: rgba(200,16,46,0.05);
+    border-left: 3px solid rgba(200,16,46,0.5);
     border-radius: 0 6px 6px 0;
   }
 
   /* ── Local state ─────────────────────────────────────────────────────────── */
   .local-state {
     padding: 12px 14px;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid #1e293b;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
     border-radius: 8px;
     min-height: 52px;
     display: flex;
@@ -272,11 +272,11 @@
   }
 
   .local-state.has-vote {
-    border-color: rgba(34,197,94,0.3);
-    background: rgba(34,197,94,0.05);
+    border-color: rgba(22,163,74,0.3);
+    background: rgba(22,163,74,0.04);
   }
 
-  .state-empty { font-size: 13px; color: #475569; font-style: italic; }
+  .state-empty { font-size: 13px; color: #94a3b8; font-style: italic; }
 
   .state-filled { display: flex; flex-direction: column; gap: 3px; }
 
@@ -285,23 +285,23 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: #4ade80;
+    color: #16a34a;
   }
 
-  .state-party { font-size: 14px; font-weight: 700; color: #e2e8f0; line-height: 1.3; }
-  .state-prefs { font-size: 12px; color: #94a3b8; }
+  .state-party { font-size: 14px; font-weight: 700; color: #0f172a; line-height: 1.3; }
+  .state-prefs { font-size: 12px; color: #64748b; }
 
   /* ── Education block ─────────────────────────────────────────────────────── */
   .ctx-education {
     padding: 10px 12px;
-    background: rgba(255,255,255,0.03);
+    background: #f8fafc;
     border-radius: 8px;
     border-left: 3px solid #C8102E;
   }
 
   .ctx-education p {
     font-size: 12px;
-    color: #94a3b8;
+    color: #475569;
     line-height: 1.6;
     margin: 0;
   }
@@ -312,8 +312,8 @@
     padding: 13px 16px;
     border: none;
     border-radius: 8px;
-    background: #1e3a5f;
-    color: #60a5fa;
+    background: #eff6ff;
+    color: #1d4ed8;
     font-size: 13px;
     font-weight: 700;
     cursor: pointer;
@@ -324,7 +324,7 @@
     line-height: 1.4;
   }
 
-  .primary-cta:hover { background: #1e4080; color: #93c5fd; }
+  .primary-cta:hover { background: #dbeafe; color: #1e40af; }
 
   /* ── Deliver CTA ─────────────────────────────────────────────────────────── */
   .deliver-cta {
@@ -333,10 +333,10 @@
     align-items: center;
     gap: 10px;
     padding: 13px 14px;
-    border: 1px solid rgba(34,197,94,0.35);
+    border: 1px solid rgba(21,128,61,0.3);
     border-radius: 8px;
-    background: linear-gradient(135deg, rgba(34,197,94,0.12) 0%, rgba(21,128,61,0.18) 100%);
-    color: #4ade80;
+    background: linear-gradient(135deg, rgba(22,163,74,0.08) 0%, rgba(21,128,61,0.12) 100%);
+    color: #15803d;
     cursor: pointer;
     text-align: left;
     font-family: inherit;
@@ -344,8 +344,8 @@
   }
 
   .deliver-cta:hover {
-    background: linear-gradient(135deg, rgba(34,197,94,0.18) 0%, rgba(21,128,61,0.26) 100%);
-    border-color: rgba(34,197,94,0.55);
+    background: linear-gradient(135deg, rgba(22,163,74,0.13) 0%, rgba(21,128,61,0.18) 100%);
+    border-color: rgba(21,128,61,0.45);
     transform: translateY(-1px);
   }
 
@@ -357,8 +357,8 @@
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    background: rgba(34,197,94,0.18);
-    border: 1px solid rgba(34,197,94,0.35);
+    background: rgba(21,128,61,0.1);
+    border: 1px solid rgba(21,128,61,0.25);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -378,26 +378,26 @@
   .deliver-title {
     font-size: 13px;
     font-weight: 700;
-    color: #4ade80;
+    color: #15803d;
     line-height: 1.2;
   }
 
   .deliver-sub {
     font-size: 11px;
-    color: rgba(74,222,128,0.7);
+    color: rgba(21,128,61,0.7);
     line-height: 1.3;
   }
 
   .deliver-arrow {
     font-size: 16px;
-    color: rgba(74,222,128,0.5);
+    color: rgba(21,128,61,0.5);
     flex-shrink: 0;
     transition: transform 0.15s ease;
   }
 
   .deliver-cta:hover .deliver-arrow {
     transform: translateX(3px);
-    color: rgba(74,222,128,0.8);
+    color: rgba(21,128,61,0.8);
   }
 
 </style>

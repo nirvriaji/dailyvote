@@ -101,16 +101,16 @@
 
 <style>
   .sim-header {
-    background: #0f172a;
-    border-bottom: 1px solid #1e293b;
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
     padding: 10px 16px 0;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
     transition: background 0.3s ease;
   }
 
   .sim-header.all-done {
-    background: #0a1a0a;
-    border-bottom-color: rgba(34, 197, 94, 0.3);
+    background: #f0fdf4;
+    border-bottom-color: rgba(22, 163, 74, 0.3);
   }
 
   /* Top row */
@@ -141,7 +141,7 @@
   .header-step-label {
     font-size: 14px;
     font-weight: 700;
-    color: #e2e8f0;
+    color: #0f172a;
     line-height: 1.3;
     white-space: nowrap;
     overflow: hidden;
@@ -151,7 +151,7 @@
   .header-counter {
     font-size: 22px;
     font-weight: 800;
-    color: white;
+    color: #0f172a;
     line-height: 1;
     white-space: nowrap;
     flex-shrink: 0;
@@ -160,7 +160,7 @@
   .counter-total {
     font-size: 13px;
     font-weight: 500;
-    color: #475569;
+    color: #94a3b8;
   }
 
   /* Stepper */
@@ -217,9 +217,9 @@
   }
 
   .is-pending .step-dot {
-    background: #1e293b;
-    color: #94a3b8;
-    border: 1px solid #475569;
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
   }
 
   .is-active .step-dot {
@@ -243,8 +243,8 @@
   }
 
   .is-pending .step-label  { color: #94a3b8; }
-  .is-active .step-label   { color: #e2e8f0; }
-  .is-completed .step-label { color: #4ade80; }
+  .is-active .step-label   { color: #0f172a; }
+  .is-completed .step-label { color: #16a34a; }
 
   .header-actions {
     display: flex;
@@ -270,16 +270,16 @@
     white-space: nowrap;
   }
 
-  .sb-complete { background: rgba(34,197,94,0.15);   color: #4ade80; }
-  .sb-partial  { background: rgba(245,158,11,0.15); color: #fbbf24; }
-  .sb-blank    { background: rgba(100,116,139,0.15); color: #94a3b8; }
+  .sb-complete { background: rgba(22,163,74,0.1);    color: #16a34a; }
+  .sb-partial  { background: rgba(217,119,6,0.1);   color: #d97706; }
+  .sb-blank    { background: rgba(100,116,139,0.1);  color: #64748b; }
 
   .summary-btn {
     padding: 6px 12px;
-    border: 1px solid #334155;
+    border: 1px solid #e2e8f0;
     border-radius: 6px;
     background: transparent;
-    color: #94a3b8;
+    color: #64748b;
     font-size: 11px;
     font-weight: 600;
     cursor: pointer;
@@ -289,9 +289,9 @@
   }
 
   .summary-btn:hover {
-    border-color: #475569;
-    color: #e2e8f0;
-    background: rgba(255,255,255,0.04);
+    border-color: #cbd5e1;
+    color: #0f172a;
+    background: rgba(0,0,0,0.04);
   }
 
   @media (max-width: 768px) {

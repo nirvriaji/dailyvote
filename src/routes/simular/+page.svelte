@@ -614,8 +614,9 @@
       left: 0;
       right: 0;
       z-index: 50;
-      background: #0f172a;
-      border-top: 1px solid #1e293b;
+      background: #ffffff;
+      border-top: 1px solid #e2e8f0;
+      box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
     }
   }
 
@@ -628,7 +629,7 @@
     padding: 8px 16px 10px;
     cursor: pointer;
     flex-shrink: 0;
-    border-bottom: 1px solid #1e293b;
+    border-bottom: 1px solid #e2e8f0;
     min-height: 48px;
     justify-content: center;
     user-select: none;
@@ -650,14 +651,14 @@
   }
 
   .mobile-handle:active {
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(0, 0, 0, 0.04);
   }
 
   .handle-pill {
     width: 36px;
     height: 4px;
     border-radius: 2px;
-    background: #334155;
+    background: #e2e8f0;
     flex-shrink: 0;
   }
 
@@ -672,7 +673,7 @@
   .mobile-step-label {
     font-size: 12px;
     font-weight: 700;
-    color: #e2e8f0;
+    color: #0f172a;
     text-align: left;
   }
 
@@ -717,7 +718,7 @@
   /* ── Mobile CTA bar (siempre visible) ──────────────────────────────────── */
   .mobile-cta-bar {
     padding: 10px 16px 12px;
-    border-top: 1px solid #1e293b;
+    border-top: 1px solid #e2e8f0;
     flex-shrink: 0;
   }
 

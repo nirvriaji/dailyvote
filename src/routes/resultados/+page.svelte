@@ -573,8 +573,8 @@
   ───────────────────────────────────────────────────────────────────────── */
   :global(html),
   :global(body) {
-    background: #0b1220 !important;
-    color: #e2e8f0;
+    background: #f8fafc !important;
+    color: #0f172a;
     font-family: system-ui, -apple-system, sans-serif;
   }
 
@@ -585,7 +585,7 @@
     display: flex;
     flex-direction: column;
     gap: 56px;
-    background: #0b1220;
+    background: #f8fafc;
     min-height: 100dvh;
   }
 
@@ -624,7 +624,7 @@
   .hero-title {
     font-size: clamp(28px, 5vw, 44px);
     font-weight: 800;
-    color: #f8fafc;
+    color: #0f172a;
     line-height: 1.15;
     margin: 0 0 14px;
     letter-spacing: -0.02em;
@@ -632,7 +632,7 @@
 
   .hero-subtitle {
     font-size: 17px;
-    color: #94a3b8;
+    color: #475569;
     line-height: 1.65;
     margin: 0;
     max-width: 560px;
@@ -648,14 +648,15 @@
   }
 
   .ballot-card {
-    background: #111827;
-    border: 1px solid #1e293b;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
     border-radius: 10px;
     padding: 14px;
     display: flex;
     flex-direction: column;
     gap: 6px;
     transition: border-color 0.15s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
   }
 
   .ballot-card.has-vote {
@@ -689,14 +690,14 @@
   }
 
   .chip-marked {
-    color: #4ade80;
-    border-color: rgba(74, 222, 128, 0.3);
-    background: rgba(74, 222, 128, 0.07);
+    color: #16a34a;
+    border-color: rgba(22, 163, 74, 0.3);
+    background: rgba(22, 163, 74, 0.07);
   }
 
   .chip-blank {
-    color: #475569;
-    border-color: #1e293b;
+    color: #94a3b8;
+    border-color: #e2e8f0;
     background: transparent;
   }
 
@@ -717,7 +718,7 @@
   .bc-party-name {
     font-size: 13px;
     font-weight: 600;
-    color: #e2e8f0;
+    color: #0f172a;
     line-height: 1.3;
   }
 
@@ -732,10 +733,10 @@
     font-size: 10px;
     font-weight: 700;
     padding: 2px 7px;
-    background: rgba(200, 16, 46, 0.12);
-    border: 1px solid rgba(200, 16, 46, 0.25);
+    background: rgba(200, 16, 46, 0.08);
+    border: 1px solid rgba(200, 16, 46, 0.2);
     border-radius: 99px;
-    color: #f87171;
+    color: #C8102E;
   }
 
   /* ─────────────────────────────────────────────────────────────────────────
@@ -748,22 +749,23 @@
   }
 
   .proc-card {
-    background: #111827;
-    border: 1px solid #1e293b;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
     border-radius: 12px;
     padding: 24px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
   }
 
   .proc-card-title {
     font-size: 16px;
     font-weight: 700;
-    color: #f1f5f9;
+    color: #0f172a;
     margin: 0 0 10px;
   }
 
   .proc-card-desc {
     font-size: 14px;
-    color: #94a3b8;
+    color: #475569;
     margin: 0 0 16px;
     line-height: 1.6;
   }
@@ -774,8 +776,8 @@
     align-items: center;
     gap: 10px;
     padding: 12px 16px;
-    background: #0f172a;
-    border: 1px solid #1e293b;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
     border-radius: 8px;
   }
 
@@ -789,7 +791,7 @@
   .pres-party {
     font-size: 15px;
     font-weight: 600;
-    color: #e2e8f0;
+    color: #0f172a;
     flex: 1;
   }
 
@@ -817,8 +819,8 @@
   }
 
   .fn {
-    background: #0f172a;
-    border: 1px solid #1e293b;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
     border-radius: 10px;
     padding: 14px 12px;
     display: flex;
@@ -827,14 +829,15 @@
     min-width: 0;
     flex: 1;
     min-width: 120px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
   }
 
   .fn-icon-wrap {
     width: 36px;
     height: 36px;
     border-radius: 8px;
-    border: 1px solid #1e293b;
-    background: #111827;
+    border: 1px solid #e2e8f0;
+    background: #f1f5f9;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -848,7 +851,7 @@
   .fn-label {
     font-size: 12px;
     font-weight: 700;
-    color: #e2e8f0;
+    color: #0f172a;
     margin: 0;
   }
 
@@ -884,15 +887,15 @@
     font-size: 11px;
     font-weight: 700;
     padding: 2px 8px;
-    background: rgba(200, 16, 46, 0.12);
-    border: 1px solid rgba(200, 16, 46, 0.25);
+    background: rgba(200, 16, 46, 0.08);
+    border: 1px solid rgba(200, 16, 46, 0.2);
     border-radius: 99px;
-    color: #f87171;
+    color: #C8102E;
   }
 
   .fn-no-pref {
     font-size: 10px;
-    color: #334155;
+    color: #cbd5e1;
     font-style: italic;
     margin-top: 2px;
   }
@@ -912,7 +915,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #334155;
+    color: #cbd5e1;
     padding-top: 18px;
     flex-shrink: 0;
     align-self: flex-start;
@@ -922,13 +925,14 @@
      Collapsed summary blocks (other legislative columns)
   ───────────────────────────────────────────────────────────────────────── */
   .bloque-resumen {
-    background: #111827;
-    border: 1px solid #1e293b;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
     border-radius: 12px;
     padding: 20px 24px;
     display: flex;
     flex-direction: column;
     gap: 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
   }
 
   .resumen-partido {
@@ -949,12 +953,12 @@
   .resumen-name {
     font-size: 14px;
     font-weight: 600;
-    color: #e2e8f0;
+    color: #0f172a;
   }
 
   .resumen-logic {
     font-size: 12px;
-    color: #475569;
+    color: #64748b;
     line-height: 1.55;
     margin: 0;
   }
@@ -1060,8 +1064,8 @@
      Blank vote insight
   ───────────────────────────────────────────────────────────────────────── */
   .blank-insight-card {
-    background: rgba(251, 191, 36, 0.04);
-    border: 1px solid rgba(251, 191, 36, 0.18);
+    background: rgba(251, 191, 36, 0.05);
+    border: 1px solid rgba(217, 119, 6, 0.2);
     border-radius: 12px;
     padding: 18px 20px;
     display: flex;
@@ -1083,20 +1087,20 @@
   .blank-insight-title {
     font-size: 14px;
     font-weight: 700;
-    color: #fde68a;
+    color: #92400e;
     margin: 0;
     line-height: 1.3;
   }
 
   .blank-insight-body {
     font-size: 13px;
-    color: rgba(226, 232, 240, 0.78);
+    color: #475569;
     line-height: 1.65;
     margin: 0;
   }
 
   .blank-insight-example {
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(0, 0, 0, 0.04);
     border-radius: 8px;
     padding: 12px 14px;
     display: flex;
@@ -1124,13 +1128,13 @@
 
   .blank-insight-list li {
     font-size: 13px;
-    color: rgba(226, 232, 240, 0.78);
+    color: #475569;
     line-height: 1.55;
   }
 
   .blank-insight-example-text {
     font-size: 12px;
-    color: rgba(203, 213, 225, 0.65);
+    color: #64748b;
     line-height: 1.65;
     margin: 0;
   }
@@ -1144,32 +1148,33 @@
   }
 
   .reveal-card {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
     border-radius: 12px;
     padding: 16px 18px;
     display: flex;
     gap: 14px;
     align-items: flex-start;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
   }
 
   .reveal-card--concentrated {
-    border-color: rgba(59, 130, 246, 0.25);
-    background: rgba(59, 130, 246, 0.05);
+    border-color: rgba(59, 130, 246, 0.2);
+    background: rgba(59, 130, 246, 0.04);
   }
 
   .reveal-card--fragmented {
-    border-color: rgba(168, 85, 247, 0.25);
-    background: rgba(168, 85, 247, 0.05);
+    border-color: rgba(168, 85, 247, 0.2);
+    background: rgba(168, 85, 247, 0.04);
   }
 
   .reveal-card--prefs {
-    border-color: rgba(34, 197, 94, 0.22);
-    background: rgba(34, 197, 94, 0.04);
+    border-color: rgba(22, 163, 74, 0.2);
+    background: rgba(22, 163, 74, 0.04);
   }
 
   .reveal-card--blank {
-    border-color: rgba(100, 116, 139, 0.25);
+    border-color: #e2e8f0;
   }
 
   .reveal-card-icon {
@@ -1177,7 +1182,7 @@
     width: 36px;
     height: 36px;
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.05);
+    background: #f1f5f9;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1185,21 +1190,21 @@
     margin-top: 1px;
   }
 
-  .reveal-card--concentrated .reveal-card-icon { color: #60a5fa; }
-  .reveal-card--fragmented   .reveal-card-icon { color: #c084fc; }
-  .reveal-card--prefs        .reveal-card-icon { color: #4ade80; }
+  .reveal-card--concentrated .reveal-card-icon { color: #3b82f6; }
+  .reveal-card--fragmented   .reveal-card-icon { color: #a855f7; }
+  .reveal-card--prefs        .reveal-card-icon { color: #16a34a; }
 
   .reveal-card-title {
     font-size: 14px;
     font-weight: 700;
-    color: #f1f5f9;
+    color: #0f172a;
     line-height: 1.35;
     margin: 0 0 6px;
   }
 
   .reveal-card-desc {
     font-size: 13px;
-    color: rgba(203, 213, 225, 0.75);
+    color: #475569;
     line-height: 1.65;
     margin: 0;
   }
@@ -1213,7 +1218,7 @@
 
   .what-if-intro {
     font-size: 14px;
-    color: rgba(220, 230, 242, 0.78);
+    color: #475569;
     line-height: 1.6;
     margin: 12px 0 16px;
   }
@@ -1226,9 +1231,9 @@
   }
 
   .what-if-btn {
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(255, 255, 255, 0.03);
-    color: rgba(230, 238, 248, 0.72);
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #64748b;
     border-radius: 999px;
     padding: 9px 16px;
     font: inherit;
@@ -1239,22 +1244,22 @@
   }
 
   .what-if-btn.is-active {
-    background: rgba(255, 255, 255, 0.09);
-    border-color: rgba(255, 255, 255, 0.18);
-    color: #f4f7fb;
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #0f172a;
     font-weight: 600;
   }
 
   .what-if-card {
-    background: rgba(255, 255, 255, 0.025);
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
     border-radius: 12px;
     padding: 18px 20px;
   }
 
   .what-if-result {
     font-size: 13px;
-    color: rgba(203, 213, 225, 0.78);
+    color: #475569;
     line-height: 1.65;
     margin: 0;
   }
@@ -1272,7 +1277,7 @@
 
   .closing-invite {
     font-size: 15px;
-    color: #94a3b8;
+    color: #475569;
     line-height: 1.6;
     margin: 0;
     text-align: center;
@@ -1314,13 +1319,13 @@
   .feedback-title {
     font-size: 15px;
     font-weight: 600;
-    color: #94a3b8;
+    color: #0f172a;
     margin: 0;
   }
 
   .feedback-sub {
     font-size: 13px;
-    color: #475569;
+    color: #64748b;
     margin: 0;
   }
 
@@ -1335,19 +1340,19 @@
   .btn-ghost {
     padding: 9px 20px;
     background: transparent;
-    border: 1px solid #334155;
+    border: 1px solid #e2e8f0;
     border-radius: 7px;
     font-size: 13px;
     font-weight: 600;
-    color: #64748b;
+    color: #475569;
     cursor: pointer;
     transition: border-color 0.15s, color 0.15s;
     font-family: inherit;
   }
 
   .btn-ghost:hover {
-    border-color: #475569;
-    color: #94a3b8;
+    border-color: #cbd5e1;
+    color: #0f172a;
   }
 
   /* ─────────────────────────────────────────────────────────────────────────
@@ -1368,8 +1373,8 @@
     gap: 12px;
     align-items: flex-start;
     padding: 14px 16px;
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid #1e293b;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
     border-radius: 8px;
   }
 
@@ -1377,8 +1382,8 @@
     width: 24px;
     height: 24px;
     border-radius: 50%;
-    background: #1e293b;
-    color: #94a3b8;
+    background: #f1f5f9;
+    color: #64748b;
     font-size: 11px;
     font-weight: 800;
     display: flex;
@@ -1397,7 +1402,7 @@
   .hiw-term {
     font-size: 13px;
     font-weight: 700;
-    color: #e2e8f0;
+    color: #0f172a;
   }
 
   .hiw-desc {
@@ -1409,7 +1414,7 @@
 
   .hiw-arrow {
     text-align: center;
-    color: #334155;
+    color: #cbd5e1;
     font-size: 18px;
     padding: 4px 0;
     line-height: 1;
@@ -1417,8 +1422,8 @@
 
   .hiw-example {
     margin-top: 12px;
-    background: rgba(99, 102, 241, 0.05);
-    border: 1px solid rgba(99, 102, 241, 0.15);
+    background: rgba(59, 130, 246, 0.04);
+    border: 1px solid rgba(59, 130, 246, 0.15);
     border-radius: 8px;
     padding: 14px 16px;
     display: flex;
@@ -1431,7 +1436,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: #818cf8;
+    color: #3b82f6;
   }
 
   .hiw-example-text {
