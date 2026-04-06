@@ -63,10 +63,13 @@
 
     if (changes.length === 0) return;
 
+    console.log('[DEBUG validity] changes:', JSON.stringify(changes), '| currValids:', JSON.stringify(currValids), '| activeIdx before:', activeIdx);
+
     if (changes.length > 1) {
       // Batch change (reset / storage load): recalculate normally
       untrack(() => {
         const i = currValids.findIndex(v => !v);
+        console.log('[DEBUG validity] BATCH → setting activeIdx to', i === -1 ? STEP_KEYS.length - 1 : i);
         activeIdx = i === -1 ? STEP_KEYS.length - 1 : i;
       });
       return;
@@ -76,11 +79,13 @@
 
     if (!became) {
       // Column deselected: bring focus back to it
+      console.log('[DEBUG validity] deselect → activeIdx =', idx);
       untrack(() => { activeIdx = idx; });
       return;
     }
 
     // All columns: stay so user can review and explicitly click "Continuar"
+    console.log('[DEBUG validity] single select → activeIdx =', idx, '(was', activeIdx, ')');
     untrack(() => { activeIdx = idx; });
   });
 
@@ -161,8 +166,10 @@
     const rootRect = ballotScroller.getBoundingClientRect();
     const colRect  = colEl.getBoundingClientRect();
     const fullyVisible = colRect.left >= rootRect.left - 2 && colRect.right <= rootRect.right + 2;
+    console.log('[DEBUG scroll] activeIdx changed to', idx, '| fullyVisible:', fullyVisible, '| colRect:', Math.round(colRect.left), '-', Math.round(colRect.right), '| rootRect:', Math.round(rootRect.left), '-', Math.round(rootRect.right));
     if (fullyVisible) return;
 
+    console.log('[DEBUG scroll] → scrolling to col', idx);
     _suppressObserver = true;
     colEl.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
     setTimeout(() => { _suppressObserver = false; }, 700);
@@ -224,6 +231,7 @@
   function handleColumnFocus(colId: string) {
     const idx = STEP_COL_IDS.indexOf(colId);
     if (idx === -1) return;
+    console.log('[DEBUG focus] handleColumnFocus col', idx, '| prev activeIdx:', activeIdx);
     activeIdx = idx;
     lockedIdx = idx;
     if (_lockTimer) clearTimeout(_lockTimer);
@@ -330,6 +338,7 @@
           if (bestEl) {
             const idx = STEP_COL_IDS.indexOf(bestEl.dataset.colId!);
             if (idx !== -1 && idx !== activeIdx) {
+              console.log('[DEBUG scrollObs] scroll observer → activeIdx:', idx, '(was', activeIdx, ')');
               _activeIdxFromScroll = true; // tell $effect not to scroll back
               activeIdx = idx;
             }
