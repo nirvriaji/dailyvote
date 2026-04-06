@@ -191,31 +191,8 @@
 
   // Edge-proximity scroll: when mouse is near left/right edge of ballot area,
   // advance to the adjacent column after a short delay.
-  function handleBallotMouseMove(e: MouseEvent) {
-    // Edge-proximity scroll is desktop-only — skip on touch devices
-    if (typeof window !== 'undefined' && window.innerWidth <= 900) return;
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const zone = rect.width * EDGE_ZONE_RATIO;
-    const inLeft  = x < zone;
-    const inRight = x > rect.width - zone;
-
-    if (inLeft || inRight) {
-      if (_edgeTimer) return; // already counting down
-      const dir = inLeft ? -1 : 1;
-      _edgeTimer = setTimeout(() => {
-        _edgeTimer = null;
-        const next = activeIdx + dir;
-        if (next >= 0 && next < STEP_KEYS.length) {
-          activeIdx = next;
-          lockedIdx = next;
-          if (_lockTimer) clearTimeout(_lockTimer);
-          _lockTimer = setTimeout(() => { lockedIdx = null; }, 800);
-        }
-      }, 350);
-    } else {
-      if (_edgeTimer) { clearTimeout(_edgeTimer); _edgeTimer = null; }
-    }
+  function handleBallotMouseMove(_e: MouseEvent) {
+    // Edge-proximity auto-advance disabled — user navigates columns explicitly
   }
 
   function handleBallotMouseLeave() {
