@@ -599,6 +599,7 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    height: 100%;
   }
 
   /* ── Mobile bottom panel (3-state bottom sheet) ───────────────────────── */

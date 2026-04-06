@@ -400,13 +400,43 @@
     color: rgba(21,128,61,0.8);
   }
 
-  /* ── Desktop: bump gray text one stop darker for readability ──────────── */
+  /* ── Desktop: full height + larger text ──────────────────────────────── */
   @media (min-width: 901px) {
-    .step-eyebrow  { color: #64748b; }
-    .state-empty   { color: #64748b; }
-    .state-prefs   { color: #475569; }
-    .education-brief,
-    .ctx-education p { color: #334155; }
+    .step-body {
+      padding: 28px 24px;
+      gap: 22px;
+    }
+
+    .step-eyebrow { font-size: 12px; color: #64748b; }
+
+    .step-title { font-size: 28px; }
+
+    .education-brief {
+      font-size: 15px;
+      line-height: 1.6;
+      color: #334155;
+    }
+
+    .local-state {
+      padding: 14px 18px;
+      min-height: 64px;
+    }
+
+    .state-empty   { font-size: 15px; color: #64748b; }
+    .state-label   { font-size: 11px; }
+    .state-party   { font-size: 17px; }
+    .state-prefs   { font-size: 14px; color: #475569; }
+
+    .ctx-education { padding: 12px 16px; }
+    .ctx-education p { font-size: 14px; color: #334155; }
+
+    /* Push CTA to bottom of the flex column */
+    .primary-cta,
+    .deliver-cta { margin-top: auto; font-size: 15px; padding: 15px 18px; }
+
+    .deliver-icon { width: 32px; height: 32px; font-size: 15px; }
+    .deliver-title { font-size: 15px; }
+    .deliver-sub   { font-size: 13px; }
   }
 
 </style>
