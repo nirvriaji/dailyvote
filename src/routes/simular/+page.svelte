@@ -130,7 +130,7 @@
   // Hover-intent: activate column only after mouse is still for 1s
   let _lastHoveredColId: string | null = null;
   let _hoverIdleTimer: ReturnType<typeof setTimeout> | null = null;
-  const HOVER_IDLE_MS = 500;
+  const HOVER_IDLE_MS = 200;
 
   let highlightColumnId = $derived(lockedIdx !== null ? STEP_COL_IDS[lockedIdx] : null);
 
