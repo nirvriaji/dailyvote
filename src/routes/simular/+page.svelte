@@ -124,10 +124,13 @@
 
   // ─── Desktop hover lock ──────────────────────────────────────────────────────
   let lockedIdx = $state<number | null>(null);
-  let _hoverTimer: ReturnType<typeof setTimeout> | null = null;
   let _lockTimer: ReturnType<typeof setTimeout> | null = null;
   let _edgeTimer: ReturnType<typeof setTimeout> | null = null;
-  const EDGE_ZONE_RATIO = 0.20; // 20% of ballot-area width on each side
+
+  // Hover-intent: activate column only after mouse is still for 1s
+  let _lastHoveredColId: string | null = null;
+  let _hoverIdleTimer: ReturnType<typeof setTimeout> | null = null;
+  const HOVER_IDLE_MS = 1000;
 
   let highlightColumnId = $derived(lockedIdx !== null ? STEP_COL_IDS[lockedIdx] : null);
 
@@ -179,23 +182,28 @@
     colEl.scrollIntoView({ behavior: 'instant' as ScrollBehavior, inline: 'center', block: 'start' });
   }
 
-  // Desktop hover — update active step with debounce; locked columns use longer delay
+  // Desktop hover — track last hovered column; activation happens via idle timer in handleBallotMouseMove
   function handleColumnHover(colId: string | null) {
-    if (_hoverTimer) { clearTimeout(_hoverTimer); _hoverTimer = null; }
-    if (colId === null) return;
-    const idx = STEP_COL_IDS.indexOf(colId);
-    if (idx === -1 || idx === activeIdx) return;
-    const delay = lockedIdx !== null ? 300 : 200;
-    _hoverTimer = setTimeout(() => { activeIdx = idx; }, delay);
+    if (colId !== null) _lastHoveredColId = colId;
   }
 
   // Edge-proximity scroll: when mouse is near left/right edge of ballot area,
   // advance to the adjacent column after a short delay.
+  // Hover-intent: reset idle timer on every mouse movement; activate after 1s of stillness
   function handleBallotMouseMove(_e: MouseEvent) {
-    // Edge-proximity auto-advance disabled — user navigates columns explicitly
+    if (_lastHoveredColId === null) return;
+    if (_hoverIdleTimer) { clearTimeout(_hoverIdleTimer); _hoverIdleTimer = null; }
+    _hoverIdleTimer = setTimeout(() => {
+      _hoverIdleTimer = null;
+      if (_lastHoveredColId === null) return;
+      const idx = STEP_COL_IDS.indexOf(_lastHoveredColId);
+      if (idx !== -1 && idx !== activeIdx) activeIdx = idx;
+    }, HOVER_IDLE_MS);
   }
 
   function handleBallotMouseLeave() {
+    _lastHoveredColId = null;
+    if (_hoverIdleTimer) { clearTimeout(_hoverIdleTimer); _hoverIdleTimer = null; }
     if (_edgeTimer) { clearTimeout(_edgeTimer); _edgeTimer = null; }
   }
 
