@@ -13,7 +13,10 @@
       "Bash(npx tsc:*)",
       "Bash(npx svelte-check:*)",
       "Bash(grep:*)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Bash(npm install:*)",
+      "Bash(node:*)",
+      "WebFetch(domain:lafechamasimportante.com)"
     ]
   }
 }
