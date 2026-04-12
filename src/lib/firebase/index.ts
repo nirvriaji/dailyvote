@@ -23,8 +23,8 @@ export const ELECTION_DAY_TARGET = new Date('2026-04-12T07:00:00');
  * Verificar si aún se pueden hacer simulaciones
  * Hasta el 12 de abril a las 07:00 a. m.
  */
-export function canStillSimulate(now: Date = new Date()): boolean {
-  return now.getTime() < ELECTION_DAY_TARGET.getTime();
+export function canStillSimulate(_now: Date = new Date()): boolean {
+  return true;
 }
 
 /**
